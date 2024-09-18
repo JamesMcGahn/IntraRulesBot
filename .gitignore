@@ -1,0 +1,10 @@
+out/
+data/
+logs/
+__pycache__/
+
+keys.py
+.DS_Store
+.venv/*
+
+
