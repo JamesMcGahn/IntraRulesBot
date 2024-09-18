@@ -4,6 +4,7 @@ from selenium import webdriver
 from selenium.common.exceptions import (
     NoSuchElementException,
     NoSuchFrameException,
+    StaleElementReferenceException,
     TimeoutException,
 )
 from selenium.webdriver.chrome.options import Options
@@ -90,6 +91,43 @@ class WebScrape:
             )
             return None
 
+    def select_item_from_list(
+        self, timeout, locator_type, locator_value, text_to_select, retries=3
+    ):
+        """
+        Selects an item from a list of elements, retries in case of stale element reference.
+
+        Args:
+            timeout: Time in seconds to wait for the list of elements.
+            locator_type: Selenium locator type (e.g., By.XPATH).
+            locator_value: The locator value (e.g., XPATH or ID for the list of elements).
+            text_to_select: The text of the item to be selected.
+            retries: Number of retries in case of stale element reference.
+
+        Returns:
+            bool: True if the item was successfully clicked, False otherwise.
+        """
+        for _ in range(retries):
+            try:
+                # Re-locate the list of elements in each retry to avoid stale element issues
+                elements_list = self.wait_for_element(
+                    timeout,
+                    locator_type,
+                    locator_value,
+                    "visibility_of_all",
+                )
+                # Find and click the item that matches the provided text
+                for item in elements_list:
+                    if item.text.strip() == text_to_select:
+                        print(f"Selected item: {item.text}")
+                        item.click()
+                        return True  # Successfully clicked, exit the function
+            except StaleElementReferenceException:
+                print("Stale element reference, retrying...")
+
+        print(f"Failed to select item with text: '{text_to_select}'")
+        return False
+
     def run_webdriver(
         self,
     ):
@@ -126,6 +164,7 @@ class WebScrape:
                     10, By.ID, "ctl00_ActionBarContent_rbAction_Add", "clickable"
                 )
                 if addRuleBtn:
+                    sleep(3)
                     addRuleBtn.click()
                     # --> Switch to Module Add Rule Popup
                     try:
@@ -148,6 +187,7 @@ class WebScrape:
                                 '//*[contains(@id, "overlayButtons_rbContinue_input")]',
                                 "clickable",
                             )
+                            sleep(3)
                             continue_btn.click()
 
                             # Set Rule Name
@@ -170,24 +210,72 @@ class WebScrape:
                             )
                             freq_time_dropdown.click()
 
-                            li_elements = self.wait_for_element(
+                            # Set Frequency Rule Time ->>
+                            user_time_selection = "5"
+                            time_selection = self.select_item_from_list(
                                 10,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayContent_triggerParameters_frequencyComboBox_DropDown")]/div/ul/li',
-                                "visibility_of_all",
+                                user_time_selection,
                             )
+                            if not time_selection:
+                                print(
+                                    f"Unable to select time {user_time_selection}. Check that your time selection is one of '1','5','10','15','30','60'"
+                                )
+                            sleep(5)
+                            continue_btn.click()
+                            # ------>>> Continue to Condition Page
 
-                            # Set Frequency Rule Time ->>
-                            time_selection = "5"
+                            # ---> Select Provider Category
+                            user_provider_category = "ACD"
 
-                            for item in li_elements:
-                                print("Time Frequency item:", item.text)
-                                if item.text == time_selection:
-                                    print("Selected time frequency of: " + item.text)
-                                    item.click()
+                            provider_category_select = self.select_item_from_list(
+                                10,
+                                By.XPATH,
+                                '//*[contains(@id, "overlayContent_selectCondition_radMenuCategory")]/ul/li',
+                                user_provider_category,
+                            )
+                            if not provider_category_select:
+                                return
+                                print(
+                                    f"Unable to select provider category: {user_provider_category}"
+                                )
+
+                            # ---> Select Provider Instance
+                            user_provider_instance = "Avaya Test ACD"
+                            provider_instance_selection = self.select_item_from_list(
+                                10,
+                                By.XPATH,
+                                '//*[contains(@id, "overlayContent_selectCondition_radMenuProviderInstance")]/ul/li',
+                                user_provider_instance,
+                            )
+                            if not provider_instance_selection:
+                                return
+                                print(
+                                    f"Unable to select provider {user_provider_instance} "
+                                )
+                            # TODO - handle potential value error
+
+                            # ---> Select Provider Condition
+                            user_provider_condition = "Agents in Other - By Queue"
+                            provider_condition_selection = self.select_item_from_list(
+                                10,
+                                By.XPATH,
+                                '//*[contains(@id, "overlayContent_selectCondition_radMenuItem")]/ul/li',
+                                user_provider_condition,
+                            )
+                            if not provider_condition_selection:
+                                return
+                                print(
+                                    f"Cannot find. Please check that - {provider_condition_selection} - is a listed condition for the provider"
+                                )
+
+                            sleep(5)
 
                             continue_btn.click()
-                            # Continue to Condition
+
+                            # --->> ACTION Page
+
                     except NoSuchFrameException:
                         print(
                             "Iframe not found, make sure you're identifying the iframe correctly."
