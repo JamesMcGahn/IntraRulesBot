@@ -35,13 +35,16 @@ class WebScrape:
     def init_driver(self):
         pass
 
-    def wait_for_element(self, timeout, locator_type, locator_value, condition):
+    def wait_for_element(
+        self, timeout, locator_type, locator_value, condition, text=None
+    ):
         """
         Args:
             - timeout: int for how long the driver should wait
-            - locator_type:
-            - locator_value:
-            - condition (str): one of 'presence', 'visibility', or 'clickable'
+            - locator_type (By): The type of locator to find the element (e.g., By.ID, By.XPATH).
+            - locator_value (str): The locator value (e.g., the ID or XPATH).
+            - condition (str): one of 'presence', 'visibility', 'clickable', 'text', 'presence_of_all', 'visibility_of_all', 'selected'
+            - text (str, optional): The text to wait for if the condition is 'text'.
 
         """
         try:
@@ -58,6 +61,28 @@ class WebScrape:
                 element = wait.until(
                     EC.element_to_be_clickable((locator_type, locator_value))
                 )
+            elif condition == "text":
+                element = wait.until(
+                    EC.text_to_be_present_in_element(
+                        (locator_type, locator_value), text
+                    )
+                )
+            elif condition == "presence_of_all":
+                elements = wait.until(
+                    EC.presence_of_all_elements_located((locator_type, locator_value))
+                )
+                return elements
+            elif condition == "visibility_of_all":
+                elements = wait.until(
+                    EC.visibility_of_all_elements_located((locator_type, locator_value))
+                )
+                return elements
+            elif condition == "selected":
+                element = wait.until(
+                    EC.element_to_be_selected((locator_type, locator_value))
+                )
+            else:
+                raise ValueError(f"Unknown condition: {condition}")
             return element
         except TimeoutException:
             print(
@@ -145,14 +170,13 @@ class WebScrape:
                             )
                             freq_time_dropdown.click()
 
-                            li_elements = WebDriverWait(self.driver, 10).until(
-                                EC.visibility_of_all_elements_located(
-                                    (
-                                        By.XPATH,
-                                        '//*[contains(@id, "overlayContent_triggerParameters_frequencyComboBox_DropDown")]/div/ul/li',
-                                    )
-                                )
+                            li_elements = self.wait_for_element(
+                                10,
+                                By.XPATH,
+                                '//*[contains(@id, "overlayContent_triggerParameters_frequencyComboBox_DropDown")]/div/ul/li',
+                                "visibility_of_all",
                             )
+
                             # Set Frequency Rule Time ->>
                             time_selection = "5"
 
