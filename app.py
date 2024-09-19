@@ -82,6 +82,7 @@ class WebScrape:
                 element = wait.until(
                     EC.element_to_be_selected((locator_type, locator_value))
                 )
+
             else:
                 raise ValueError(f"Unknown condition: {condition}")
             return element
@@ -116,16 +117,52 @@ class WebScrape:
                     locator_value,
                     "visibility_of_all",
                 )
-                # Find and click the item that matches the provided text
+
                 for item in elements_list:
                     if item.text.strip() == text_to_select:
                         print(f"Selected item: {item.text}")
                         item.click()
-                        return True  # Successfully clicked, exit the function
+                        return True  # Successfully clicked, exit
             except StaleElementReferenceException:
                 print("Stale element reference, retrying...")
 
         print(f"Failed to select item with text: '{text_to_select}'")
+        return False
+
+    def click_all_items_in_list(
+        self, timeout, locator_type, locator_value, retries=3, item_name=None
+    ):
+        """
+        Selects an item from a list of elements, retries in case of stale element reference.
+
+        Args:
+            timeout (int): Time in seconds to wait for the list of elements.
+            locator_type: Selenium locator type (e.g., By.XPATH).
+            locator_value : The locator value (e.g., XPATH or ID for the list of elements).
+            retries (int): Number of retries in case of stale element reference.
+            item_name (str): name of item to specify in print message
+        Returns:
+            bool: True if the item was successfully clicked, False otherwise.
+        """
+        for _ in range(retries):
+            try:
+                # Re-locate the list of elements in each retry to avoid stale element issues
+                elements_list = self.wait_for_element(
+                    timeout,
+                    locator_type,
+                    locator_value,
+                    "visibility_of_all",
+                )
+
+                for item in elements_list:
+                    item.click()
+                print(f"All {item_name} items clicked")
+                return True  # exit inner loop
+            except StaleElementReferenceException:
+                print("Stale element reference, retrying...")
+
+            return False
+        print(f"Failed to click all {item_name} items")
         return False
 
     def run_webdriver(
@@ -222,6 +259,7 @@ class WebScrape:
                                 print(
                                     f"Unable to select time {user_time_selection}. Check that your time selection is one of '1','5','10','15','30','60'"
                                 )
+                                return
                             sleep(5)
                             continue_btn.click()
                             # ------>>> Continue to Condition Page
@@ -236,11 +274,11 @@ class WebScrape:
                                 user_provider_category,
                             )
                             if not provider_category_select:
-                                return
                                 print(
                                     f"Unable to select provider category: {user_provider_category}"
                                 )
-
+                                return
+                            sleep(5)
                             # ---> Select Provider Instance
                             user_provider_instance = "Avaya Test ACD"
                             provider_instance_selection = self.select_item_from_list(
@@ -250,12 +288,12 @@ class WebScrape:
                                 user_provider_instance,
                             )
                             if not provider_instance_selection:
-                                return
                                 print(
                                     f"Unable to select provider {user_provider_instance} "
                                 )
+                                return
                             # TODO - handle potential value error
-
+                            sleep(5)
                             # ---> Select Provider Condition
                             user_provider_condition = "Agents in Other - By Queue"
                             provider_condition_selection = self.select_item_from_list(
@@ -263,18 +301,89 @@ class WebScrape:
                                 By.XPATH,
                                 '//*[contains(@id, "overlayContent_selectCondition_radMenuItem")]/ul/li',
                                 user_provider_condition,
+                                5,
                             )
                             if not provider_condition_selection:
-                                return
                                 print(
-                                    f"Cannot find. Please check that - {provider_condition_selection} - is a listed condition for the provider"
+                                    f"Cannot find. Please check that - {user_provider_condition} - is a listed condition for the provider"
                                 )
-
+                                return
                             sleep(5)
 
-                            continue_btn.click()
+                            ## Stats Condition
 
-                            # --->> ACTION Page
+                            # equality comparison dropdown
+                            agents_in_after_call_eq_drop = self.wait_for_element(
+                                10,
+                                By.XPATH,
+                                '//*[contains(@id, "overlayContent_conditionParameters_ddExposedDataOperator_Arrow")]',
+                                "clickable",
+                            )
+                            agents_in_after_call_eq_drop.click()
+
+                            # equality comparison operator selection
+                            user_agents_in_after_call_eq = "Greater Than"
+                            agents_in_after_call_eq = self.select_item_from_list(
+                                10,
+                                By.XPATH,
+                                '//*[contains(@id, "overlayContent_conditionParameters_ddExposedDataOperator_DropDown")]/div/ul/li',
+                                user_agents_in_after_call_eq,
+                            )
+                            if not agents_in_after_call_eq:
+                                print(
+                                    f"Cant not find {user_agents_in_after_call_eq}. Make sure the comparison operator text is correct"
+                                )
+                                return
+
+                            # Condition numeric value input to compare
+                            agents_in_after_call_eq_condition = self.wait_for_element(
+                                15,
+                                By.XPATH,
+                                '//*[contains(@id, "overlayContent_conditionParameters_tbExposedDataValue")]',
+                                "visibility",
+                            )
+
+                            user_agents_in_after_call_eq_condition = 1
+                            # TODO raise value error if user input is str
+                            agents_in_after_call_eq_condition.send_keys(
+                                user_agents_in_after_call_eq_condition
+                            )
+
+                            user_condition_queues = "queues"
+                            if user_condition_queues == "users":
+                                continue_btn.click()
+                            elif user_condition_queues == "queues":
+
+                                queues_radio_btn = self.wait_for_element(
+                                    15,
+                                    By.XPATH,
+                                    '//*[contains(@id, "overlayContent_conditionParameters_ctl16_1")]',
+                                    "clickable",
+                                )
+                                queues_radio_btn.click()
+
+                                user_queues_dropdown_btn = self.wait_for_element(
+                                    15,
+                                    By.XPATH,
+                                    '//*[contains(@id, "overlayContent_conditionParameters_ctl22_Arrow")]',
+                                    "clickable",
+                                )
+                                user_queues_dropdown_btn.click()
+
+                                queues_list = self.click_all_items_in_list(
+                                    10,
+                                    By.XPATH,
+                                    '//*[contains(@id, "overlayContent_conditionParameters_ctl22_DropDown")]/div/ul/li',
+                                    5,
+                                    "queues in queues list",
+                                )
+
+                                if not queues_list:
+                                    return
+
+                                sleep(3)
+                                continue_btn.click()
+                        # --->> action page
 
                     except NoSuchFrameException:
                         print(
