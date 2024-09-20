@@ -117,7 +117,8 @@ class WebScrape:
                     locator_value,
                     "visibility_of_all",
                 )
-
+                if elements_list is None:
+                    raise NoSuchElementException
                 for item in elements_list:
                     if item.text.strip() == text_to_select:
                         print(f"Selected item: {item.text}")
@@ -125,6 +126,11 @@ class WebScrape:
                         return True  # Successfully clicked, exit
             except StaleElementReferenceException:
                 print("Stale element reference, retrying...")
+            except NoSuchElementException:
+                print(
+                    "No Such element list...check to make sure the locator value is correct"
+                )
+                return False
 
         print(f"Failed to select item with text: '{text_to_select}'")
         return False
@@ -383,8 +389,168 @@ class WebScrape:
 
                                 sleep(3)
                                 continue_btn.click()
-                        # --->> action page
+                        # --->> action page -selection
+                        sleep(3)
+                        user_action_category_selection = "Communications"
+                        action_category_dropdown = self.select_item_from_list(
+                            10,
+                            By.XPATH,
+                            '//*[contains(@id, "overlayContent_selectAction_radMenuCategory")]/ul/li',
+                            user_action_category_selection,
+                        )
+                        if not action_category_dropdown:
+                            print(
+                                f"Cant not find {action_category_dropdown}. Make sure the provider category for the action text is correct"
+                            )
+                            return
 
+                        user_action_provider_instance = "Email Provider Instance"
+
+                        sleep(3)
+                        action_provider_dropdown = self.select_item_from_list(
+                            10,
+                            By.XPATH,
+                            '//*[contains(@id, "ctl00_overlayContent_selectAction_radMenuProviderInstance")]/ul/li',
+                            user_action_provider_instance,
+                        )
+                        if not action_provider_dropdown:
+                            print(
+                                f"Cant not find {user_action_provider_instance}. Make sure the action provider text is correct"
+                            )
+                            return
+
+                        sleep(3)
+                        user_action_selection = "Send Email"
+                        action_selection_dropdown = self.select_item_from_list(
+                            10,
+                            By.XPATH,
+                            '//*[contains(@id, "ctl00_overlayContent_selectAction_radMenuItem")]/ul/li',
+                            user_action_selection,
+                        )
+                        if not action_selection_dropdown:
+                            print(
+                                f"Cant not find {user_action_selection}. Make sure the action provider text is correct"
+                            )
+                            return
+
+                        # Stats based email
+
+                        email_page_settings_btn = self.wait_for_element(
+                            15,
+                            By.XPATH,
+                            '//*[contains(@id, "overlayContent_actionParameters_lblSettings")]',
+                            "clickable",
+                        )
+                        email_page_settings_btn.click()
+
+                        email_subject = self.wait_for_element(
+                            15,
+                            By.XPATH,
+                            '//*[contains(@id, "overlayContent_actionParameters_ctl05")]',
+                            "visibility",
+                        )
+                        email_subject.send_keys(rule_name)
+
+                        email_message = self.wait_for_element(
+                            15,
+                            By.XPATH,
+                            '//*[contains(@id, "overlayContent_actionParameters_ctl12")]',
+                            "visibility",
+                        )
+                        email_message.send_keys("Test Message")
+                        sleep(3)
+                        continue_btn.click()
+
+                        email_page_users_btn = self.wait_for_element(
+                            15,
+                            By.XPATH,
+                            '//*[contains(@id, "overlayContent_actionParameters_lblUsers")]',
+                            "clickable",
+                        )
+                        email_page_users_btn.click()
+
+                        select_email_individual = self.wait_for_element(
+                            15,
+                            By.XPATH,
+                            '//*[contains(@id, "overlayContent_actionParameters_rblIntradiemUsersIndividual_Users_1")]',
+                            "clickable",
+                        )
+                        select_email_individual.click()
+
+                        if user_condition_queues == "users":
+                            input_email_address = self.wait_for_element(
+                                15,
+                                By.XPATH,
+                                '//*[contains(@id, "overlayContent_actionParameters_ctl65")]',
+                                "visibility",
+                            )
+                            input_email_address.send_keys("Test Message")
+
+                        elif user_condition_queues == "queues":
+
+                            input_email_address = self.wait_for_element(
+                                15,
+                                By.XPATH,
+                                '//*[contains(@id, "overlayContent_actionParameters_ctl61")]',
+                                "visibility",
+                            )
+                            input_email_address.send_keys("test@example.com")
+
+                        rule_settings_hamburger = self.wait_for_element(
+                            15,
+                            By.XPATH,
+                            '//*[contains(@id, "overlayContent_divAddEditAction")]/div[3]/a',
+                            "clickable",
+                        )
+                        rule_settings_hamburger.click()
+                        sleep(3)
+
+                        self.driver.switch_to.default_content()
+
+                        WebDriverWait(self.driver, 10).until(
+                            EC.frame_to_be_available_and_switch_to_it(
+                                (By.NAME, "RadWindowAddEditRuleSettings")
+                            )
+                        )
+
+                        rule_category_dropdown_arrow = self.wait_for_element(
+                            15,
+                            By.XPATH,
+                            '//*[contains(@id, "ddRuleCategory_Arrow")]',
+                            "clickable",
+                        )
+                        rule_category_dropdown_arrow.click()
+
+                        self.select_item_from_list(
+                            10,
+                            By.XPATH,
+                            '//*[contains(@id, "ddRuleCategory_DropDown")]/div/ul/li',
+                            "Other - Admin",
+                        )
+                        sleep(3)
+                        self.driver.switch_to.default_content()
+                        WebDriverWait(self.driver, 10).until(
+                            EC.frame_to_be_available_and_switch_to_it(
+                                (By.NAME, "RadWindowAddEditRule")
+                            )
+                        )
+
+                        continue_btn.click()
+                        try:
+                            WebDriverWait(self.driver, 5).until(EC.alert_is_present())
+
+                            alert = self.driver.switch_to.alert
+                            alert.accept()
+                            print("There is something wrong with your email.")
+                            # continue when in actual Loop
+                            # print("Skipping Rule - rule name")
+                        except TimeoutException:
+                            print("No alert was present after login.")
+
+                        # to submit
+
+                    except Exception as e:
+                        print(e)
                     except NoSuchFrameException:
                         print(
                             "Iframe not found, make sure you're identifying the iframe correctly."
@@ -394,6 +560,8 @@ class WebScrape:
 
         except Exception as e:
             print(e)
+        finally:
+            self.close()
 
 
 run = WebScrape(keys["url"])
