@@ -37,7 +37,13 @@ class WebScrape:
         pass
 
     def wait_for_element(
-        self, timeout, locator_type, locator_value, condition, text=None
+        self,
+        timeout,
+        locator_type,
+        locator_value,
+        condition,
+        text=None,
+        failure_message="default",
     ):
         """
         Args:
@@ -46,7 +52,7 @@ class WebScrape:
             - locator_value (str): The locator value (e.g., the ID or XPATH).
             - condition (str): one of 'presence', 'visibility', 'clickable', 'text', 'presence_of_all', 'visibility_of_all', 'selected'
             - text (str, optional): The text to wait for if the condition is 'text'.
-
+            - failure_message (str,optional): Override the default failure message with your custom message
         """
         try:
             wait = WebDriverWait(self.driver, timeout)
@@ -87,9 +93,13 @@ class WebScrape:
                 raise ValueError(f"Unknown condition: {condition}")
             return element
         except TimeoutException:
-            print(
-                f"Element with {locator_type} = {locator_value} not found within {timeout} seconds."
-            )
+            if failure_message != "default":
+                print(failure_message)
+            else:
+                print(
+                    f"Element with {locator_type} = {locator_value} not found within {timeout} seconds."
+                )
+
             return None
 
     def select_item_from_list(
@@ -188,15 +198,27 @@ class WebScrape:
             login_btn = self.driver.find_element(By.ID, "btnLogin")
             login_btn.click()
 
-            # ---- LOGIN - Session Alert
             try:
-                WebDriverWait(self.driver, 10).until(EC.alert_is_present())
+                WebDriverWait(self.driver, 5).until(EC.alert_is_present())
 
                 alert = self.driver.switch_to.alert
                 alert.accept()
-                print("Alert was present and accepted.")
+                print(
+                    "Session open elsewhere alert was present. Accepted alert to proceed with this session."
+                )
             except TimeoutException:
-                print("No alert was present after login.")
+                print("No session alert was present.")
+
+            error_login = self.wait_for_element(
+                5,
+                By.XPATH,
+                '//*[@id="loginErrorContainer"]/span',
+                "visibility",
+                failure_message="Login successful.",
+            )
+            if error_login:
+                print("Error during login:", error_login.text)
+                return
 
             # --- Wait for Page Load -> Move to Rules Page
             if self.wait_for_element(
@@ -548,6 +570,7 @@ class WebScrape:
                             print("No alert was present after login.")
 
                         # to submit
+                        # ctl00_overlayButtons_rbSubmit_input
 
                     except Exception as e:
                         print(e)
