@@ -2,7 +2,7 @@
   "avaya": {
     "rules": [
       {
-        "rule_name": "",
+        "rule_name": "Test Rule 1",
         "frequency_based": {
           "time_interval": 5
         },
@@ -17,6 +17,17 @@
               "equality_threshold": 1,
               "queues_source": "queues"
             }
+          },
+          {
+            "provider_category": "ACD2",
+            "provider_instance": "Avaya Test ACD2",
+            "provider_condition": "Agents in Other - By Queue2",
+            "details": {
+              "condition_type": "stats",
+              "equality_operator": "Greater Than",
+              "equality_threshold": 1,
+              "queues_source": "queues"
+            }
           }
         ],
         "actions": [
@@ -25,7 +36,7 @@
             "provider_instance": "Email Provider Instance",
             "provider_condition": "Send Email",
             "details": {
-              "condition_type": "email",
+              "action_type": "email",
               "email_subject": "Test Subject",
               "email_body": "Test body",
               "email_address": "test@example.com"
@@ -57,7 +68,7 @@
             "provider_instance": "Email Provider Instance",
             "provider_condition": "Change State",
             "details": {
-              "condition_type": "state",
+              "action_type": "state",
               "agent_state": "Test",
               "agent_state_aux": "Test"
             }
