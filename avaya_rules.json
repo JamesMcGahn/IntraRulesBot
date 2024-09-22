@@ -45,20 +45,31 @@
         ]
       },
       {
-        "rule_name": "",
+        "rule_name": "Test Rule 2",
         "frequency_based": {
           "time_interval": 5
         },
         "conditions": [
           {
             "provider_category": "ACD",
-            "provider_instance": "Avaya Test ACD",
+            "provider_instance": "Avaya Test ACD3",
             "provider_condition": "Agents in Other - By Queue",
             "details": {
-              "condition_type": "threshold",
-              "interval_check": "multiple",
-              "ratio_threshold": 1,
-              "user_id": "test user"
+              "condition_type": "stats",
+              "equality_operator": "Greater Than",
+              "equality_threshold": 1,
+              "queues_source": "queues"
+            }
+          },
+          {
+            "provider_category": "ACD2",
+            "provider_instance": "Avaya Test ACD3",
+            "provider_condition": "Agents in Other - By Queue2",
+            "details": {
+              "condition_type": "stats",
+              "equality_operator": "Greater Than",
+              "equality_threshold": 1,
+              "queues_source": "queues"
             }
           }
         ],
@@ -66,11 +77,12 @@
           {
             "provider_category": "Communications",
             "provider_instance": "Email Provider Instance",
-            "provider_condition": "Change State",
+            "provider_condition": "Send Email",
             "details": {
-              "action_type": "state",
-              "agent_state": "Test",
-              "agent_state_aux": "Test"
+              "action_type": "email",
+              "email_subject": "Test Subject2",
+              "email_body": "Test body",
+              "email_address": "test@example.com"
             }
           }
         ]

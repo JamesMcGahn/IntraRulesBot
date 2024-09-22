@@ -18,6 +18,7 @@ class MainWindow(QMainWindow):
         self.setMaximumSize(QSize(16777215, 16777215))
         font = QFont()
         font.setFamilies([".AppleSystemUIFont"])
+
         self.setFont(font)
 
         with open("avaya_rules.json") as f:
