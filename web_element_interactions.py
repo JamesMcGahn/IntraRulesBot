@@ -1,3 +1,5 @@
+from enum import Enum
+
 from selenium.common.exceptions import (
     NoSuchElementException,
     StaleElementReferenceException,
@@ -5,6 +7,16 @@ from selenium.common.exceptions import (
 )
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+
+
+class WaitConditions(Enum):
+    PRESENCE = "presence"
+    VISIBILITY = "visibility"
+    CLICKABLE = "clickable"
+    TEXT = "text"
+    PRESENCE_OF_ALL = "presence_of_all"
+    VISIBILITY_OF_ALL = "visibility_of_all"
+    SELECTED = "selected"
 
 
 # TODO: use Enums?
