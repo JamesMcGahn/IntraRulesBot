@@ -34,7 +34,7 @@ class ConfigEditor(QWidget):
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(self.stacked_widget)
         main_layout.addWidget(scroll_area)
-        for rule in self.config["avaya"]["rules"]:
+        for rule in self.config["rules"]:
             self.create_rule_form(rule)
 
         button_layout = QVBoxLayout()
@@ -227,7 +227,7 @@ class ConfigEditor(QWidget):
             rules.append(dat_rule)
         print(rules)
 
-        data = {"avaya": {"rules": rules}}
+        data = {"rules": rules}
         with open("./avaya_user.json", "w") as f:
             json.dump(data, f, indent=4)
         # print(dat_rule)
