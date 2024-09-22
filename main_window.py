@@ -4,6 +4,7 @@ from PySide6.QtCore import QSize
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QLabel, QMainWindow
 
+from central_widget import CentralWidget
 from configeditor import ConfigEditor
 
 
@@ -21,9 +22,7 @@ class MainWindow(QMainWindow):
 
         self.setFont(font)
 
-        with open("avaya_rules.json") as f:
-            config_data = json.load(f)
-        self.centralwidget = ConfigEditor(config_data)
+        self.centralWidget = CentralWidget()
 
         self.label = QLabel(self)
-        self.setCentralWidget(self.centralwidget)
+        self.setCentralWidget(self.centralWidget)
