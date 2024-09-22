@@ -16,6 +16,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
 from keys import keys
+from web_element_interactions import WebElementInteractions
 
 
 class WebScrape:
@@ -26,6 +27,7 @@ class WebScrape:
         self.driver = webdriver.Chrome(
             options=chrome_options, service=Service(ChromeDriverManager().install())
         )
+        self.wELI = WebElementInteractions(self.driver)
         self.not_available = []
         self.source = None
         self.url = url
@@ -35,151 +37,6 @@ class WebScrape:
 
     def init_driver(self):
         pass
-
-    def wait_for_element(
-        self,
-        timeout,
-        locator_type,
-        locator_value,
-        condition,
-        text=None,
-        failure_message="default",
-    ):
-        """
-        Args:
-            - timeout: int for how long the driver should wait
-            - locator_type (By): The type of locator to find the element (e.g., By.ID, By.XPATH).
-            - locator_value (str): The locator value (e.g., the ID or XPATH).
-            - condition (str): one of 'presence', 'visibility', 'clickable', 'text', 'presence_of_all', 'visibility_of_all', 'selected'
-            - text (str, optional): The text to wait for if the condition is 'text'.
-            - failure_message (str,optional): Override the default failure message with your custom message
-        """
-        try:
-            wait = WebDriverWait(self.driver, timeout)
-            if condition == "presence":
-                element = wait.until(
-                    EC.presence_of_element_located((locator_type, locator_value))
-                )
-            elif condition == "visibility":
-                element = wait.until(
-                    EC.visibility_of_element_located((locator_type, locator_value))
-                )
-            elif condition == "clickable":
-                element = wait.until(
-                    EC.element_to_be_clickable((locator_type, locator_value))
-                )
-            elif condition == "text":
-                element = wait.until(
-                    EC.text_to_be_present_in_element(
-                        (locator_type, locator_value), text
-                    )
-                )
-            elif condition == "presence_of_all":
-                elements = wait.until(
-                    EC.presence_of_all_elements_located((locator_type, locator_value))
-                )
-                return elements
-            elif condition == "visibility_of_all":
-                elements = wait.until(
-                    EC.visibility_of_all_elements_located((locator_type, locator_value))
-                )
-                return elements
-            elif condition == "selected":
-                element = wait.until(
-                    EC.element_to_be_selected((locator_type, locator_value))
-                )
-
-            else:
-                raise ValueError(f"Unknown condition: {condition}")
-            return element
-        except TimeoutException:
-            if failure_message != "default":
-                print(failure_message)
-            else:
-                print(
-                    f"Element with {locator_type} = {locator_value} not found within {timeout} seconds."
-                )
-
-            return None
-
-    def select_item_from_list(
-        self, timeout, locator_type, locator_value, text_to_select, retries=3
-    ):
-        """
-        Selects an item from a list of elements, retries in case of stale element reference.
-
-        Args:
-            timeout: Time in seconds to wait for the list of elements.
-            locator_type: Selenium locator type (e.g., By.XPATH).
-            locator_value: The locator value (e.g., XPATH or ID for the list of elements).
-            text_to_select: The text of the item to be selected.
-            retries: Number of retries in case of stale element reference.
-
-        Returns:
-            bool: True if the item was successfully clicked, False otherwise.
-        """
-        for _ in range(retries):
-            try:
-                # Re-locate the list of elements in each retry to avoid stale element issues
-                elements_list = self.wait_for_element(
-                    timeout,
-                    locator_type,
-                    locator_value,
-                    "visibility_of_all",
-                )
-                if elements_list is None:
-                    raise NoSuchElementException
-                for item in elements_list:
-                    if item.text.strip() == text_to_select:
-                        print(f"Selected item: {item.text}")
-                        item.click()
-                        return True  # Successfully clicked, exit
-            except StaleElementReferenceException:
-                print("Stale element reference, retrying...")
-            except NoSuchElementException:
-                print(
-                    "No Such element list...check to make sure the locator value is correct"
-                )
-                return False
-
-        print(f"Failed to select item with text: '{text_to_select}'")
-        return False
-
-    def click_all_items_in_list(
-        self, timeout, locator_type, locator_value, retries=3, item_name=None
-    ):
-        """
-        Selects an item from a list of elements, retries in case of stale element reference.
-
-        Args:
-            timeout (int): Time in seconds to wait for the list of elements.
-            locator_type: Selenium locator type (e.g., By.XPATH).
-            locator_value : The locator value (e.g., XPATH or ID for the list of elements).
-            retries (int): Number of retries in case of stale element reference.
-            item_name (str): name of item to specify in print message
-        Returns:
-            bool: True if the item was successfully clicked, False otherwise.
-        """
-        for _ in range(retries):
-            try:
-                # Re-locate the list of elements in each retry to avoid stale element issues
-                elements_list = self.wait_for_element(
-                    timeout,
-                    locator_type,
-                    locator_value,
-                    "visibility_of_all",
-                )
-
-                for item in elements_list:
-                    item.click()
-                print(f"All {item_name} items clicked")
-                return True  # exit inner loop
-            except StaleElementReferenceException:
-                print("Stale element reference, retrying...")
-
-            return False
-        print(f"Failed to click all {item_name} items")
-        return False
 
     def run_webdriver(
         self,
@@ -209,7 +66,7 @@ class WebScrape:
             except TimeoutException:
                 print("No session alert was present.")
 
-            error_login = self.wait_for_element(
+            error_login = self.wELI.wait_for_element(
                 5,
                 By.XPATH,
                 '//*[@id="loginErrorContainer"]/span',
@@ -221,11 +78,11 @@ class WebScrape:
                 return
 
             # --- Wait for Page Load -> Move to Rules Page
-            if self.wait_for_element(
+            if self.wELI.wait_for_element(
                 10, By.ID, "ctl00_radTabStripSubNavigation", "presence"
             ):
                 self.driver.get(self.url + "/ManagerConsole/Delivery/Rules.aspx")
-                addRuleBtn = self.wait_for_element(
+                addRuleBtn = self.wELI.wait_for_element(
                     10, By.ID, "ctl00_ActionBarContent_rbAction_Add", "clickable"
                 )
                 if addRuleBtn:
@@ -240,13 +97,13 @@ class WebScrape:
                             )
                         )
                         # --> If Tuturial Page Info Present -> Skip Page
-                        if self.wait_for_element(
+                        if self.wELI.wait_for_element(
                             15,
                             By.XPATH,
                             '//*[contains(@id, "overlayButtonsLeft_cbDontAskLead")]',
                             "clickable",
                         ):
-                            continue_btn = self.wait_for_element(
+                            continue_btn = self.wELI.wait_for_element(
                                 15,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayButtons_rbContinue_input")]',
@@ -256,7 +113,7 @@ class WebScrape:
                             continue_btn.click()
 
                             # Set Rule Name
-                            rule_name_input = self.wait_for_element(
+                            rule_name_input = self.wELI.wait_for_element(
                                 15,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayRuleProgressArea_tbRuleName")]',
@@ -267,7 +124,7 @@ class WebScrape:
                             rule_name_input.send_keys(rule_name)
 
                             # Frequency Rule -->
-                            freq_time_dropdown = self.wait_for_element(
+                            freq_time_dropdown = self.wELI.wait_for_element(
                                 10,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayContent_triggerParameters_frequencyComboBox_Arrow")]',
@@ -277,7 +134,7 @@ class WebScrape:
 
                             # Set Frequency Rule Time ->>
                             user_time_selection = "5"
-                            time_selection = self.select_item_from_list(
+                            time_selection = self.wELI.select_item_from_list(
                                 10,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayContent_triggerParameters_frequencyComboBox_DropDown")]/div/ul/li',
@@ -295,7 +152,7 @@ class WebScrape:
                             # ---> Select Provider Category
                             user_provider_category = "ACD"
 
-                            provider_category_select = self.select_item_from_list(
+                            provider_category_select = self.wELI.select_item_from_list(
                                 10,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayContent_selectCondition_radMenuCategory")]/ul/li',
@@ -309,7 +166,7 @@ class WebScrape:
                             sleep(5)
                             # ---> Select Provider Instance
                             user_provider_instance = "Avaya Test ACD"
-                            provider_instance_selection = self.select_item_from_list(
+                            provider_instance_selection = self.wELI.select_item_from_list(
                                 10,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayContent_selectCondition_radMenuProviderInstance")]/ul/li',
@@ -324,7 +181,7 @@ class WebScrape:
                             sleep(5)
                             # ---> Select Provider Condition
                             user_provider_condition = "Agents in Other - By Queue"
-                            provider_condition_selection = self.select_item_from_list(
+                            provider_condition_selection = self.wELI.select_item_from_list(
                                 10,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayContent_selectCondition_radMenuItem")]/ul/li',
@@ -341,7 +198,7 @@ class WebScrape:
                             ## Stats Condition
 
                             # equality comparison dropdown
-                            agents_in_after_call_eq_drop = self.wait_for_element(
+                            agents_in_after_call_eq_drop = self.wELI.wait_for_element(
                                 10,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayContent_conditionParameters_ddExposedDataOperator_Arrow")]',
@@ -351,7 +208,7 @@ class WebScrape:
 
                             # equality comparison operator selection
                             user_agents_in_after_call_eq = "Greater Than"
-                            agents_in_after_call_eq = self.select_item_from_list(
+                            agents_in_after_call_eq = self.wELI.select_item_from_list(
                                 10,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayContent_conditionParameters_ddExposedDataOperator_DropDown")]/div/ul/li',
@@ -364,7 +221,7 @@ class WebScrape:
                                 return
 
                             # Condition numeric value input to compare
-                            agents_in_after_call_eq_condition = self.wait_for_element(
+                            agents_in_after_call_eq_condition = self.wELI.wait_for_element(
                                 15,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayContent_conditionParameters_tbExposedDataValue")]',
@@ -382,7 +239,7 @@ class WebScrape:
                                 continue_btn.click()
                             elif user_condition_queues == "queues":
 
-                                queues_radio_btn = self.wait_for_element(
+                                queues_radio_btn = self.wELI.wait_for_element(
                                     15,
                                     By.XPATH,
                                     '//*[contains(@id, "overlayContent_conditionParameters_ctl16_1")]',
@@ -390,7 +247,7 @@ class WebScrape:
                                 )
                                 queues_radio_btn.click()
 
-                                user_queues_dropdown_btn = self.wait_for_element(
+                                user_queues_dropdown_btn = self.wELI.wait_for_element(
                                     15,
                                     By.XPATH,
                                     '//*[contains(@id, "overlayContent_conditionParameters_ctl22_Arrow")]',
@@ -398,7 +255,7 @@ class WebScrape:
                                 )
                                 user_queues_dropdown_btn.click()
 
-                                queues_list = self.click_all_items_in_list(
+                                queues_list = self.wELI.click_all_items_in_list(
                                     10,
                                     By.XPATH,
                                     '//*[contains(@id, "overlayContent_conditionParameters_ctl22_DropDown")]/div/ul/li',
@@ -414,7 +271,7 @@ class WebScrape:
                         # --->> action page -selection
                         sleep(3)
                         user_action_category_selection = "Communications"
-                        action_category_dropdown = self.select_item_from_list(
+                        action_category_dropdown = self.wELI.select_item_from_list(
                             10,
                             By.XPATH,
                             '//*[contains(@id, "overlayContent_selectAction_radMenuCategory")]/ul/li',
@@ -429,7 +286,7 @@ class WebScrape:
                         user_action_provider_instance = "Email Provider Instance"
 
                         sleep(3)
-                        action_provider_dropdown = self.select_item_from_list(
+                        action_provider_dropdown = self.wELI.select_item_from_list(
                             10,
                             By.XPATH,
                             '//*[contains(@id, "ctl00_overlayContent_selectAction_radMenuProviderInstance")]/ul/li',
@@ -443,7 +300,7 @@ class WebScrape:
 
                         sleep(3)
                         user_action_selection = "Send Email"
-                        action_selection_dropdown = self.select_item_from_list(
+                        action_selection_dropdown = self.wELI.select_item_from_list(
                             10,
                             By.XPATH,
                             '//*[contains(@id, "ctl00_overlayContent_selectAction_radMenuItem")]/ul/li',
@@ -457,7 +314,7 @@ class WebScrape:
 
                         # Stats based email
 
-                        email_page_settings_btn = self.wait_for_element(
+                        email_page_settings_btn = self.wELI.wait_for_element(
                             15,
                             By.XPATH,
                             '//*[contains(@id, "overlayContent_actionParameters_lblSettings")]',
@@ -465,7 +322,7 @@ class WebScrape:
                         )
                         email_page_settings_btn.click()
 
-                        email_subject = self.wait_for_element(
+                        email_subject = self.wELI.wait_for_element(
                             15,
                             By.XPATH,
                             '//*[contains(@id, "overlayContent_actionParameters_ctl05")]',
@@ -473,7 +330,7 @@ class WebScrape:
                         )
                         email_subject.send_keys(rule_name)
 
-                        email_message = self.wait_for_element(
+                        email_message = self.wELI.wait_for_element(
                             15,
                             By.XPATH,
                             '//*[contains(@id, "overlayContent_actionParameters_ctl12")]',
@@ -483,7 +340,7 @@ class WebScrape:
                         sleep(3)
                         continue_btn.click()
 
-                        email_page_users_btn = self.wait_for_element(
+                        email_page_users_btn = self.wELI.wait_for_element(
                             15,
                             By.XPATH,
                             '//*[contains(@id, "overlayContent_actionParameters_lblUsers")]',
@@ -491,7 +348,7 @@ class WebScrape:
                         )
                         email_page_users_btn.click()
 
-                        select_email_individual = self.wait_for_element(
+                        select_email_individual = self.wELI.wait_for_element(
                             15,
                             By.XPATH,
                             '//*[contains(@id, "overlayContent_actionParameters_rblIntradiemUsersIndividual_Users_1")]',
@@ -500,7 +357,7 @@ class WebScrape:
                         select_email_individual.click()
 
                         if user_condition_queues == "users":
-                            input_email_address = self.wait_for_element(
+                            input_email_address = self.wELI.wait_for_element(
                                 15,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayContent_actionParameters_ctl65")]',
@@ -510,7 +367,7 @@ class WebScrape:
 
                         elif user_condition_queues == "queues":
 
-                            input_email_address = self.wait_for_element(
+                            input_email_address = self.wELI.wait_for_element(
                                 15,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayContent_actionParameters_ctl61")]',
@@ -518,7 +375,7 @@ class WebScrape:
                             )
                             input_email_address.send_keys("test@example.com")
 
-                        rule_settings_hamburger = self.wait_for_element(
+                        rule_settings_hamburger = self.wELI.wait_for_element(
                             15,
                             By.XPATH,
                             '//*[contains(@id, "overlayContent_divAddEditAction")]/div[3]/a',
@@ -535,7 +392,7 @@ class WebScrape:
                             )
                         )
 
-                        rule_category_dropdown_arrow = self.wait_for_element(
+                        rule_category_dropdown_arrow = self.wELI.wait_for_element(
                             15,
                             By.XPATH,
                             '//*[contains(@id, "ddRuleCategory_Arrow")]',
@@ -543,7 +400,7 @@ class WebScrape:
                         )
                         rule_category_dropdown_arrow.click()
 
-                        self.select_item_from_list(
+                        self.wELI.select_item_from_list(
                             10,
                             By.XPATH,
                             '//*[contains(@id, "ddRuleCategory_DropDown")]/div/ul/li',
