@@ -10,6 +10,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+from services.logger import Logger
+
 
 # TODO: Update with logging
 class WaitConditions(Enum):
@@ -33,7 +35,7 @@ class WebElementInteractions:
         locator_value: str,
         condition: WaitConditions,
         text: Optional[str] = None,
-        failure_message: str = "default",
+        failure_message: tuple[str, str] = ("WARN", "default"),
     ):
         """
         Args:
@@ -42,7 +44,7 @@ class WebElementInteractions:
             locator_value (str): The value of the locator (e.g., the ID or XPATH).
             condition (WaitConditions): The condition to wait for
             text (str, optional): The text to wait for if the condition is 'text'.
-            failure_message (str, optional): Custom message to override the default failure message.
+            failure_message (Tuple[str, str], optional): A tuple containing a logging warning type and a default message (default is ("WARN", "default"))
 
         Returns:
             Union[None, WebElement]:
@@ -88,11 +90,14 @@ class WebElementInteractions:
                 raise ValueError(f"Unknown condition: {condition}")
             return element
         except TimeoutException:
-            if failure_message != "default":
-                print(failure_message)
+            log_level, msg = failure_message
+            if msg != "default":
+                Logger().insert(msg, log_level.upper())
+
             else:
-                print(
-                    f"Element with {locator_type} = {locator_value} not found within {timeout} seconds."
+                Logger().insert(
+                    "ERROR",
+                    f"Element with {locator_type} = {locator_value} not found within {timeout} seconds.",
                 )
 
             return None
@@ -131,18 +136,23 @@ class WebElementInteractions:
                     raise NoSuchElementException
                 for item in elements_list:
                     if item.text.strip() == text_to_select:
-                        print(f"Selected item: {item.text}")
+                        Logger().insert(f"Selected item: {item.text}", "INFO")
+
                         item.click()
                         return True  # Successfully clicked, exit
             except StaleElementReferenceException:
-                print("Stale element reference, retrying...")
+                Logger().insert("Stale element reference, retrying...", "WARN")
             except NoSuchElementException:
-                print(
-                    "No Such element list...check to make sure the locator value is correct"
+                Logger().insert(
+                    "No Such element list...check to make sure the locator value is correct",
+                    "ERROR",
                 )
                 return False
 
-        print(f"Failed to select item with text: '{text_to_select}'")
+        Logger().insert(
+            f"Failed to select item with text: '{text_to_select}'",
+            "ERROR",
+        )
         return False
 
     def click_all_items_in_list(
@@ -177,11 +187,13 @@ class WebElementInteractions:
 
                 for item in elements_list:
                     item.click()
-                print(f"All {item_name} items clicked")
+                Logger().insert(f"All {item_name} items clicked", "INFO")
+
                 return True  # exit inner loop
             except StaleElementReferenceException:
-                print("Stale element reference, retrying...")
+                Logger().insert("Stale element reference, retrying...", "WARN")
+                print()
 
             return False
-        print(f"Failed to click all {item_name} items")
+        Logger().insert(f"Failed to click all {item_name} items", "ERROR")
         return False
