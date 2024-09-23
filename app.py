@@ -4,6 +4,7 @@ from selenium import webdriver
 from selenium.common.exceptions import (
     NoSuchElementException,
     NoSuchFrameException,
+    NoSuchWindowException,
     StaleElementReferenceException,
     TimeoutException,
 )
@@ -16,7 +17,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
 from keys import keys
-from web_element_interactions import WebElementInteractions
+from web_element_interactions import WaitConditions, WebElementInteractions
 
 
 class WebScrape:
@@ -70,7 +71,7 @@ class WebScrape:
                 5,
                 By.XPATH,
                 '//*[@id="loginErrorContainer"]/span',
-                "visibility",
+                WaitConditions.VISIBILITY,
                 failure_message="Login successful.",
             )
             if error_login:
@@ -79,11 +80,14 @@ class WebScrape:
 
             # --- Wait for Page Load -> Move to Rules Page
             if self.wELI.wait_for_element(
-                10, By.ID, "ctl00_radTabStripSubNavigation", "presence"
+                10, By.ID, "ctl00_radTabStripSubNavigation", WaitConditions.PRESENCE
             ):
                 self.driver.get(self.url + "/ManagerConsole/Delivery/Rules.aspx")
                 addRuleBtn = self.wELI.wait_for_element(
-                    10, By.ID, "ctl00_ActionBarContent_rbAction_Add", "clickable"
+                    10,
+                    By.ID,
+                    "ctl00_ActionBarContent_rbAction_Add",
+                    WaitConditions.CLICKABLE,
                 )
                 if addRuleBtn:
                     sleep(3)
@@ -101,13 +105,13 @@ class WebScrape:
                             15,
                             By.XPATH,
                             '//*[contains(@id, "overlayButtonsLeft_cbDontAskLead")]',
-                            "clickable",
+                            WaitConditions.CLICKABLE,
                         ):
                             continue_btn = self.wELI.wait_for_element(
                                 15,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayButtons_rbContinue_input")]',
-                                "clickable",
+                                WaitConditions.CLICKABLE,
                             )
                             sleep(3)
                             continue_btn.click()
@@ -117,7 +121,7 @@ class WebScrape:
                                 15,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayRuleProgressArea_tbRuleName")]',
-                                "visibility",
+                                WaitConditions.VISIBILITY,
                             )
 
                             rule_name = "Test Rule"
@@ -128,7 +132,7 @@ class WebScrape:
                                 10,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayContent_triggerParameters_frequencyComboBox_Arrow")]',
-                                "visibility",
+                                WaitConditions.VISIBILITY,
                             )
                             freq_time_dropdown.click()
 
@@ -202,7 +206,7 @@ class WebScrape:
                                 10,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayContent_conditionParameters_ddExposedDataOperator_Arrow")]',
-                                "clickable",
+                                WaitConditions.CLICKABLE,
                             )
                             agents_in_after_call_eq_drop.click()
 
@@ -225,7 +229,7 @@ class WebScrape:
                                 15,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayContent_conditionParameters_tbExposedDataValue")]',
-                                "visibility",
+                                WaitConditions.VISIBILITY,
                             )
 
                             user_agents_in_after_call_eq_condition = 1
@@ -243,7 +247,7 @@ class WebScrape:
                                     15,
                                     By.XPATH,
                                     '//*[contains(@id, "overlayContent_conditionParameters_ctl16_1")]',
-                                    "clickable",
+                                    WaitConditions.CLICKABLE,
                                 )
                                 queues_radio_btn.click()
 
@@ -251,7 +255,7 @@ class WebScrape:
                                     15,
                                     By.XPATH,
                                     '//*[contains(@id, "overlayContent_conditionParameters_ctl22_Arrow")]',
-                                    "clickable",
+                                    WaitConditions.CLICKABLE,
                                 )
                                 user_queues_dropdown_btn.click()
 
@@ -318,7 +322,7 @@ class WebScrape:
                             15,
                             By.XPATH,
                             '//*[contains(@id, "overlayContent_actionParameters_lblSettings")]',
-                            "clickable",
+                            WaitConditions.CLICKABLE,
                         )
                         email_page_settings_btn.click()
 
@@ -326,7 +330,7 @@ class WebScrape:
                             15,
                             By.XPATH,
                             '//*[contains(@id, "overlayContent_actionParameters_ctl05")]',
-                            "visibility",
+                            WaitConditions.VISIBILITY,
                         )
                         email_subject.send_keys(rule_name)
 
@@ -334,7 +338,7 @@ class WebScrape:
                             15,
                             By.XPATH,
                             '//*[contains(@id, "overlayContent_actionParameters_ctl12")]',
-                            "visibility",
+                            WaitConditions.VISIBILITY,
                         )
                         email_message.send_keys("Test Message")
                         sleep(3)
@@ -344,7 +348,7 @@ class WebScrape:
                             15,
                             By.XPATH,
                             '//*[contains(@id, "overlayContent_actionParameters_lblUsers")]',
-                            "clickable",
+                            WaitConditions.CLICKABLE,
                         )
                         email_page_users_btn.click()
 
@@ -352,7 +356,7 @@ class WebScrape:
                             15,
                             By.XPATH,
                             '//*[contains(@id, "overlayContent_actionParameters_rblIntradiemUsersIndividual_Users_1")]',
-                            "clickable",
+                            WaitConditions.CLICKABLE,
                         )
                         select_email_individual.click()
 
@@ -361,7 +365,7 @@ class WebScrape:
                                 15,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayContent_actionParameters_ctl65")]',
-                                "visibility",
+                                WaitConditions.VISIBILITY,
                             )
                             input_email_address.send_keys("Test Message")
 
@@ -371,7 +375,7 @@ class WebScrape:
                                 15,
                                 By.XPATH,
                                 '//*[contains(@id, "overlayContent_actionParameters_ctl61")]',
-                                "visibility",
+                                WaitConditions.VISIBILITY,
                             )
                             input_email_address.send_keys("test@example.com")
 
@@ -379,7 +383,7 @@ class WebScrape:
                             15,
                             By.XPATH,
                             '//*[contains(@id, "overlayContent_divAddEditAction")]/div[3]/a',
-                            "clickable",
+                            WaitConditions.CLICKABLE,
                         )
                         rule_settings_hamburger.click()
                         sleep(3)
@@ -396,7 +400,7 @@ class WebScrape:
                             15,
                             By.XPATH,
                             '//*[contains(@id, "ddRuleCategory_Arrow")]',
-                            "clickable",
+                            WaitConditions.CLICKABLE,
                         )
                         rule_category_dropdown_arrow.click()
 
