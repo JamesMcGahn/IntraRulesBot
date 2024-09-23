@@ -17,6 +17,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
 from keys import keys
+from login_manager import LoginManager
 from services.logger import Logger
 from web_element_interactions import WaitConditions, WebElementInteractions
 
@@ -45,41 +46,11 @@ class WebScrape:
     ):
         try:
             self.driver.get(self.url)
-
+            Logger()
             # ---- LOGIN
             # TODO: put in fn
-            login_name_field = self.driver.find_element(By.ID, "inputUserName")
-            login_name_field.send_keys(keys["login"])
-
-            login_pw_field = self.driver.find_element(By.ID, "inputPassword")
-            login_pw_field.send_keys(keys["password"])
-
-            login_btn = self.driver.find_element(By.ID, "btnLogin")
-            login_btn.click()
-
-            try:
-                WebDriverWait(self.driver, 5).until(EC.alert_is_present())
-
-                alert = self.driver.switch_to.alert
-                alert.accept()
-                Logger().insert(
-                    "Session open elsewhere alert was present. Accepted alert to proceed with this session.",
-                    "INFO",
-                )
-
-            except TimeoutException:
-                print("No session alert was present.")
-
-            error_login = self.wELI.wait_for_element(
-                5,
-                By.XPATH,
-                '//*[@id="loginErrorContainer"]/span',
-                WaitConditions.VISIBILITY,
-                failure_message="Login successful.",
-            )
-            if error_login:
-                print("Error during login:", error_login.text)
-                return
+            login = LoginManager(self.driver, keys["login"], keys["password"])
+            login.login()
 
             # --- Wait for Page Load -> Move to Rules Page
             if self.wELI.wait_for_element(
