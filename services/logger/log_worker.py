@@ -15,14 +15,25 @@ class LogWorker(QThread):
         self.log_queue = log_queue
         self.filename = filename
         self.stop_event = False
+
+        self.logger = logging.getLogger(self.filename)
+        self.logger.setLevel(logging.INFO)
+        self.setup_logging()
+
+    def setup_logging(self):
+        """Set up the rotating file handler and ensure no duplicate handlers exist."""
+        # Check if logger already has handlers and remove them
+        if self.logger.handlers:
+            for handler in self.logger.handlers[:]:
+                self.logger.removeHandler(handler)
+
+        # Set up the rotating file handler
         self.logfile = RotatingFileHandler(
             self.filename, maxBytes=5 * 1024 * 1024, backupCount=5
         )
         self.logfile.setFormatter(
             logging.Formatter("%(asctime)s %(levelname)s %(message)s")
         )
-        self.logger = logging.getLogger(self.filename)
-        self.logger.setLevel(logging.INFO)
         self.logger.addHandler(self.logfile)
 
     def run(self):
