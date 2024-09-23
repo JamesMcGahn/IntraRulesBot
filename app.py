@@ -17,6 +17,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
 from keys import keys
+from utils import Logger
 from web_element_interactions import WaitConditions, WebElementInteractions
 
 
@@ -61,9 +62,11 @@ class WebScrape:
 
                 alert = self.driver.switch_to.alert
                 alert.accept()
-                print(
-                    "Session open elsewhere alert was present. Accepted alert to proceed with this session."
+                Logger().insert(
+                    "Session open elsewhere alert was present. Accepted alert to proceed with this session.",
+                    "INFO",
                 )
+
             except TimeoutException:
                 print("No session alert was present.")
 
