@@ -21,7 +21,7 @@ class PathManager:
             return True
         else:
             if raiseError:
-                import utils.logger as logger
+                import services.logger as logger
 
                 log = logger.Logger()
                 log.insert("Filepath does not exist", "WARN")

@@ -17,7 +17,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
 from keys import keys
-from utils import Logger
+from services.logger import Logger
 from web_element_interactions import WaitConditions, WebElementInteractions
 
 
