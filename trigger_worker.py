@@ -31,9 +31,9 @@ class TriggerWorker:
 
     def do_work(self):
         if "frequency_based" in self.rule:
-            self.handle_frequency_based()
+            self.set_frequency_based()
 
-    def handle_frequency_based(self):
+    def set_frequency_based(self):
         freq_time_dropdown = self.wELI.wait_for_element(
             10,
             By.XPATH,
