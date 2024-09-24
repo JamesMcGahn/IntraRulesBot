@@ -17,6 +17,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
+from actions_email_worker import ActionsEmailWorker
 from keys import keys
 from login_manager import LoginManager
 from services.logger import Logger
@@ -41,132 +42,71 @@ class ActionsWorker:
 
     def do_work(self):
         for i, action in enumerate(self.rule["actions"]):
-            user_action_category_selection = action["provider_category"]
-            action_category_dropdown = self.wELI.select_item_from_list(
-                10,
-                By.XPATH,
-                '//*[contains(@id, "overlayContent_selectAction_radMenuCategory")]/ul/li',
-                user_action_category_selection,
+
+            self.set_provider_category(action)
+            self.set_provider_instance(action)
+            self.set_provider_condition(action)
+            self.set_email_action(action, self.rule)
+            self.add_additional_action(i)
+
+    def set_provider_category(self, action):
+        user_action_category_selection = action["provider_category"]
+
+        action_category_dropdown = self.wELI.select_item_from_list(
+            10,
+            By.XPATH,
+            '//*[contains(@id, "overlayContent_selectAction_radMenuCategory")]/ul/li',
+            user_action_category_selection,
+        )
+        if not action_category_dropdown:
+            print(
+                f"Cant not find {action_category_dropdown}. Make sure the provider category for the action text is correct"
             )
-            if not action_category_dropdown:
-                print(
-                    f"Cant not find {action_category_dropdown}. Make sure the provider category for the action text is correct"
-                )
-                return
-            sleep(3)
+            return
+        sleep(3)
 
-            user_action_provider_instance = action["provider_instance"]
+    def set_provider_instance(self, action):
+        user_action_provider_instance = action["provider_instance"]
 
-            action_provider_dropdown = self.wELI.select_item_from_list(
-                10,
-                By.XPATH,
-                '//*[contains(@id, "ctl00_overlayContent_selectAction_radMenuProviderInstance")]/ul/li',
-                user_action_provider_instance,
+        action_provider_dropdown = self.wELI.select_item_from_list(
+            10,
+            By.XPATH,
+            '//*[contains(@id, "ctl00_overlayContent_selectAction_radMenuProviderInstance")]/ul/li',
+            user_action_provider_instance,
+        )
+        if not action_provider_dropdown:
+            print(
+                f"Cant not find {user_action_provider_instance}. Make sure the action provider text is correct"
             )
-            if not action_provider_dropdown:
-                print(
-                    f"Cant not find {user_action_provider_instance}. Make sure the action provider text is correct"
-                )
-                return
+            return
 
-            sleep(3)
-            user_action_selection = action["provider_condition"]
-            action_selection_dropdown = self.wELI.select_item_from_list(
-                10,
-                By.XPATH,
-                '//*[contains(@id, "ctl00_overlayContent_selectAction_radMenuItem")]/ul/li',
-                user_action_selection,
+        sleep(3)
+
+    def set_provider_condition(self, action):
+        user_action_selection = action["provider_condition"]
+        action_selection_dropdown = self.wELI.select_item_from_list(
+            10,
+            By.XPATH,
+            '//*[contains(@id, "ctl00_overlayContent_selectAction_radMenuItem")]/ul/li',
+            user_action_selection,
+        )
+        if not action_selection_dropdown:
+            print(
+                f"Cant not find {user_action_selection}. Make sure the action provider text is correct"
             )
-            if not action_selection_dropdown:
-                print(
-                    f"Cant not find {user_action_selection}. Make sure the action provider text is correct"
-                )
-                return
+            return
 
-            if action["details"]["action_type"] == "email":
-                # Stats based email
+    def set_email_action(self, action, rule):
+        if action["details"]["action_type"] == "email":
+            actions_worker = ActionsEmailWorker(self.driver, self, action, rule)
+            actions_worker.do_work()
 
-                email_page_settings_btn = self.wELI.wait_for_element(
-                    15,
-                    By.XPATH,
-                    '//*[contains(@id, "overlayContent_actionParameters_lblSettings")]',
-                    WaitConditions.CLICKABLE,
-                )
-                email_page_settings_btn.click()
-
-                email_subject = self.wELI.wait_for_element(
-                    15,
-                    By.XPATH,
-                    '//*[contains(@id, "overlayContent_actionParameters_ctl05")]',
-                    WaitConditions.VISIBILITY,
-                )
-                email_subject.send_keys(self.rule["rule_name"])
-
-                if "frequency_based" in self.rule:
-                    email_message = self.wELI.wait_for_element(
-                        15,
-                        By.XPATH,
-                        '//*[contains(@id, "overlayContent_actionParameters_ctl12")]',
-                        WaitConditions.VISIBILITY,
-                    )
-                else:
-                    email_message = self.wELI.wait_for_element(
-                        15,
-                        By.XPATH,
-                        '//*[contains(@id, "overlayContent_actionParameters_ctl13")]',
-                        WaitConditions.VISIBILITY,
-                    )
-
-                email_message.send_keys(action["details"]["email_body"])
-                sleep(3)
-                continue_btn = self.wELI.wait_for_element(
-                    15,
-                    By.XPATH,
-                    '//*[contains(@id, "overlayButtons_rbContinue_input")]',
-                    WaitConditions.CLICKABLE,
-                )
-                continue_btn.click()
-
-                email_page_users_btn = self.wELI.wait_for_element(
-                    15,
-                    By.XPATH,
-                    '//*[contains(@id, "overlayContent_actionParameters_lblUsers")]',
-                    WaitConditions.CLICKABLE,
-                )
-                email_page_users_btn.click()
-
-                select_email_individual = self.wELI.wait_for_element(
-                    15,
-                    By.XPATH,
-                    '//*[contains(@id, "overlayContent_actionParameters_rblIntradiemUsersIndividual_Users_1")]',
-                    WaitConditions.CLICKABLE,
-                )
-                select_email_individual.click()
-
-                if self._rule_condition_queues_source == "users":
-                    input_email_address = self.wELI.wait_for_element(
-                        15,
-                        By.XPATH,
-                        '//*[contains(@id, "overlayContent_actionParameters_ctl65")]',
-                        WaitConditions.VISIBILITY,
-                    )
-
-                elif self._rule_condition_queues_source == "queues":
-
-                    input_email_address = self.wELI.wait_for_element(
-                        15,
-                        By.XPATH,
-                        '//*[contains(@id, "overlayContent_actionParameters_ctl61")]',
-                        WaitConditions.VISIBILITY,
-                    )
-
-                input_email_address.send_keys(action["details"]["email_address"])
-
-            if i != len(self.rule["actions"]) - 1 and len(self.rule["actions"]) > 1:
-                add__addit_action = self.wELI.wait_for_element(
-                    15,
-                    By.XPATH,
-                    '//*[contains(@id, "overlayContent_lblAddAction")]',
-                    WaitConditions.CLICKABLE,
-                )
-                add__addit_action.click()
+    def add_additional_action(self, i):
+        if i != len(self.rule["actions"]) - 1 and len(self.rule["actions"]) > 1:
+            add__addit_action = self.wELI.wait_for_element(
+                15,
+                By.XPATH,
+                '//*[contains(@id, "overlayContent_lblAddAction")]',
+                WaitConditions.CLICKABLE,
+            )
+            add__addit_action.click()
