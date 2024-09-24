@@ -17,9 +17,12 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
+from actions_worker import ActionsWorker
+from conditions_worker import ConditionsWorker
 from keys import keys
 from login_manager import LoginManager
 from services.logger import Logger
+from trigger_worker import TriggerWorker
 from web_element_interactions import WaitConditions, WebElementInteractions
 
 
@@ -105,324 +108,24 @@ class WebScrape:
                         )
                         rule_name_input.send_keys(rule["rule_name"])
 
-                        ####TODO PUT in own method / class
-                        if "frequency_based" in rule:
-                            # Frequency Rule -->
-                            freq_time_dropdown = self.wELI.wait_for_element(
-                                10,
-                                By.XPATH,
-                                '//*[contains(@id, "overlayContent_triggerParameters_frequencyComboBox_Arrow")]',
-                                WaitConditions.VISIBILITY,
-                            )
-                            freq_time_dropdown.click()
+                        #Trigger
+                        trigger = TriggerWorker(self.driver, rule)
+                        trigger.do_work()
 
-                            # Set Frequency Rule Time ->>
-                            user_time_selection = str(
-                                rule["frequency_based"]["time_interval"]
-                            )
-
-                            time_selection = self.wELI.select_item_from_list(
-                                10,
-                                By.XPATH,
-                                '//*[contains(@id, "overlayContent_triggerParameters_frequencyComboBox_DropDown")]/div/ul/li',
-                                user_time_selection,
-                            )
-                            if not time_selection:
-                                print(
-                                    f"Unable to select time {user_time_selection}. Check that your time selection is one of '1','5','10','15','30','60'"
-                                )
-                                return
-
-                            sleep(5)
                         continue_btn.click()
                         # ------>>> Continue to Condition Page
+                        
+                        
+                        conditions = ConditionsWorker(self.driver, rule)
                         if "conditions" in rule and rule["conditions"]:
-                            # ---> Select Provider Category
-
-                            for i, condition in enumerate(rule["conditions"]):
-
-                                user_provider_category = condition["provider_category"]
-
-                                provider_category_select = self.wELI.select_item_from_list(
-                                    10,
-                                    By.XPATH,
-                                    '//*[contains(@id, "overlayContent_selectCondition_radMenuCategory")]/ul/li',
-                                    user_provider_category,
-                                )
-
-                                if not provider_category_select:
-                                    print(
-                                        f"Unable to select provider category: {user_provider_category}"
-                                    )
-                                    return
-                                sleep(5)
-                                # ---> Select Provider Instance
-                                user_provider_instance = condition["provider_instance"]
-                                provider_instance_selection = self.wELI.select_item_from_list(
-                                    10,
-                                    By.XPATH,
-                                    '//*[contains(@id, "overlayContent_selectCondition_radMenuProviderInstance")]/ul/li',
-                                    user_provider_instance,
-                                )
-                                if not provider_instance_selection:
-                                    print(
-                                        f"Unable to select provider {user_provider_instance} "
-                                    )
-                                    return
-                                # TODO - handle potential value error
-                                sleep(5)
-                                # ---> Select Provider Condition
-                                user_provider_condition = condition[
-                                    "provider_condition"
-                                ]
-                                provider_condition_selection = self.wELI.select_item_from_list(
-                                    10,
-                                    By.XPATH,
-                                    '//*[contains(@id, "overlayContent_selectCondition_radMenuItem")]/ul/li',
-                                    user_provider_condition,
-                                    5,
-                                )
-                                if not provider_condition_selection:
-                                    print(
-                                        f"Cannot find. Please check that - {user_provider_condition} - is a listed condition for the provider"
-                                    )
-                                    return
-                                sleep(5)
-
-                                ## Stats Condition
-                                condition_details = condition["details"]
-                                if condition_details["condition_type"] == "stats":
-                                    # equality comparison dropdown
-                                    agents_in_after_call_eq_drop = self.wELI.wait_for_element(
-                                        10,
-                                        By.XPATH,
-                                        '//*[contains(@id, "overlayContent_conditionParameters_ddExposedDataOperator_Arrow")]',
-                                        WaitConditions.CLICKABLE,
-                                    )
-                                    agents_in_after_call_eq_drop.click()
-
-                                    # equality comparison operator selection
-                                    user_agents_in_after_call_eq = condition_details[
-                                        "equality_operator"
-                                    ]
-                                    agents_in_after_call_eq = self.wELI.select_item_from_list(
-                                        10,
-                                        By.XPATH,
-                                        '//*[contains(@id, "overlayContent_conditionParameters_ddExposedDataOperator_DropDown")]/div/ul/li',
-                                        user_agents_in_after_call_eq,
-                                    )
-                                    if not agents_in_after_call_eq:
-                                        print(
-                                            f"Cant not find {user_agents_in_after_call_eq}. Make sure the comparison operator text is correct"
-                                        )
-                                        return
-
-                                    # Condition numeric value input to compare
-                                    agents_in_after_call_eq_condition = self.wELI.wait_for_element(
-                                        15,
-                                        By.XPATH,
-                                        '//*[contains(@id, "overlayContent_conditionParameters_tbExposedDataValue")]',
-                                        WaitConditions.VISIBILITY,
-                                    )
-
-                                    user_agents_in_after_call_eq_condition = (
-                                        condition_details["equality_threshold"]
-                                    )
-
-                                    agents_in_after_call_eq_condition.send_keys(
-                                        user_agents_in_after_call_eq_condition
-                                    )
-
-                                    user_condition_queues = condition_details[
-                                        "queues_source"
-                                    ]
-                                    if user_condition_queues == "users":
-                                        # TODO: need getter when made into fn
-                                        self.rule_condition_queues_source = "users"
-                                        continue_btn.click()
-                                    elif user_condition_queues == "queues":
-
-                                        queues_radio_btn = self.wELI.wait_for_element(
-                                            15,
-                                            By.XPATH,
-                                            '//*[contains(@id, "overlayContent_conditionParameters_ctl16_1")]',
-                                            WaitConditions.CLICKABLE,
-                                        )
-                                        queues_radio_btn.click()
-
-                                        user_queues_dropdown_btn = self.wELI.wait_for_element(
-                                            15,
-                                            By.XPATH,
-                                            '//*[contains(@id, "overlayContent_conditionParameters_ctl22_Arrow")]',
-                                            WaitConditions.CLICKABLE,
-                                        )
-                                        user_queues_dropdown_btn.click()
-
-                                        queues_list = self.wELI.click_all_items_in_list(
-                                            10,
-                                            By.XPATH,
-                                            '//*[contains(@id, "overlayContent_conditionParameters_ctl22_DropDown")]/div/ul/li',
-                                            5,
-                                            "queues in queues list",
-                                        )
-
-                                        if not queues_list:
-                                            return
-
-                                    if (
-                                        i != len(rule["conditions"]) - 1
-                                        and len(rule["conditions"]) > 1
-                                    ):
-                                        add__addit_condition = self.wELI.wait_for_element(
-                                            15,
-                                            By.XPATH,
-                                            '//*[contains(@id, "overlayContent_lblAddCondition")]',
-                                            WaitConditions.CLICKABLE,
-                                        )
-                                        add__addit_condition.click()
-
-                                sleep(3)
+                            conditions.do_work()
                             continue_btn.click()
                         # --->> action page -selection
                         sleep(3)
+                        actions = ActionsWorker(self.driver,rule)
                         if "actions" in rule and rule["actions"]:
-                            for action in rule["actions"]:
-                                user_action_category_selection = action[
-                                    "provider_category"
-                                ]
-                                action_category_dropdown = self.wELI.select_item_from_list(
-                                    10,
-                                    By.XPATH,
-                                    '//*[contains(@id, "overlayContent_selectAction_radMenuCategory")]/ul/li',
-                                    user_action_category_selection,
-                                )
-                                if not action_category_dropdown:
-                                    print(
-                                        f"Cant not find {action_category_dropdown}. Make sure the provider category for the action text is correct"
-                                    )
-                                    return
-                                sleep(3)
-
-                                user_action_provider_instance = action[
-                                    "provider_instance"
-                                ]
-
-                                action_provider_dropdown = self.wELI.select_item_from_list(
-                                    10,
-                                    By.XPATH,
-                                    '//*[contains(@id, "ctl00_overlayContent_selectAction_radMenuProviderInstance")]/ul/li',
-                                    user_action_provider_instance,
-                                )
-                                if not action_provider_dropdown:
-                                    print(
-                                        f"Cant not find {user_action_provider_instance}. Make sure the action provider text is correct"
-                                    )
-                                    return
-
-                                sleep(3)
-                                user_action_selection = action["provider_condition"]
-                                action_selection_dropdown = self.wELI.select_item_from_list(
-                                    10,
-                                    By.XPATH,
-                                    '//*[contains(@id, "ctl00_overlayContent_selectAction_radMenuItem")]/ul/li',
-                                    user_action_selection,
-                                )
-                                if not action_selection_dropdown:
-                                    print(
-                                        f"Cant not find {user_action_selection}. Make sure the action provider text is correct"
-                                    )
-                                    return
-
-                                if action["details"]["action_type"] == "email":
-                                    # Stats based email
-
-                                    email_page_settings_btn = self.wELI.wait_for_element(
-                                        15,
-                                        By.XPATH,
-                                        '//*[contains(@id, "overlayContent_actionParameters_lblSettings")]',
-                                        WaitConditions.CLICKABLE,
-                                    )
-                                    email_page_settings_btn.click()
-
-                                    email_subject = self.wELI.wait_for_element(
-                                        15,
-                                        By.XPATH,
-                                        '//*[contains(@id, "overlayContent_actionParameters_ctl05")]',
-                                        WaitConditions.VISIBILITY,
-                                    )
-                                    email_subject.send_keys(rule["rule_name"])
-
-                                    if "frequency_based" in rule:
-                                        email_message = self.wELI.wait_for_element(
-                                            15,
-                                            By.XPATH,
-                                            '//*[contains(@id, "overlayContent_actionParameters_ctl12")]',
-                                            WaitConditions.VISIBILITY,
-                                        )
-                                    else:
-                                        email_message = self.wELI.wait_for_element(
-                                            15,
-                                            By.XPATH,
-                                            '//*[contains(@id, "overlayContent_actionParameters_ctl13")]',
-                                            WaitConditions.VISIBILITY,
-                                        )
-
-                                    email_message.send_keys(
-                                        action["details"]["email_body"]
-                                    )
-                                    sleep(3)
-                                    continue_btn.click()
-
-                                    email_page_users_btn = self.wELI.wait_for_element(
-                                        15,
-                                        By.XPATH,
-                                        '//*[contains(@id, "overlayContent_actionParameters_lblUsers")]',
-                                        WaitConditions.CLICKABLE,
-                                    )
-                                    email_page_users_btn.click()
-
-                                    select_email_individual = self.wELI.wait_for_element(
-                                        15,
-                                        By.XPATH,
-                                        '//*[contains(@id, "overlayContent_actionParameters_rblIntradiemUsersIndividual_Users_1")]',
-                                        WaitConditions.CLICKABLE,
-                                    )
-                                    select_email_individual.click()
-
-                                    if self.rule_condition_queues_source == "users":
-                                        input_email_address = self.wELI.wait_for_element(
-                                            15,
-                                            By.XPATH,
-                                            '//*[contains(@id, "overlayContent_actionParameters_ctl65")]',
-                                            WaitConditions.VISIBILITY,
-                                        )
-
-                                    elif self.rule_condition_queues_source == "queues":
-
-                                        input_email_address = self.wELI.wait_for_element(
-                                            15,
-                                            By.XPATH,
-                                            '//*[contains(@id, "overlayContent_actionParameters_ctl61")]',
-                                            WaitConditions.VISIBILITY,
-                                        )
-
-                                    input_email_address.send_keys(
-                                        action["details"]["email_address"]
-                                    )
-
-                                if (
-                                    i != len(rule["actions"]) - 1
-                                    and len(rule["actions"]) > 1
-                                ):
-                                    add__addit_action = self.wELI.wait_for_element(
-                                        15,
-                                        By.XPATH,
-                                        '//*[contains(@id, "overlayContent_lblAddAction")]',
-                                        WaitConditions.CLICKABLE,
-                                    )
-                                    add__addit_action.click()
-
-                        
+                            actions.rule_condition_queues_source = conditions.rule_condition_queues_source
+                            actions.do_work()
 
                         # Rule category
                         rule_settings_hamburger = self.wELI.wait_for_element(
@@ -511,6 +214,9 @@ class WebScrape:
             print(e)
         finally:
             self.close()
+
+
+
 
 
 run = WebScrape(keys["url"])
