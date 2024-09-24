@@ -3,6 +3,7 @@ from typing import Optional
 
 from selenium.common.exceptions import (
     NoSuchElementException,
+    NoSuchFrameException,
     StaleElementReferenceException,
     TimeoutException,
 )
@@ -197,3 +198,23 @@ class WebElementInteractions:
             return False
         Logger().insert(f"Failed to click all {item_name} items", "ERROR")
         return False
+
+    def switch_to_frame(self, timeout: int, locator_type: By, locator_value: str):
+        """
+        Selects an item from a list of elements, retries in case of stale element reference.
+
+        Args:
+            timeout (int): Time in seconds to wait for the list of elements.
+            locator_type (By): Selenium locator type (e.g., By.XPATH).
+            locator_value (str): The locator value (e.g., XPATH or ID for the list of elements).
+        Returns:
+            bool: True if successfully switched to frame, False otherwise.
+        """
+        try:
+            WebDriverWait(self.driver, timeout).until(
+                EC.frame_to_be_available_and_switch_to_it((locator_type, locator_value))
+            )
+            return True
+        except NoSuchFrameException:
+            Logger().insert(f"Cannot not find {locator_value} frame.")
+            return False
