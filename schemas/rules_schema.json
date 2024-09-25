@@ -1,0 +1,135 @@
+{
+  "$id": "/schemas/rules",
+  "type": "object",
+  "properties": {
+    "rule_name": {
+      "type": "string"
+    },
+    "frequency_based": {
+      "type": "object",
+      "properties": {
+        "time_interval": {
+          "type": "integer"
+        }
+      },
+      "required": ["time_interval"]
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "provider_category": {
+            "type": "string"
+          },
+          "provider_instance": {
+            "type": "string"
+          },
+          "provider_condition": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "properties": {
+              "condition_type": {
+                "type": "string",
+                "enum": ["stats", "state"]
+              },
+              "equality_operator": {
+                "type": "string"
+              },
+              "equality_threshold": {
+                "type": "number"
+              },
+              "queues_source": {
+                "type": "string"
+              }
+            },
+            "required": ["condition_type"],
+            "if": {
+              "properties": {
+                "condition_type": {
+                  "const": "stats"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "equality_operator",
+                "equality_threshold",
+                "queues_source"
+              ]
+            }
+          }
+        },
+        "required": [
+          "provider_category",
+          "provider_instance",
+          "provider_condition",
+          "details"
+        ]
+      }
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "provider_category": {
+            "type": "string"
+          },
+          "provider_instance": {
+            "type": "string"
+          },
+          "provider_condition": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "properties": {
+              "action_type": {
+                "type": "string",
+                "enum": ["email"]
+              },
+              "email_subject": {
+                "type": "string"
+              },
+              "email_body": {
+                "type": "string"
+              },
+              "email_address": {
+                "type": "string"
+              }
+            },
+            "required": ["action_type"],
+            "if": {
+              "properties": {
+                "action_type": {
+                  "const": "email"
+                }
+              }
+            },
+            "then": {
+              "required": ["email_subject", "email_body", "email_address"]
+            }
+          }
+        },
+        "required": [
+          "provider_category",
+          "provider_instance",
+          "provider_condition",
+          "details"
+        ]
+      }
+    }
+  },
+  "required": ["rule_name", "conditions", "actions"],
+  "anyOf": [
+    {
+      "required": ["frequency_based"]
+    },
+    {
+      "required": ["action_based"]
+    }
+  ]
+}
