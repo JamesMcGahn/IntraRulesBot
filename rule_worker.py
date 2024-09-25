@@ -121,17 +121,17 @@ class RuleWorker(QObject):
         self.wait_for_dup_rule_alert()
         self.driver.switch_to.default_content()
         success_message = self.wELI.wait_for_element(
-                                            15,
-                                            By.XPATH,
-                                            '//*[contains(@id, "lblMessage")]',
-                                            WaitConditions.VISIBILITY,
-                                        )
+            15,
+            By.XPATH,
+            '//*[contains(@id, "lblMessage")]',
+            WaitConditions.VISIBILITY,
+        )
         if "You have successfully added the Rule" in success_message.text:
-            Logger().insert(f"Rule: {self.rule["rule_name"]} has been created.","INFO")
+            # Logger().insert(f"Rule: {self.rule["rule_name"]} has been created.","INFO")
+            print()
         else:
-            Logger().insert(f"Recevied no success feedback. Cannot confirm if Rule: {self.rule["rule_name"]} has been created.","WARN")
-
-
+            # Logger().insert(f"Recevied no success feedback. Cannot confirm if Rule: {self.rule["rule_name"]} has been created.","WARN")
+            print()
 
     def set_rule_category(self):
         rule_settings_hamburger = self.wELI.wait_for_element(
@@ -169,13 +169,14 @@ class RuleWorker(QObject):
             alert = self.driver.switch_to.alert
             if alert.text == "A Rule with this name already exists":
                 alert.accept()
-                                # TODO Ask user to update
-                                
-                Logger().insert(
-                                f"A Rule with the name {self.rule["rule_name"]} already exists.",
-                                "ERROR",
-                            )   
+                # TODO Ask user to update
+
+                # Logger().insert(
+                #                 f"A Rule with the name {self.rule["rule_name"]} already exists.",
+                #                 "ERROR",
+                #             )
                 raise ValueError(alert.text)
-                            
+
         except TimeoutException:
-            Logger().insert(f"Rule: {self.rule["rule_name"]} has been submitted.","INFO")
+            print()
+            # Logger().insert(f"Rule: {self.rule["rule_name"]} has been submitted.","INFO")

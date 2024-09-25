@@ -96,13 +96,15 @@ class WebElementInteractions(QObject):
         except TimeoutException:
             log_level, msg = failure_message
             if msg != "default":
-                Logger().insert(msg, log_level.upper())
+                print()
+                # Logger().insert(msg, log_level.upper())
 
             else:
-                Logger().insert(
-                    f"Element with {locator_type} = {locator_value} not found within {timeout} seconds.",
-                    "ERROR",
-                )
+                print()
+                # Logger().insert(
+                #     f"Element with {locator_type} = {locator_value} not found within {timeout} seconds.",
+                #     "ERROR",
+                # )
 
             return None
 
@@ -140,23 +142,24 @@ class WebElementInteractions(QObject):
                     raise NoSuchElementException
                 for item in elements_list:
                     if item.text.strip() == text_to_select:
-                        Logger().insert(f"Selected item: {item.text}", "INFO")
+                        # Logger().insert(f"Selected item: {item.text}", "INFO")
 
                         item.click()
                         return True  # Successfully clicked, exit
             except StaleElementReferenceException:
-                Logger().insert("Stale element reference, retrying...", "WARN")
+                print()
+                # Logger().insert("Stale element reference, retrying...", "WARN")
             except NoSuchElementException:
-                Logger().insert(
-                    "No Such element list...check to make sure the locator value is correct",
-                    "ERROR",
-                )
+                # Logger().insert(
+                #     "No Such element list...check to make sure the locator value is correct",
+                #     "ERROR",
+                # )
                 return False
 
-        Logger().insert(
-            f"Failed to select item with text: '{text_to_select}'",
-            "ERROR",
-        )
+        # Logger().insert(
+        #     f"Failed to select item with text: '{text_to_select}'",
+        #     "ERROR",
+        # )
         return False
 
     def click_all_items_in_list(
@@ -191,15 +194,15 @@ class WebElementInteractions(QObject):
 
                 for item in elements_list:
                     item.click()
-                Logger().insert(f"All {item_name} items clicked", "INFO")
+                # Logger().insert(f"All {item_name} items clicked", "INFO")
 
                 return True  # exit inner loop
             except StaleElementReferenceException:
-                Logger().insert("Stale element reference, retrying...", "WARN")
+                # Logger().insert("Stale element reference, retrying...", "WARN")
                 print()
 
             return False
-        Logger().insert(f"Failed to click all {item_name} items", "ERROR")
+        # Logger().insert(f"Failed to click all {item_name} items", "ERROR")
         return False
 
     def switch_to_frame(self, timeout: int, locator_type: By, locator_value: str):
@@ -219,5 +222,5 @@ class WebElementInteractions(QObject):
             )
             return True
         except NoSuchFrameException:
-            Logger().insert(f"Cannot not find {locator_value} frame.", "ERROR")
+            # Logger().insert(f"Cannot not find {locator_value} frame.", "ERROR")
             return False

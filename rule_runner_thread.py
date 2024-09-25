@@ -36,10 +36,10 @@ class RuleRunnerThread(QThread):
         self._rule_finished = False
 
     def run(self):
-        Logger().insert(
-            f"Starting LoginManagerWorker in thread: {threading.get_ident()} - {self.thread()}",
-            "INFO",
-        )
+        # Logger().insert(
+        #     f"Starting LoginManagerWorker in thread: {threading.get_ident()} - {self.thread()}",
+        #     "INFO",
+        # )
         self.driver.get(self.url)
         self.login_worker = LoginManagerWorker(
             self.driver, self.username, self.password, self.url
