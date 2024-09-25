@@ -4,60 +4,61 @@ import queue
 import time
 from logging.handlers import RotatingFileHandler
 
-from PySide6.QtCore import QThread, Signal
+from PySide6.QtCore import QMutex, QMutexLocker, QThread, Signal, Slot
 
 
 class LogWorker(QThread):
-    log_signal = Signal(str)  # Signal to emit log messages
+    log_signal = Signal(str)
 
     def __init__(self, log_queue, filename):
         super().__init__()
         self.log_queue = log_queue
         self.filename = filename
         self.stop_event = False
-
-        self.logger = logging.getLogger(self.filename)
-        self.logger.setLevel(logging.INFO)
+        self.mutex = QMutex()
         self.setup_logging()
 
     def setup_logging(self):
-        """Set up the rotating file handler and ensure no duplicate handlers exist."""
-        # Check if logger already has handlers and remove them
-        if self.logger.handlers:
-            for handler in self.logger.handlers[:]:
-                self.logger.removeHandler(handler)
+        self.logger = logging.getLogger(self.filename)
+        self.logger.setLevel(logging.INFO)
+        if not self.logger.handlers:
+            logfile = RotatingFileHandler(
+                self.filename, maxBytes=5 * 1024 * 1024, backupCount=5
+            )
+            logfile.setFormatter(
+                logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+            )
+            self.logger.addHandler(logfile)
 
-        # Set up the rotating file handler
-        self.logfile = RotatingFileHandler(
-            self.filename, maxBytes=5 * 1024 * 1024, backupCount=5
-        )
-        self.logfile.setFormatter(
-            logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-        )
-        self.logger.addHandler(self.logfile)
+    @Slot(tuple)
+    def insert_log(self, log):
+        level, msg = log
+        self.log_queue.put((level, msg))
 
     def run(self):
-        """Process log messages from the queue."""
-        while not self.stop_event or not self.log_queue.empty():
-            current_time_str = time.asctime(time.localtime())
-            try:
-                level, msg = self.log_queue.get(timeout=1)
-                if level == "INFO":
-                    self.logger.info(msg)
-                elif level == "ERROR":
-                    self.logger.error(msg)
-                elif level == "WARNING":
-                    self.logger.warning(msg)
-                self.log_queue.task_done()
-                self.log_signal.emit(f"{current_time_str} {level} {msg}")
-            except queue.Empty:
-                continue
+        while not self.stop_event:
+            if self.log_queue.empty():
+                try:
+                    current_time_str = time.asctime(time.localtime())
+                    level, msg = self.log_queue.get(timeout=1)
+                    with QMutexLocker(self.mutex):
+                        if level == "INFO":
+                            self.logger.info(msg)
+                        elif level == "ERROR":
+                            self.logger.error(msg)
+                        elif level == "WARNING":
+                            self.logger.warning(msg)
+                        self.log_signal.emit(f"{current_time_str} {level} {msg}")
+                    self.log_queue.task_done()
+                except queue.Empty:
+                    continue
+                except Exception as e:
+                    print(f"Logging error: {e}")
 
     def stop(self):
-        """Signal the logging thread to stop."""
         self.stop_event = True
 
     def cleanup(self):
-        """Close the log handler properly."""
-        self.logger.removeHandler(self.logfile)
-        self.logfile.close()
+        for handler in self.logger.handlers[:]:
+            handler.close()
+            self.logger.removeHandler(handler)

@@ -4,7 +4,7 @@ import queue
 import time
 from logging.handlers import RotatingFileHandler
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal, Slot
 
 from utils.files import PathManager
 from utils.singleton import Singleton
@@ -14,6 +14,7 @@ from .log_worker import LogWorker
 
 class Logger(QObject, Singleton):
     send_log = Signal(str)
+    submit_log = Signal(tuple)
 
     def __init__(
         self, filename="./logs/file.log", max_size=5 * 1024 * 1024, backup_count=5
@@ -28,12 +29,17 @@ class Logger(QObject, Singleton):
         super().__init__()
         self.filename = filename
         self.log_queue = queue.Queue()
+
         path = PathManager.regex_path(self.filename)
         if not PathManager.path_exists(path["path"], True):
             return
 
         self.log_worker = LogWorker(self.log_queue, self.filename)
         self.log_worker.log_signal.connect(self.send_logs_out)
+        self.send_log.connect(self.log_worker.insert_log)
+        # self.submit_log.connect(self.log_worker.insert_log)
+        # self.send_log.connect(self.log_worker.insert_log)
+        # self.log_worker.log_signal.connect(self.send_logs_out)
         self.log_worker.start()
 
         # Perform initial cleanup of old logs
@@ -42,12 +48,12 @@ class Logger(QObject, Singleton):
     def send_logs_out(self, msg):
         self.send_log.emit(msg)
 
+    @Slot(str, str, bool)
     def insert(self, msg, level="INFO", print_msg=True):
-
         if print_msg:
             print(msg)
 
-        self.log_queue.put((level, msg))
+        self.submit_log.emit((level, msg))
 
     def cleanup_old_logs(self):
         """
