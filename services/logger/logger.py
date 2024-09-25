@@ -4,7 +4,7 @@ import queue
 import time
 from logging.handlers import RotatingFileHandler
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QObject, Signal
 
 from utils.files import PathManager
 from utils.singleton import Singleton
@@ -12,7 +12,7 @@ from utils.singleton import Singleton
 from .log_worker import LogWorker
 
 
-class Logger(Singleton):
+class Logger(QObject, Singleton):
     send_log = Signal(str)
 
     def __init__(
@@ -25,7 +25,7 @@ class Logger(Singleton):
         :param max_size: Maximum size (in bytes) of the log file before rolling over.
         :param backup_count: Number of backup files to keep.
         """
-
+        super().__init__()
         self.filename = filename
         self.log_queue = queue.Queue()
         path = PathManager.regex_path(self.filename)
@@ -33,11 +33,14 @@ class Logger(Singleton):
             return
 
         self.log_worker = LogWorker(self.log_queue, self.filename)
-        self.log_worker.log_signal.connect(self.send_log)
+        self.log_worker.log_signal.connect(self.send_logs_out)
         self.log_worker.start()
 
         # Perform initial cleanup of old logs
         self.cleanup_old_logs()
+
+    def send_logs_out(self, msg):
+        self.send_log.emit(msg)
 
     def insert(self, msg, level="INFO", print_msg=True):
 
