@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Optional
 
+from PySide6.QtCore import QObject
 from selenium.common.exceptions import (
     NoSuchElementException,
     NoSuchFrameException,
@@ -25,8 +26,10 @@ class WaitConditions(Enum):
     SELECTED = "selected"
 
 
-class WebElementInteractions:
+class WebElementInteractions(QObject):
+
     def __init__(self, driver):
+        super().__init__()
         self.driver = driver
 
     def wait_for_element(
@@ -97,8 +100,8 @@ class WebElementInteractions:
 
             else:
                 Logger().insert(
-                    "ERROR",
                     f"Element with {locator_type} = {locator_value} not found within {timeout} seconds.",
+                    "ERROR",
                 )
 
             return None
@@ -216,5 +219,5 @@ class WebElementInteractions:
             )
             return True
         except NoSuchFrameException:
-            Logger().insert(f"Cannot not find {locator_value} frame.")
+            Logger().insert(f"Cannot not find {locator_value} frame.", "ERROR")
             return False

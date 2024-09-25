@@ -1,12 +1,14 @@
 from time import sleep
 
+from PySide6.QtCore import QObject
 from selenium.webdriver.common.by import By
 
 from web_element_interactions import WaitConditions, WebElementInteractions
 
 
-class ActionsEmailWorker:
+class ActionsEmailWorker(QObject):
     def __init__(self, driver, actions_worker, action, rule):
+        super().__init__()
         self.driver = driver
         self.action = action
         self.rule = rule

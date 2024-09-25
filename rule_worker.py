@@ -1,6 +1,7 @@
 import json
 from time import sleep
 
+from PySide6.QtCore import QObject, Signal
 from selenium import webdriver
 from selenium.common.exceptions import (
     NoSuchElementException,
@@ -20,15 +21,16 @@ from webdriver_manager.chrome import ChromeDriverManager
 from actions_worker import ActionsWorker
 from conditions_worker import ConditionsWorker
 from keys import keys
-from login_manager import LoginManager
 from services.logger import Logger
 from trigger_worker import TriggerWorker
 from web_element_interactions import WaitConditions, WebElementInteractions
 
 
-class RuleWorker:
+class RuleWorker(QObject):
+    finished = Signal()
 
     def __init__(self, driver, rule):
+        super().__init__()
         self.driver = driver
         self.rule = rule
         self.wELI = WebElementInteractions(self.driver)
@@ -56,6 +58,8 @@ class RuleWorker:
             self.set_rule_category()
             self.next_page()
             self.submit_rule()
+            # self.wait_for_dup_rule_alert()
+            self.finished.emit()
 
     def start_trigger_page(self):
         trigger = TriggerWorker(self.driver, self.rule)

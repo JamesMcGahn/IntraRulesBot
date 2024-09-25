@@ -1,32 +1,16 @@
-import json
 from time import sleep
 
-from selenium import webdriver
-from selenium.common.exceptions import (
-    NoSuchElementException,
-    NoSuchFrameException,
-    NoSuchWindowException,
-    StaleElementReferenceException,
-    TimeoutException,
-)
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.alert import Alert
+from PySide6.QtCore import QObject
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
-from webdriver_manager.chrome import ChromeDriverManager
 
 from actions_email_worker import ActionsEmailWorker
-from keys import keys
-from login_manager import LoginManager
-from services.logger import Logger
 from web_element_interactions import WaitConditions, WebElementInteractions
 
 
-class ActionsWorker:
+class ActionsWorker(QObject):
 
     def __init__(self, driver, rule):
+        super().__init__()
         self.driver = driver
         self.rule = rule
         self.wELI = WebElementInteractions(self.driver)

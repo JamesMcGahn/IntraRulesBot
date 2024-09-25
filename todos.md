@@ -9,6 +9,6 @@
 
 #TODO : add login password form
 #TODO : rf GUI files to views and controllers
-#TODO : rulerunner thread
+~#TODO : rulerunner thread~
 #TODO : handle errors in rulerrunner workers
 #TODO : display logs to user

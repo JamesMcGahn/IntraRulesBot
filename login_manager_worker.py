@@ -1,38 +1,37 @@
-from time import sleep
+import threading
 
 from PySide6.QtCore import QObject, Signal
-from selenium import webdriver
-from selenium.common.exceptions import (
-    NoSuchElementException,
-    NoSuchFrameException,
-    NoSuchWindowException,
-    StaleElementReferenceException,
-    TimeoutException,
-)
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.alert import Alert
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from webdriver_manager.chrome import ChromeDriverManager
 
-from keys import keys
 from services.logger import Logger
 from web_element_interactions import WaitConditions, WebElementInteractions
 
 
-class LoginManager(QObject):
-    status = Signal(bool)
+class LoginManagerWorker(QObject):
+    status_signal = Signal(bool)
 
-    def __init__(self, driver, username, password):
+    def __init__(self, driver, username, password, url):
+        super().__init__()
         self.driver = driver
+        self.url = url
         self.username = username
         self.password = password
         self.wELI = WebElementInteractions(self.driver)
 
-    def login(self):
-        super().__init__()
+    def do_work(self):
+        Logger().insert(
+            f"Starting LoginManagerWorker in thread: {threading.get_ident()} - {self.thread()}",
+            "INFO",
+        )
+
+        self.enter_login_info()
+        self.wait_for_session_alert()
+        self.wait_for_success()
+
+    def enter_login_info(self):
         login_name_field = self.driver.find_element(By.ID, "inputUserName")
         login_name_field.send_keys(self.username)
 
@@ -42,6 +41,7 @@ class LoginManager(QObject):
         login_btn = self.driver.find_element(By.ID, "btnLogin")
         login_btn.click()
 
+    def wait_for_session_alert(self):
         try:
             WebDriverWait(self.driver, 5).until(EC.alert_is_present())
 
@@ -55,6 +55,7 @@ class LoginManager(QObject):
         except TimeoutException:
             Logger().insert("INFO", "No session alert was present.")
 
+    def wait_for_success(self):
         error_login = self.wELI.wait_for_element(
             5,
             By.XPATH,
@@ -66,7 +67,22 @@ class LoginManager(QObject):
         if error_login:
             Logger().insert(f"Error during login: {error_login.text}", "ERROR")
 
-            self.status.emit(False)
+            self.status_signal.emit(False)
         else:
+            self.move_to_rules_page()
 
-            self.status.emit(True)
+    def move_to_rules_page(self):
+
+        if self.wELI.wait_for_element(
+            5,
+            By.XPATH,
+            '//*[contains(@id, "radTabStripSubNavigation")]',
+            WaitConditions.PRESENCE,
+        ):
+            Logger().insert("Navigating to the Rules Page...", "INFO")
+            self.driver.get(self.url + "/ManagerConsole/Delivery/Rules.aspx")
+
+            self.status_signal.emit(True)
+        else:
+            self.status_signal.emit(False)
+        Logger().insert("Ending Login Worker Thread...", "INFO")

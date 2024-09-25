@@ -1,32 +1,16 @@
-import json
 from time import sleep
 
-from selenium import webdriver
-from selenium.common.exceptions import (
-    NoSuchElementException,
-    NoSuchFrameException,
-    NoSuchWindowException,
-    StaleElementReferenceException,
-    TimeoutException,
-)
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.alert import Alert
+from PySide6.QtCore import QObject
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
-from webdriver_manager.chrome import ChromeDriverManager
 
 from conditions_stats_worker import ConditionsStatsWorker
-from keys import keys
-from login_manager import LoginManager
-from services.logger import Logger
 from web_element_interactions import WaitConditions, WebElementInteractions
 
 
-class ConditionsWorker:
+class ConditionsWorker(QObject):
 
     def __init__(self, driver, rule):
+        super().__init__()
         self.driver = driver
         self.rule = rule
         self.wELI = WebElementInteractions(self.driver)
@@ -64,7 +48,7 @@ class ConditionsWorker:
 
         if not provider_category_select:
             print(f"Unable to select provider category: {user_provider_category}")
-            return
+
         sleep(5)
 
     def set_provider_instance(self, condition):
@@ -77,7 +61,7 @@ class ConditionsWorker:
         )
         if not provider_instance_selection:
             print(f"Unable to select provider {user_provider_instance} ")
-            return
+
         sleep(5)
 
     def set_provider_condition(self, condition):
@@ -93,7 +77,7 @@ class ConditionsWorker:
             print(
                 f"Cannot find. Please check that - {user_provider_condition} - is a listed condition for the provider"
             )
-            return
+
         sleep(5)
 
     def set_stats_based_condition(self, condition):
