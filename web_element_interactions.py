@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Optional
 
-from PySide6.QtCore import QObject
+from PySide6.QtCore import QObject, Signal
 from selenium.common.exceptions import (
     NoSuchElementException,
     NoSuchFrameException,
@@ -15,7 +15,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from services.logger import Logger
 
 
-# TODO: Update with logging
 class WaitConditions(Enum):
     PRESENCE = "presence"
     VISIBILITY = "visibility"
@@ -27,6 +26,7 @@ class WaitConditions(Enum):
 
 
 class WebElementInteractions(QObject):
+    send_msg = Signal(str, str, bool)
 
     def __init__(self, driver):
         super().__init__()
@@ -96,15 +96,14 @@ class WebElementInteractions(QObject):
         except TimeoutException:
             log_level, msg = failure_message
             if msg != "default":
-                print()
-                # Logger().insert(msg, log_level.upper())
+                self.send_msg.emit(msg, log_level.upper(), True)
 
             else:
-                print()
-                # Logger().insert(
-                #     f"Element with {locator_type} = {locator_value} not found within {timeout} seconds.",
-                #     "ERROR",
-                # )
+                self.send_msg.emit(
+                    f"Element with {locator_type} = {locator_value} not found within {timeout} seconds.",
+                    "ERROR",
+                    True,
+                )
 
             return None
 
@@ -142,24 +141,26 @@ class WebElementInteractions(QObject):
                     raise NoSuchElementException
                 for item in elements_list:
                     if item.text.strip() == text_to_select:
-                        # Logger().insert(f"Selected item: {item.text}", "INFO")
+                        self.send_msg.emit(f"Selected item: {item.text}", "INFO", True)
 
                         item.click()
                         return True  # Successfully clicked, exit
             except StaleElementReferenceException:
-                print()
-                # Logger().insert("Stale element reference, retrying...", "WARN")
+
+                self.send_msg.emit("Stale element reference, retrying...", "WARN", True)
             except NoSuchElementException:
-                # Logger().insert(
-                #     "No Such element list...check to make sure the locator value is correct",
-                #     "ERROR",
-                # )
+                self.send_msg.emit(
+                    "No Such element list...check to make sure the locator value is correct",
+                    "ERROR",
+                    True,
+                )
                 return False
 
-        # Logger().insert(
-        #     f"Failed to select item with text: '{text_to_select}'",
-        #     "ERROR",
-        # )
+        self.send_msg.emit(
+            f"Failed to select item with text: '{text_to_select}'",
+            "ERROR",
+            True,
+        )
         return False
 
     def click_all_items_in_list(
@@ -194,15 +195,14 @@ class WebElementInteractions(QObject):
 
                 for item in elements_list:
                     item.click()
-                # Logger().insert(f"All {item_name} items clicked", "INFO")
+                self.send_msg.emit(f"All {item_name} items clicked", "INFO", True)
 
                 return True  # exit inner loop
             except StaleElementReferenceException:
-                # Logger().insert("Stale element reference, retrying...", "WARN")
-                print()
+                self.send_msg.emit("Stale element reference, retrying...", "WARN", True)
 
             return False
-        # Logger().insert(f"Failed to click all {item_name} items", "ERROR")
+        self.send_msg.emit(f"Failed to click all {item_name} items", "ERROR", True)
         return False
 
     def switch_to_frame(self, timeout: int, locator_type: By, locator_value: str):
@@ -222,5 +222,5 @@ class WebElementInteractions(QObject):
             )
             return True
         except NoSuchFrameException:
-            # Logger().insert(f"Cannot not find {locator_value} frame.", "ERROR")
+            self.send_msg.emit(f"Cannot not find {locator_value} frame.", "ERROR", True)
             return False
