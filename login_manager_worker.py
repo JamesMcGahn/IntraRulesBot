@@ -53,7 +53,13 @@ class LoginManagerWorker(QObject):
             )
 
         except TimeoutException:
-            Logger().insert("INFO", "No session alert was present.")
+            Logger().insert(
+                "No session alert was present." "INFO",
+            )
+        except Exception as e:
+            Logger().insert(e.message, "ERROR")
+
+        return
 
     def wait_for_success(self):
         error_login = self.wELI.wait_for_element(

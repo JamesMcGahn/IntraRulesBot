@@ -52,7 +52,9 @@ class RuleRunnerThread(QThread):
     def login_responses(self, status):
         if status:
             self.process_next_rule()
-        self.login_worker.deleteLater()
+            self.login_worker.deleteLater()
+        else:
+            self.login_worker.deleteLater()
 
     def process_next_rule(self):
         if not self.rules.empty():
