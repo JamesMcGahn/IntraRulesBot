@@ -12,6 +12,7 @@ from web_element_interactions import WaitConditions, WebElementInteractions
 
 class LoginManagerWorker(QObject):
     status_signal = Signal(bool)
+    send_logs = Signal(str, str, bool)
 
     def __init__(self, driver, username, password, url):
         super().__init__()
@@ -20,19 +21,23 @@ class LoginManagerWorker(QObject):
         self.username = username
         self.password = password
         self.wELI = WebElementInteractions(self.driver)
+        self.wELI.send_msg.connect(self.logging)
+
+    def logging(self, msg, level, print_msg=True):
+        self.send_logs.emit(msg, level, print_msg)
 
     def do_work(self):
         try:
-            # Logger().insert(
-            #     f"Starting LoginManagerWorker in thread: {threading.get_ident()} - {self.thread()}",
-            #     "INFO",
-            # )
+            self.logging(
+                f"Starting LoginManagerWorker in thread: {threading.get_ident()} - {self.thread()}",
+                "INFO",
+            )
 
             self.enter_login_info()
             self.wait_for_session_alert()
             self.wait_for_success()
         except Exception as e:
-            # Logger().insert(f"Exception in LoginManagerWorker: {str(e)}", "ERROR")
+            self.logging(f"Exception in LoginManagerWorker: {str(e)}", "ERROR")
             self.status_signal.emit(False)
 
     def enter_login_info(self):
@@ -52,17 +57,17 @@ class LoginManagerWorker(QObject):
             alert = self.driver.switch_to.alert
             alert.accept()
             print("herer")
-            # Logger().insert(
-            #     "Session open elsewhere alert was present. Accepted alert to proceed with this session.",
-            #     "INFO",
-            # )
+            self.logging(
+                "Session open elsewhere alert was present. Accepted alert to proceed with this session.",
+                "INFO",
+            )
 
         except TimeoutException:
             print()
-            # Logger().insert("No session alert was present.", "INFO")
+            self.logging("No session alert was present.", "INFO")
         except Exception as e:
             print(e)
-            # Logger().insert(e.message, "ERROR")
+            self.logging(e.message, "ERROR")
 
         return
 
@@ -76,7 +81,7 @@ class LoginManagerWorker(QObject):
         )
 
         if error_login:
-            # Logger().insert(f"Error during login: {error_login.text}", "ERROR")
+            self.logging(f"Error during login: {error_login.text}", "ERROR")
 
             self.status_signal.emit(False)
         else:
@@ -90,10 +95,10 @@ class LoginManagerWorker(QObject):
             '//*[contains(@id, "radTabStripSubNavigation")]',
             WaitConditions.PRESENCE,
         ):
-            # Logger().insert("Navigating to the Rules Page...", "INFO")
+            self.logging("Navigating to the Rules Page...", "INFO")
             self.driver.get(self.url + "/ManagerConsole/Delivery/Rules.aspx")
 
             self.status_signal.emit(True)
         else:
             self.status_signal.emit(False)
-        # Logger().insert("Ending Login Worker Thread...", "INFO")
+        self.logging("Ending Login Worker Thread...", "INFO")

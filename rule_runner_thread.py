@@ -14,6 +14,7 @@ from web_element_interactions import WebElementInteractions
 
 class RuleRunnerThread(QThread):
     finished = Signal()
+    send_insert_logs = Signal(str, str, bool)
 
     def __init__(self, username, password, url, rules):
         super().__init__()
@@ -36,17 +37,22 @@ class RuleRunnerThread(QThread):
         self._rule_finished = False
 
     def run(self):
-        # Logger().insert(
-        #     f"Starting LoginManagerWorker in thread: {threading.get_ident()} - {self.thread()}",
-        #     "INFO",
-        # )
+        self.receiver_thread_logs(
+            f"Starting LoginManagerWorker in thread: {threading.get_ident()} - {self.thread()}",
+            "INFO",
+        )
         self.driver.get(self.url)
         self.login_worker = LoginManagerWorker(
             self.driver, self.username, self.password, self.url
         )
         self.login_worker.status_signal.connect(self.login_responses)
+        self.login_worker.send_logs.connect(self.receiver_thread_logs)
         self.login_worker.moveToThread(self)
         self.login_worker.do_work()
+
+    @Slot(str, str, bool)
+    def receiver_thread_logs(self, msg, level, print_msg=True):
+        self.send_insert_logs.emit(msg, level, print_msg)
 
     @Slot(bool)
     def login_responses(self, status):
