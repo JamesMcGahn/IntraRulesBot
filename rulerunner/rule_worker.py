@@ -1,30 +1,15 @@
-import json
 from time import sleep
 
 from PySide6.QtCore import Signal
-from selenium import webdriver
-from selenium.common.exceptions import (
-    NoSuchElementException,
-    NoSuchFrameException,
-    NoSuchWindowException,
-    StaleElementReferenceException,
-    TimeoutException,
-)
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.alert import Alert
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from webdriver_manager.chrome import ChromeDriverManager
 
-from actions_worker import ActionsWorker
-from conditions_worker import ConditionsWorker
-from keys import keys
-from services.logger import Logger
-from trigger_worker import TriggerWorker
-from web_element_interactions import WaitConditions, WebElementInteractions
-from worker_class import WorkerClass
+from .actions import ActionsWorker
+from .conditions import ConditionsWorker
+from .triggers import TriggerWorker
+from .utils import WaitConditions, WebElementInteractions, WorkerClass
 
 
 class RuleWorker(WorkerClass):
@@ -119,7 +104,8 @@ class RuleWorker(WorkerClass):
         )
 
     def submit_rule(self):
-        self.logging(f"Submitting Rule - {self.rule["rule_name"]}...", "INFO")
+        rule_name = self.rule["rule_name"]
+        self.logging(f"Submitting Rule - {rule_name}...", "INFO")
         submit_btn = self.wELI.wait_for_element(
             15,
             By.XPATH,
@@ -136,14 +122,16 @@ class RuleWorker(WorkerClass):
             WaitConditions.VISIBILITY,
         )
         if "You have successfully added the Rule" in success_message.text:
-            self.logging(f"Rule: {self.rule["rule_name"]} has been created.","INFO")
+            self.logging(f"Rule: {rule_name} has been created.", "INFO")
 
         else:
-            self.logging(f"Recevied no success feedback. Cannot confirm if Rule: {self.rule["rule_name"]} has been created.","WARN")
-
+            self.logging(
+                f"Recevied no success feedback. Cannot confirm if Rule: {rule_name} has been created.",
+                "WARN",
+            )
 
     def set_rule_category(self):
-        self.logging("Setting the rule category","INFO")
+        self.logging("Setting the rule category", "INFO")
         rule_settings_hamburger = self.wELI.wait_for_element(
             15,
             By.XPATH,
@@ -166,14 +154,16 @@ class RuleWorker(WorkerClass):
             20,
             By.XPATH,
             '//*[contains(@id, "ddRuleCategory_DropDown")]/div/ul/li',
-            rule_category_selection
+            rule_category_selection,
         )
         sleep(2)
         self.logging("Switching the main frame", "INFO")
         self.driver.switch_to.default_content()
 
     def wait_for_dup_rule_alert(self):
+
         try:
+            rule_name = self.rule["rule_name"]
             WebDriverWait(self.driver, 3).until(EC.alert_is_present())
 
             alert = self.driver.switch_to.alert
@@ -182,10 +172,9 @@ class RuleWorker(WorkerClass):
                 # TODO Ask user to update
 
                 self.logging(
-                                 f"A Rule with the name {self.rule["rule_name"]} already exists.",
-                                 "ERROR"
-                           )
+                    f"A Rule with the name {rule_name} already exists.", "ERROR"
+                )
                 raise ValueError(alert.text)
 
         except TimeoutException:
-            self.logging(f"Rule: {self.rule["rule_name"]} has been submitted.","INFO")
+            self.logging(f"Rule: {rule_name} has been submitted.", "INFO")

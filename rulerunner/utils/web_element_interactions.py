@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import Optional
 
 from PySide6.QtCore import QObject, Signal
@@ -12,17 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from services.logger import Logger
-
-
-class WaitConditions(Enum):
-    PRESENCE = "presence"
-    VISIBILITY = "visibility"
-    CLICKABLE = "clickable"
-    TEXT = "text"
-    PRESENCE_OF_ALL = "presence_of_all"
-    VISIBILITY_OF_ALL = "visibility_of_all"
-    SELECTED = "selected"
+from .wait_conditions import WaitConditions
 
 
 class WebElementInteractions(QObject):

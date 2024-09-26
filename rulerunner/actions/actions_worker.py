@@ -2,9 +2,8 @@ from time import sleep
 
 from selenium.webdriver.common.by import By
 
-from actions_email_worker import ActionsEmailWorker
-from web_element_interactions import WaitConditions, WebElementInteractions
-from worker_class import WorkerClass
+from ..actions import ActionsEmailWorker
+from ..utils import WaitConditions, WebElementInteractions, WorkerClass
 
 
 class ActionsWorker(WorkerClass):

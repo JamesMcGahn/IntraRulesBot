@@ -5,11 +5,11 @@ from queue import Queue
 
 from PySide6.QtCore import QMutex, QMutexLocker, QThread, QWaitCondition, Signal, Slot
 
-from login_manager_worker import LoginManagerWorker
-from rule_worker import RuleWorker
-from services.logger import Logger
-from web_driver_manager import WebDriverManager
-from web_element_interactions import WebElementInteractions
+from managers import WebDriverManager
+
+from .login import LoginManagerWorker
+from .rule_worker import RuleWorker
+from .utils import WebElementInteractions
 
 
 class RuleRunnerThread(QThread):

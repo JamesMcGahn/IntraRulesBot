@@ -4,9 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from services.logger import Logger
-from web_element_interactions import WaitConditions, WebElementInteractions
-from worker_class import WorkerClass
+from ..utils import WaitConditions, WebElementInteractions, WorkerClass
 
 
 class LoginManagerWorker(WorkerClass):

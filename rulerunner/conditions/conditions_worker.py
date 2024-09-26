@@ -2,9 +2,8 @@ from time import sleep
 
 from selenium.webdriver.common.by import By
 
-from conditions_stats_worker import ConditionsStatsWorker
-from web_element_interactions import WaitConditions, WebElementInteractions
-from worker_class import WorkerClass
+from ..utils import WaitConditions, WebElementInteractions, WorkerClass
+from .conditions_stats_worker import ConditionsStatsWorker
 
 
 class ConditionsWorker(WorkerClass):

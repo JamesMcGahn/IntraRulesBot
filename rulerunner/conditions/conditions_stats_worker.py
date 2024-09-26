@@ -1,7 +1,6 @@
 from selenium.webdriver.common.by import By
 
-from web_element_interactions import WaitConditions, WebElementInteractions
-from worker_class import WorkerClass
+from ..utils import WaitConditions, WebElementInteractions, WorkerClass
 
 
 class ConditionsStatsWorker(WorkerClass):
