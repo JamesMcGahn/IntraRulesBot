@@ -5,6 +5,9 @@
     "rule_name": {
       "type": "string"
     },
+    "rule_category": {
+      "type": "string"
+    },
     "frequency_based": {
       "type": "object",
       "properties": {
@@ -123,7 +126,7 @@
       }
     }
   },
-  "required": ["rule_name", "conditions", "actions"],
+  "required": ["rule_name", "rule_category", "conditions", "actions"],
   "anyOf": [
     {
       "required": ["frequency_based"]
