@@ -3,16 +3,19 @@
   "type": "object",
   "properties": {
     "rule_name": {
-      "type": "string"
+      "type": "string",
+      "minLength": 5
     },
     "rule_category": {
-      "type": "string"
+      "type": "string",
+      "minLength": 5
     },
     "frequency_based": {
       "type": "object",
       "properties": {
         "time_interval": {
-          "type": "integer"
+          "type": "number",
+          "minimum": 1
         }
       },
       "required": ["time_interval"]
@@ -23,13 +26,16 @@
         "type": "object",
         "properties": {
           "provider_category": {
-            "type": "string"
+            "type": "string",
+            "minLength": 3
           },
           "provider_instance": {
-            "type": "string"
+            "type": "string",
+            "minLength": 3
           },
           "provider_condition": {
-            "type": "string"
+            "type": "string",
+            "minLength": 3
           },
           "details": {
             "type": "object",
@@ -39,13 +45,16 @@
                 "enum": ["stats", "state"]
               },
               "equality_operator": {
-                "type": "string"
+                "type": "string",
+                "minLength": 3
               },
               "equality_threshold": {
-                "type": "number"
+                "type": "number",
+                "minimum": 1
               },
               "queues_source": {
-                "type": "string"
+                "type": "string",
+                "enum": ["queues", "users"]
               }
             },
             "required": ["condition_type"],
@@ -79,13 +88,16 @@
         "type": "object",
         "properties": {
           "provider_category": {
-            "type": "string"
+            "type": "string",
+            "minLength": 3
           },
           "provider_instance": {
-            "type": "string"
+            "type": "string",
+            "minLength": 3
           },
           "provider_condition": {
-            "type": "string"
+            "type": "string",
+            "minLength": 3
           },
           "details": {
             "type": "object",
@@ -95,13 +107,17 @@
                 "enum": ["email"]
               },
               "email_subject": {
-                "type": "string"
+                "type": "string",
+                "minLength": 3
               },
               "email_body": {
-                "type": "string"
+                "type": "string",
+                "minLength": 3
               },
               "email_address": {
-                "type": "string"
+                "type": "string",
+                "format": "email",
+                "minLength": 3
               }
             },
             "required": ["action_type"],

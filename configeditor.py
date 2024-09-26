@@ -17,6 +17,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from services.validator import SchemaValidator, ValidationError
+
 
 class ConfigEditor(QWidget):
     def __init__(self, config):
@@ -99,6 +101,14 @@ class ConfigEditor(QWidget):
 
         general_settings_layout.addRow(QLabel("Rule Name:"), rule_name)
 
+        rule_category = QLineEdit(rule["rule_category"])
+        rule_category.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
+        rule_input["rule_category"] = rule_category
+
+        general_settings_layout.addRow(QLabel("Rule Category:"), rule_category)
+
         general_settings_box.setLayout(general_settings_layout)
         rule_layout.addRow(general_settings_box)
 
@@ -124,7 +134,7 @@ class ConfigEditor(QWidget):
             )
             inputs = self.create_condition_fields(condition_layout, condition)
             # condition_group_box.setLayout(condition_layout)
-            print("cond", inputs)
+            # print("cond", inputs)
             rule_layout.addRow(condition_group_box)
             rule_input["conditions"].append(inputs)
 
@@ -142,9 +152,9 @@ class ConfigEditor(QWidget):
             # action_group_box.setLayout(condition_layout)
             rule_layout.addRow(action_group_box)
 
-        print("aaaaaee \n\n", rule_input)
+        # print("aaaaaee \n\n", rule_input)
         self.rules_inputs.append(rule_input.copy())
-        print("s\n\n", self.rules_inputs)
+        # print("s\n\n", self.rules_inputs)
 
         rule_group_box.setLayout(rule_layout)
         rule_layout = QVBoxLayout()
@@ -159,17 +169,20 @@ class ConfigEditor(QWidget):
         #     return
         #
         rules = []
-
+        val = SchemaValidator("./schemas", "/schemas/rules")
         for rule in self.rules_inputs:
 
             dat_rule = {}
             dat_rule["rule_name"] = rule["rule_name"].text()
-
+            dat_rule["rule_category"] = rule["rule_category"].text()
             if "frequency_based" in rule:
                 dat_rule["frequency_based"] = {}
-                dat_rule["frequency_based"]["time_interval"] = rule["frequency_based"][
-                    "time_interval"
-                ].text()
+                if rule["frequency_based"]["time_interval"].text().isdigit():
+                    dat_rule["frequency_based"]["time_interval"] = int(
+                        rule["frequency_based"]["time_interval"].text()
+                    )
+                else:
+                    dat_rule["frequency_based"]["time_interval"] = 0
 
             dat_rule["conditions"] = []
             for condition in rule["conditions"]:
@@ -186,34 +199,41 @@ class ConfigEditor(QWidget):
                 ].text()
 
                 dat_condition["details"] = {}
+                dat_condition["details"]["condition_type"] = condition["details"][
+                    "condition_type"
+                ].text()
 
                 if condition["details"]["condition_type"].text() == "stats":
-                    dat_condition["details"]["condition_type"] = condition["details"][
-                        "condition_type"
-                    ].text()
+
                     dat_condition["details"]["equality_operator"] = condition[
                         "details"
                     ]["equality_operator"].text()
-                    dat_condition["details"]["equality_threshold"] = int(
-                        condition["details"]["equality_threshold"].text()
-                    )
+                    if condition["details"]["equality_threshold"].text().isdigit():
+                        dat_condition["details"]["equality_threshold"] = int(
+                            condition["details"]["equality_threshold"].text()
+                        )
+                    else:
+                        dat_condition["details"]["equality_threshold"] = 0
                     dat_condition["details"]["queues_source"] = condition["details"][
                         "queues_source"
                     ].text()
 
                 dat_rule["conditions"].append(dat_condition)
 
-            dat_condition["actions"] = []
+            dat_rule["actions"] = []
             for action in rule["actions"]:
+                # print(action)
                 dat_action = {}
+
                 dat_action["provider_category"] = action["provider_category"].text()
                 dat_action["provider_instance"] = action["provider_instance"].text()
                 dat_action["provider_condition"] = action["provider_condition"].text()
+
                 dat_action["details"] = {}
-                if condition["details"]["condition_type"].text() == "email":
-                    dat_action["details"]["action_type"] = action["details"][
-                        "action_type"
-                    ].text()
+                dat_action["details"]["action_type"] = action["details"][
+                    "action_type"
+                ].text()
+                if action["details"]["action_type"].text() == "email":
                     dat_action["details"]["email_subject"] = action["details"][
                         "email_subject"
                     ].text()
@@ -223,17 +243,117 @@ class ConfigEditor(QWidget):
                     dat_action["details"]["email_address"] = action["details"][
                         "email_address"
                     ].text()
+                dat_rule["actions"].append(dat_action)
+
+            validate = val.get_validator()
+            rule["errors"] = []
+            for error in validate.iter_errors(dat_rule):
+                rule["errors"].append(error)
+                # TODO append errors to an array on rule, and then run highlight errors
+                # on the whole rule at once, to turn label red for failure and green for success
+                self.highlight_errors(error, rule)
 
             rules.append(dat_rule)
-        print(rules)
+        # print(rules)
 
         data = {"rules": rules}
         with open("./avaya_user.json", "w") as f:
             json.dump(data, f, indent=4)
         # print(dat_rule)
         # rules.append(dat_rule)
-        print(rules)
+        # print(rules)
         # Save logic..
+
+    def highlight_errors(self, error, rule):
+        # print(error)
+        path = error.path
+        # print(path)
+        # print(rule["errors"][0].path)
+
+        def set_sheet(el, status=False):
+            if status:
+                color = "green"
+            else:
+                color = "red"
+
+            el.setStyleSheet(f"border: 1px solid {color};")
+
+        if "rule_name" in path:
+            set_sheet(rule["rule_name"])
+
+        if "rule_category" in path:
+            set_sheet(rule["rule_category"])
+
+        if "frequency_based" in path:
+            if "time_interval" in path:
+                set_sheet(rule["frequency_based"]["time_interval"])
+
+        if "conditions" in path and path[0] == "conditions":
+            conditions_index = path[1]
+
+            if conditions_index <= len(rule["conditions"]) - 1:
+
+                if "provider_category" in path:
+                    set_sheet(rule["conditions"][conditions_index]["provider_category"])
+                if "provider_instance" in path:
+                    set_sheet(rule["conditions"][conditions_index]["provider_instance"])
+                if "provider_condition" in path:
+                    set_sheet(
+                        rule["conditions"][conditions_index]["provider_condition"]
+                    )
+                if "details" in path:
+                    if "condition_type" in path:
+                        set_sheet(
+                            rule["conditions"][conditions_index]["details"][
+                                "condition_type"
+                            ]
+                        )
+                    if "equality_operator" in path:
+                        set_sheet(
+                            rule["conditions"][conditions_index]["details"][
+                                "equality_operator"
+                            ]
+                        )
+                    if "equality_threshold" in path:
+                        set_sheet(
+                            rule["conditions"][conditions_index]["details"][
+                                "equality_threshold"
+                            ]
+                        )
+                    if "queues_source" in path:
+                        set_sheet(
+                            rule["conditions"][conditions_index]["details"][
+                                "queues_source"
+                            ]
+                        )
+        if "actions" in path and path[0] == "actions":
+            actions_index = path[1]
+
+            if actions_index <= len(rule["actions"]) - 1:
+
+                if "provider_category" in path:
+                    set_sheet(rule["actions"][actions_index]["provider_category"])
+                if "provider_instance" in path:
+                    set_sheet(rule["actions"][actions_index]["provider_instance"])
+                if "provider_condition" in path:
+                    set_sheet(rule["actions"][actions_index]["provider_condition"])
+                if "details" in path:
+                    if "action_type" in path:
+                        set_sheet(
+                            rule["actions"][actions_index]["details"]["action_type"]
+                        )
+                    if "email_subject" in path:
+                        set_sheet(
+                            rule["actions"][actions_index]["details"]["email_subject"]
+                        )
+                    if "email_body" in path:
+                        set_sheet(
+                            rule["actions"][actions_index]["details"]["email_body"]
+                        )
+                    if "email_address" in path:
+                        set_sheet(
+                            rule["actions"][actions_index]["details"]["email_address"]
+                        )
 
     def create_condition_fields(self, layout, condition):
         # Common fields
