@@ -17,7 +17,11 @@ class Logger(QObject, Singleton):
     submit_log = Signal(tuple)
 
     def __init__(
-        self, filename="./logs/file.log", max_size=5 * 1024 * 1024, backup_count=5
+        self,
+        filename="./logs/file.log",
+        max_size=5 * 1024 * 1024,
+        backup_count=5,
+        turn_off_print=True,
     ):
         """
         Initialize the logger.
@@ -34,10 +38,11 @@ class Logger(QObject, Singleton):
         if not PathManager.path_exists(path["path"], True):
             return
 
+        self.turn_off_print = turn_off_print
         self.log_worker = LogWorker(self.log_queue, self.filename)
         self.log_worker.log_signal.connect(self.send_logs_out)
-        self.send_log.connect(self.log_worker.insert_log)
-        # self.submit_log.connect(self.log_worker.insert_log)
+        # self.send_log.connect(self.log_worker.insert_log)
+        self.submit_log.connect(self.log_worker.insert_log)
         # self.send_log.connect(self.log_worker.insert_log)
         # self.log_worker.log_signal.connect(self.send_logs_out)
         self.log_worker.start()
@@ -50,10 +55,11 @@ class Logger(QObject, Singleton):
 
     @Slot(str, str, bool)
     def insert(self, msg, level="INFO", print_msg=True):
-        if print_msg:
-            print(msg)
 
-        self.submit_log.emit((level, msg))
+        if self.turn_off_print:
+            print_msg = False
+
+        self.submit_log.emit((level, msg, print_msg))
 
     def cleanup_old_logs(self):
         """

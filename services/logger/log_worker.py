@@ -32,28 +32,30 @@ class LogWorker(QThread):
 
     @Slot(tuple)
     def insert_log(self, log):
-        level, msg = log
+        level, msg, print_msg = log
+        if print_msg:
+            print(log)
         self.log_queue.put((level, msg))
 
     def run(self):
         while not self.stop_event:
-            if self.log_queue.empty():
-                try:
-                    current_time_str = time.asctime(time.localtime())
-                    level, msg = self.log_queue.get(timeout=1)
-                    with QMutexLocker(self.mutex):
-                        if level == "INFO":
-                            self.logger.info(msg)
-                        elif level == "ERROR":
-                            self.logger.error(msg)
-                        elif level == "WARNING":
-                            self.logger.warning(msg)
-                        self.log_signal.emit(f"{current_time_str} {level} {msg}")
-                    self.log_queue.task_done()
-                except queue.Empty:
-                    continue
-                except Exception as e:
-                    print(f"Logging error: {e}")
+
+            try:
+                current_time_str = time.asctime(time.localtime())
+                level, msg = self.log_queue.get(timeout=1)
+                with QMutexLocker(self.mutex):
+                    if level == "INFO":
+                        self.logger.info(msg)
+                    elif level == "ERROR":
+                        self.logger.error(msg)
+                    elif level == "WARNING":
+                        self.logger.warning(msg)
+                    self.log_signal.emit(f"{current_time_str} {level} {msg}")
+                self.log_queue.task_done()
+            except queue.Empty:
+                continue
+            except Exception as e:
+                print(f"Logging error: {e}")
 
     def stop(self):
         self.stop_event = True
