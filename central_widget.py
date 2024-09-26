@@ -34,7 +34,7 @@ class CentralWidget(QWidget):
         main_layout.addWidget(self.open_btn)
         self.open_btn.clicked.connect(self.open_json_file)
 
-        self.logger = Logger()
+        self.logger = Logger(turn_off_print=False)
 
         main_layout.addWidget(self.config_editor)
 

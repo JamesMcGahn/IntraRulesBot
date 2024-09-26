@@ -33,12 +33,12 @@ class RuleRunnerThread(QThread):
         self.driver_manager = WebDriverManager()
         self.driver = self.driver_manager.get_driver()
         self.wELI = WebElementInteractions(self.driver)
-
+        self.executor = ThreadPoolExecutor(max_workers=8)
         self._rule_finished = False
 
     def run(self):
         self.receiver_thread_logs(
-            f"Starting LoginManagerWorker in thread: {threading.get_ident()} - {self.thread()}",
+            f"Starting RuleRunnerThread: {threading.get_ident()} - {self.thread()}",
             "INFO",
         )
         self.driver.get(self.url)
@@ -68,8 +68,7 @@ class RuleRunnerThread(QThread):
             rule = self.rules.get()
             rule_worker = RuleWorker(self.driver, rule)
             rule_worker.finished.connect(self.on_rule_finished)
-            rule_worker.moveToThread(self.thread())
-            self.executor = ThreadPoolExecutor(max_workers=4)
+            rule_worker.send_logs.connect(self.receiver_thread_logs)
             rule_worker.finished.connect(self.process_next_rule)
             rule_worker.finished.connect(rule_worker.deleteLater)
             self.executor.submit(rule_worker.do_work)
