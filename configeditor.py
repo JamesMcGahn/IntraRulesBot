@@ -450,66 +450,50 @@ class ConfigEditor(QWidget):
         condition_data["details"] = details_data
         return condition_data
 
-    def create_action_fields(self, layout, action):
-        condition_general_settings_box = QGroupBox("Action Provider Settings")
-        condition_general_settings_layout = QFormLayout(condition_general_settings_box)
-        condition_general_settings_layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
-        condition_general_settings_layout.setFieldGrowthPolicy(
-            QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
+    def create_action_fields(self, parent_layout, action):
+        action_data = {}
+        action_general_settings_layout = self.create_form_box(
+            "Action Provider Settings", parent_layout
         )
 
-        provider_category_input = QLineEdit(action["provider_category"])
-        condition_general_settings_layout.addRow(
-            QLabel("Provider Category:"), provider_category_input
-        )
+        action_fields = [
+            (action["provider_category"], "Provider Category:", "provider_category"),
+            (action["provider_instance"], "Provider Instance:", "provider_instance"),
+            (action["provider_condition"], "Provider Instance:", "provider_condition"),
+        ]
+        for initial_value, label_text, rule_input_path in action_fields:
+            self.create_text_input_row(
+                initial_value,
+                label_text,
+                action_general_settings_layout,
+                action_data,
+                rule_input_path,
+            )
 
-        provider_instance_input = QLineEdit(action["provider_instance"])
-        condition_general_settings_layout.addRow(
-            QLabel("Provider Instance:"), provider_instance_input
-        )
-
-        provider_condition_input = QLineEdit(action["provider_condition"])
-        condition_general_settings_layout.addRow(
-            QLabel("Provider Instance:"), provider_condition_input
-        )
-
-        layout.addRow(condition_general_settings_box)
-        # Dynamically generate fields based on condition type
-        data = {
-            "provider_category": provider_category_input,
-            "provider_instance": provider_instance_input,
-            "provider_condition": provider_condition_input,
-        }
         details = action["details"]
+        details_data = {}
 
         if details["action_type"] == "email":
             title = action["provider_condition"]
-            details_group_box = QGroupBox(f"{title} Settings")
-            details_layout = QFormLayout(details_group_box)
-            details_layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
-            details_layout.setFieldGrowthPolicy(
-                QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
-            )
+            details_layout = self.create_form_box(f"{title} Settings", parent_layout)
+            detail_fields = [
+                (details["action_type"], "Action Type:", "action_type"),
+                (details["email_subject"], "Email Subject:", "email_subject"),
+                (details["email_address"], "To Email Address:", "email_address"),
+            ]
 
-            action_type = QLineEdit(details["action_type"])
-            details_layout.addRow(QLabel("Condition Type:"), action_type)
-
-            email_subject_input = QLineEdit(details["email_subject"])
-            details_layout.addRow(QLabel("Email Subject:"), email_subject_input)
+            for initial_value, label_text, rule_input_path in detail_fields:
+                self.create_text_input_row(
+                    initial_value,
+                    label_text,
+                    details_layout,
+                    details_data,
+                    rule_input_path,
+                )
 
             email_body_input = QTextEdit(str(details["email_body"]))
             details_layout.addRow(QLabel("Email Body:"), email_body_input)
+            details_data["email_body"] = email_body_input
 
-            email_address_input = QLineEdit(details["email_address"])
-            details_layout.addRow(QLabel("To Email Address:"), email_address_input)
-
-            layout.addRow(details_group_box)
-
-            data["details"] = {
-                "action_type": action_type,
-                "email_subject": email_subject_input,
-                "email_body": email_body_input,
-                "email_address": email_address_input,
-            }
-            # Store inputs in a structured way
-        return data
+        action_data["details"] = details_data
+        return action_data
