@@ -18,7 +18,6 @@ class SchemaValidator:
             with open(schema_file, "r") as file:
                 schema = json.load(file)
                 self.schema_store[schema["$id"]] = schema
-        print(self.schema_store)
 
     def select_schema(self, selected_schema):
         if selected_schema not in self.schema_store:
@@ -27,6 +26,9 @@ class SchemaValidator:
         main_schema = self.schema_store[selected_schema]
         resolver = RefResolver.from_schema(main_schema, store=self.schema_store)
         self.validator = Draft202012Validator(main_schema, resolver=resolver)
+
+    def get_validator(self):
+        return self.validator
 
     def validate(self, instance):
         self.validator.validate(instance)
