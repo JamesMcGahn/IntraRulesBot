@@ -1,6 +1,4 @@
-import threading
-
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import Signal
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -8,11 +6,11 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from services.logger import Logger
 from web_element_interactions import WaitConditions, WebElementInteractions
+from worker_class import WorkerClass
 
 
-class LoginManagerWorker(QObject):
+class LoginManagerWorker(WorkerClass):
     status_signal = Signal(bool)
-    send_logs = Signal(str, str, bool)
 
     def __init__(self, driver, username, password, url):
         super().__init__()
@@ -23,16 +21,9 @@ class LoginManagerWorker(QObject):
         self.wELI = WebElementInteractions(self.driver)
         self.wELI.send_msg.connect(self.logging)
 
-    def logging(self, msg, level, print_msg=True):
-        self.send_logs.emit(msg, level, print_msg)
-
     def do_work(self):
         try:
-            self.logging(
-                f"Starting LoginManagerWorker in thread: {threading.get_ident()} - {self.thread()}",
-                "INFO",
-            )
-
+            self.log_thread()
             self.enter_login_info()
             self.wait_for_session_alert()
             self.wait_for_success()
@@ -78,6 +69,7 @@ class LoginManagerWorker(QObject):
             '//*[@id="loginErrorContainer"]/span',
             WaitConditions.VISIBILITY,
             failure_message=("INFO", "Login successful."),
+            retries=0,
         )
 
         if error_login:
@@ -100,5 +92,6 @@ class LoginManagerWorker(QObject):
 
             self.status_signal.emit(True)
         else:
+            self.logging("Failed to load the Rules Page", "ERROR")
             self.status_signal.emit(False)
         self.logging("Ending Login Worker Thread...", "INFO")

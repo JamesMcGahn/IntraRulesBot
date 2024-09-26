@@ -1,25 +1,32 @@
 from time import sleep
 
-from PySide6.QtCore import QObject
 from selenium.webdriver.common.by import By
 
 from web_element_interactions import WaitConditions, WebElementInteractions
+from worker_class import WorkerClass
 
 
-class TriggerWorker(QObject):
+class TriggerWorker(WorkerClass):
     def __init__(self, driver, rule):
         super().__init__()
         self.driver = driver
         self.rule = rule
         self.wELI = WebElementInteractions(self.driver)
+        self.wELI.send_msg.connect(self.logging)
 
     def do_work(self):
-        if "frequency_based" in self.rule:
-            self.set_frequency_based()
+        try:
+            if "frequency_based" in self.rule:
+                self.log_thread()
+                self.set_frequency_based()
+        except Exception as e:
+            self.logging(f"Something went wrong in TriggerWorker: {e}", "ERROR")
+            raise Exception(e) from Exception
 
     def set_frequency_based(self):
+        self.logging("Setting rule frequency time interval...", "INFO")
         freq_time_dropdown = self.wELI.wait_for_element(
-            10,
+            20,
             By.XPATH,
             '//*[contains(@id, "overlayContent_triggerParameters_frequencyComboBox_Arrow")]',
             WaitConditions.VISIBILITY,
@@ -30,7 +37,7 @@ class TriggerWorker(QObject):
         user_time_selection = str(self.rule["frequency_based"]["time_interval"])
 
         time_selection = self.wELI.select_item_from_list(
-            10,
+            20,
             By.XPATH,
             '//*[contains(@id, "overlayContent_triggerParameters_frequencyComboBox_DropDown")]/div/ul/li',
             user_time_selection,
@@ -41,4 +48,4 @@ class TriggerWorker(QObject):
             )
             return
 
-        sleep(5)
+        sleep(2)
