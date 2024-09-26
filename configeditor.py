@@ -179,95 +179,40 @@ class ConfigEditor(QWidget):
         self.stacked_widget.addWidget(rule_widget)
         self.rules_inputs.append(rule_input.copy())
 
+    def make_rule_dict(self, field_refs, int_keys):
+        x = {}
+        if isinstance(field_refs, ValidationError):
+            return
+        for key, field in field_refs.items():
+            if isinstance(field, dict):
+                x[key] = self.make_rule_dict(field, int_keys)
+            elif isinstance(field, list):
+                x[key] = [self.make_rule_dict(item, int_keys) for item in field]
+            else:
+                if key in int_keys:
+                    if field.text().isdigit():
+                        x[key] = int(field.text())
+                elif isinstance(field, QLineEdit):
+                    x[key] = field.text()
+                elif isinstance(field, QTextEdit):
+                    x[key] = field.toPlainText()
+        return x
+
     def save_config(self):
-        # is_valid, message = self.validate_inputs()
-        # if not is_valid:
-        #     #  QMessageBox.warning(self, "Input Error", message)
-        #     return
-        #
         rules = []
         val = SchemaValidator("./schemas", "/schemas/rules")
+
         for rule in self.rules_inputs:
 
-            dat_rule = {}
-            dat_rule["rule_name"] = rule["rule_name"].text()
-            dat_rule["rule_category"] = rule["rule_category"].text()
-            if "frequency_based" in rule:
-                dat_rule["frequency_based"] = {}
-                if rule["frequency_based"]["time_interval"].text().isdigit():
-                    dat_rule["frequency_based"]["time_interval"] = int(
-                        rule["frequency_based"]["time_interval"].text()
-                    )
-                else:
-                    dat_rule["frequency_based"]["time_interval"] = 0
-
-            dat_rule["conditions"] = []
-            for condition in rule["conditions"]:
-
-                dat_condition = {}
-                dat_condition["provider_category"] = condition[
-                    "provider_category"
-                ].text()
-                dat_condition["provider_instance"] = condition[
-                    "provider_instance"
-                ].text()
-                dat_condition["provider_condition"] = condition[
-                    "provider_condition"
-                ].text()
-
-                dat_condition["details"] = {}
-                dat_condition["details"]["condition_type"] = condition["details"][
-                    "condition_type"
-                ].text()
-
-                if condition["details"]["condition_type"].text() == "stats":
-
-                    dat_condition["details"]["equality_operator"] = condition[
-                        "details"
-                    ]["equality_operator"].text()
-                    if condition["details"]["equality_threshold"].text().isdigit():
-                        dat_condition["details"]["equality_threshold"] = int(
-                            condition["details"]["equality_threshold"].text()
-                        )
-                    else:
-                        dat_condition["details"]["equality_threshold"] = 0
-                    dat_condition["details"]["queues_source"] = condition["details"][
-                        "queues_source"
-                    ].text()
-
-                dat_rule["conditions"].append(dat_condition)
-
-            dat_rule["actions"] = []
-            for action in rule["actions"]:
-                # print(action)
-                dat_action = {}
-
-                dat_action["provider_category"] = action["provider_category"].text()
-                dat_action["provider_instance"] = action["provider_instance"].text()
-                dat_action["provider_condition"] = action["provider_condition"].text()
-
-                dat_action["details"] = {}
-                dat_action["details"]["action_type"] = action["details"][
-                    "action_type"
-                ].text()
-                if action["details"]["action_type"].text() == "email":
-                    dat_action["details"]["email_subject"] = action["details"][
-                        "email_subject"
-                    ].text()
-                    dat_action["details"]["email_body"] = action["details"][
-                        "email_body"
-                    ].toPlainText()
-                    dat_action["details"]["email_address"] = action["details"][
-                        "email_address"
-                    ].text()
-                dat_rule["actions"].append(dat_action)
+            dat_rule = self.make_rule_dict(
+                rule, ("time_interval", "equality_threshold")
+            )
 
             validate = val.get_validator()
             rule["errors"] = []
             for error in validate.iter_errors(dat_rule):
                 rule["errors"].append(error)
-                # TODO append errors to an array on rule, and then run highlight errors
-                # on the whole rule at once, to turn label red for failure and green for success
+
             self.highlight_errors(rule)
 
             rules.append(dat_rule)
