@@ -40,72 +40,80 @@ class WebElementInteractions(QObject):
         condition: WaitConditions,
         text: Optional[str] = None,
         failure_message: tuple[str, str] = ("WARN", "default"),
+        retries: int = 3,
     ):
         """
         Args:
             timeout (int): The maximum time (in seconds) the driver should wait for the condition to be met.
             locator_type (By): The type of locator to find the element (e.g., By.ID, By.XPATH).
             locator_value (str): The value of the locator (e.g., the ID or XPATH).
-            condition (WaitConditions): The condition to wait for
+            condition (WaitConditions): The condition to wait for.
             text (str, optional): The text to wait for if the condition is 'text'.
-            failure_message (Tuple[str, str], optional): A tuple containing a logging warning type and a default message (default is ("WARN", "default"))
-
+            failure_message (Tuple[str, str], optional): A tuple containing a logging warning type and a default message.
+            retries (int, optional): Number of retries in case of time out to find element.
         Returns:
-            Union[None, WebElement]:
-                - Returns None if the operation fails or no element is found.
-                - Returns a WebElement if the operation succeeds and an element is found.
+            Union[None, WebElement]: Returns None if the operation fails or no element is found; returns a WebElement if the operation succeeds.
         """
-        try:
-            wait = WebDriverWait(self.driver, timeout)
-            if condition == WaitConditions.PRESENCE:
-                element = wait.until(
-                    EC.presence_of_element_located((locator_type, locator_value))
-                )
-            elif condition == WaitConditions.VISIBILITY:
-                element = wait.until(
-                    EC.visibility_of_element_located((locator_type, locator_value))
-                )
-            elif condition == WaitConditions.CLICKABLE:
-                element = wait.until(
-                    EC.element_to_be_clickable((locator_type, locator_value))
-                )
-            elif condition == WaitConditions.TEXT:
-                element = wait.until(
-                    EC.text_to_be_present_in_element(
-                        (locator_type, locator_value), text
+        for _ in range(retries):
+            try:
+                wait = WebDriverWait(self.driver, timeout)
+                if condition == WaitConditions.PRESENCE:
+                    element = wait.until(
+                        EC.presence_of_element_located((locator_type, locator_value))
                     )
-                )
-            elif condition == WaitConditions.PRESENCE_OF_ALL:
-                elements = wait.until(
-                    EC.presence_of_all_elements_located((locator_type, locator_value))
-                )
-                return elements
-            elif condition == WaitConditions.VISIBILITY_OF_ALL:
-                elements = wait.until(
-                    EC.visibility_of_all_elements_located((locator_type, locator_value))
-                )
-                return elements
-            elif condition == WaitConditions.SELECTED:
-                element = wait.until(
-                    EC.element_to_be_selected((locator_type, locator_value))
-                )
+                elif condition == WaitConditions.VISIBILITY:
+                    element = wait.until(
+                        EC.visibility_of_element_located((locator_type, locator_value))
+                    )
+                elif condition == WaitConditions.CLICKABLE:
+                    element = wait.until(
+                        EC.element_to_be_clickable((locator_type, locator_value))
+                    )
+                elif condition == WaitConditions.TEXT:
+                    element = wait.until(
+                        EC.text_to_be_present_in_element(
+                            (locator_type, locator_value), text
+                        )
+                    )
+                elif condition == WaitConditions.PRESENCE_OF_ALL:
+                    elements = wait.until(
+                        EC.presence_of_all_elements_located(
+                            (locator_type, locator_value)
+                        )
+                    )
+                    return elements
+                elif condition == WaitConditions.VISIBILITY_OF_ALL:
+                    elements = wait.until(
+                        EC.visibility_of_all_elements_located(
+                            (locator_type, locator_value)
+                        )
+                    )
+                    return elements
+                elif condition == WaitConditions.SELECTED:
+                    element = wait.until(
+                        EC.element_to_be_selected((locator_type, locator_value))
+                    )
+                else:
+                    raise ValueError(f"Unknown condition: {condition}")
+                return element
+            except TimeoutException:
+                log_level, msg = failure_message
+                if msg != "default":
+                    self.send_msg.emit(msg, log_level.upper(), True)
+                else:
+                    self.send_msg.emit(
+                        f"Element with {locator_type} = {locator_value} not found within {timeout} seconds.",
+                        "ERROR",
+                        True,
+                    )
 
-            else:
-                raise ValueError(f"Unknown condition: {condition}")
-            return element
-        except TimeoutException:
-            log_level, msg = failure_message
-            if msg != "default":
-                self.send_msg.emit(msg, log_level.upper(), True)
-
-            else:
                 self.send_msg.emit(
-                    f"Element with {locator_type} = {locator_value} not found within {timeout} seconds.",
-                    "ERROR",
+                    f"Trying one more time to find Element with {locator_type} = {locator_value}.",
+                    "WARN",
                     True,
                 )
 
-            return None
+        return None
 
     def select_item_from_list(
         self,
