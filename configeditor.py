@@ -268,7 +268,7 @@ class ConfigEditor(QWidget):
                 rule["errors"].append(error)
                 # TODO append errors to an array on rule, and then run highlight errors
                 # on the whole rule at once, to turn label red for failure and green for success
-                self.highlight_errors(error, rule)
+            self.highlight_errors(rule)
 
             rules.append(dat_rule)
         # print(rules)
@@ -281,96 +281,46 @@ class ConfigEditor(QWidget):
         # print(rules)
         # Save logic..
 
-    def highlight_errors(self, error, rule):
-        # print(error)
-        path = error.path
-        # print(path)
-        # print(rule["errors"][0].path)
+    def highlight_errors(self, rule):
+        print(rule)
 
         def set_sheet(el, status=False):
             if status:
                 color = "green"
             else:
                 color = "red"
-
             el.setStyleSheet(f"border: 1px solid {color};")
 
-        if "rule_name" in path:
-            set_sheet(rule["rule_name"])
+        def turn_green(field_refs):
+            if isinstance(field_refs, ValidationError):
+                return
 
-        if "rule_category" in path:
-            set_sheet(rule["rule_category"])
+            for field in field_refs.values():
+                if isinstance(field, dict):
+                    turn_green(field)
+                elif isinstance(field, list):
+                    for list_item in field:
+                        turn_green(list_item)
+                else:
+                    set_sheet(field, status=True)
 
-        if "frequency_based" in path:
-            if "time_interval" in path:
-                set_sheet(rule["frequency_based"]["time_interval"])
+        turn_green(rule)
 
-        if "conditions" in path and path[0] == "conditions":
-            conditions_index = path[1]
+        def get_value_from_path(data, path):
+            current = data
+            for key in path:
+                try:
+                    current = current[key]
+                except Exception as e:
+                    print(e)
+            return current
 
-            if conditions_index <= len(rule["conditions"]) - 1:
-
-                if "provider_category" in path:
-                    set_sheet(rule["conditions"][conditions_index]["provider_category"])
-                if "provider_instance" in path:
-                    set_sheet(rule["conditions"][conditions_index]["provider_instance"])
-                if "provider_condition" in path:
-                    set_sheet(
-                        rule["conditions"][conditions_index]["provider_condition"]
-                    )
-                if "details" in path:
-                    if "condition_type" in path:
-                        set_sheet(
-                            rule["conditions"][conditions_index]["details"][
-                                "condition_type"
-                            ]
-                        )
-                    if "equality_operator" in path:
-                        set_sheet(
-                            rule["conditions"][conditions_index]["details"][
-                                "equality_operator"
-                            ]
-                        )
-                    if "equality_threshold" in path:
-                        set_sheet(
-                            rule["conditions"][conditions_index]["details"][
-                                "equality_threshold"
-                            ]
-                        )
-                    if "queues_source" in path:
-                        set_sheet(
-                            rule["conditions"][conditions_index]["details"][
-                                "queues_source"
-                            ]
-                        )
-        if "actions" in path and path[0] == "actions":
-            actions_index = path[1]
-
-            if actions_index <= len(rule["actions"]) - 1:
-
-                if "provider_category" in path:
-                    set_sheet(rule["actions"][actions_index]["provider_category"])
-                if "provider_instance" in path:
-                    set_sheet(rule["actions"][actions_index]["provider_instance"])
-                if "provider_condition" in path:
-                    set_sheet(rule["actions"][actions_index]["provider_condition"])
-                if "details" in path:
-                    if "action_type" in path:
-                        set_sheet(
-                            rule["actions"][actions_index]["details"]["action_type"]
-                        )
-                    if "email_subject" in path:
-                        set_sheet(
-                            rule["actions"][actions_index]["details"]["email_subject"]
-                        )
-                    if "email_body" in path:
-                        set_sheet(
-                            rule["actions"][actions_index]["details"]["email_body"]
-                        )
-                    if "email_address" in path:
-                        set_sheet(
-                            rule["actions"][actions_index]["details"]["email_address"]
-                        )
+        for error in rule["errors"]:
+            print(error.absolute_path)
+            path = error.path
+            element = get_value_from_path(rule, path)
+            if element is not None:
+                set_sheet(element)
 
     def create_condition_fields(self, parent_layout, condition):
         # Common fields
