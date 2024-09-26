@@ -45,17 +45,14 @@ class LoginManagerWorker(WorkerClass):
 
             alert = self.driver.switch_to.alert
             alert.accept()
-            print("herer")
             self.logging(
                 "Session open elsewhere alert was present. Accepted alert to proceed with this session.",
                 "INFO",
             )
 
         except TimeoutException:
-            print()
             self.logging("No session alert was present.", "INFO")
         except Exception as e:
-            print(e)
             self.logging(e.message, "ERROR")
 
         return

@@ -42,9 +42,11 @@ class TriggerWorker(WorkerClass):
             user_time_selection,
         )
         if not time_selection:
-            print(
-                f"Unable to select time {user_time_selection}. Check that your time selection is one of '1','5','10','15','30','60'"
+
+            self.logging(
+                f"Unable to select time {user_time_selection}. Check that your time selection is one of '1','5','10','15','30','60'",
+                "ERROR",
             )
-            return
+            raise Exception
 
         sleep(2)

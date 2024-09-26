@@ -80,7 +80,7 @@ class RuleRunnerThread(QThread):
 
     @Slot()
     def on_rule_finished(self):
-        print("RuleWorker finished.")
+        self.receiver_thread_logs("RuleWorker finished.", "INFO")
         self.process_next_rule()
 
     def wait_for_rule_to_finish(self):
