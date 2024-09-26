@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QFormLayout,
     QGroupBox,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QMainWindow,
@@ -63,66 +64,68 @@ class ConfigEditor(QWidget):
             self.current_rule_index += 1
             self.stacked_widget.setCurrentIndex(self.current_rule_index)
 
-    def create_rule_form(self, rule):
-        rule_input = {}
-        rule_widget = QWidget()
-        rules_name = rule["rule_name"]
-        rule_group_box = QGroupBox(f"Rule Configuration - {rules_name}")
-        rule_group_box.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
-        )
+    def create_input_field(self, initial_value=""):
+        field = QLineEdit(initial_value)
+        field.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        return field
 
-        rule_layout = QFormLayout(rule_group_box)
-        rule_layout.setFieldGrowthPolicy(
-            QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
-        )
+    def create_form_box(self, title, parent_layout):
+        box = QGroupBox(title)
+        box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
-        # General Settings Box
-        general_settings_box = QGroupBox("General Settings")
-        general_settings_box.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
-        )
+        layout = QFormLayout(box)
+        layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
+        layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
 
-        # general_settings_box.setMinimumWidth(300)
+        box.setLayout(layout)
 
-        general_settings_layout = QFormLayout(general_settings_box)
-        general_settings_layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
-        general_settings_layout.setFieldGrowthPolicy(
-            QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
-        )
+        if isinstance(parent_layout, QFormLayout):
+            parent_layout.addRow(box)
+        elif isinstance(parent_layout, QVBoxLayout) or isinstance(
+            parent_layout, QHBoxLayout
+        ):
+            parent_layout.addWidget(box)
+        return layout
 
-        # general_settings_layout.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+    def rf_add_general_settings(self, rule, rule_input, rule_layout):
+        general_settings_layout = self.create_form_box("General Settings", rule_layout)
 
-        rule_name = QLineEdit(rule["rule_name"])
-        rule_name.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
-        )
-        rule_input["rule_name"] = rule_name
+        rule_name = self.create_input_field(rule["rule_name"])
+        rule_category = self.create_input_field(rule["rule_category"])
 
         general_settings_layout.addRow(QLabel("Rule Name:"), rule_name)
-
-        rule_category = QLineEdit(rule["rule_category"])
-        rule_category.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
-        )
-        rule_input["rule_category"] = rule_category
-
         general_settings_layout.addRow(QLabel("Rule Category:"), rule_category)
 
-        general_settings_box.setLayout(general_settings_layout)
-        rule_layout.addRow(general_settings_box)
+        rule_input["rule_name"] = rule_name
+        rule_input["rule_category"] = rule_category
 
+    def rf_add_trigger_settings(self, rule, rule_input, rule_layout):
         if "frequency_based" in rule:
-            frequency_settings_box = QGroupBox("Frequency Settings")
-            frequency_settings_layout = QFormLayout(frequency_settings_box)
-            frequency_settings_layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
-            frequency_settings_layout.setFieldGrowthPolicy(
-                QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
+            frequency_settings_layout = self.create_form_box(
+                "Frequency Settings", rule_layout
             )
+
             frequency_input = QLineEdit(str(rule["frequency_based"]["time_interval"]))
+
             frequency_settings_layout.addRow(QLabel("Time Interval:"), frequency_input)
-            rule_layout.addRow(frequency_settings_box)
+
             rule_input["frequency_based"] = {"time_interval": frequency_input}
+
+    def create_rule_form(self, rule):
+        rule_input = {}
+        rules_name = rule["rule_name"]
+        rule_widget = QWidget()
+
+        rule_outter_layout = QVBoxLayout()
+        rule_layout = self.create_form_box(
+            f"Rule Configuration - {rules_name}", rule_outter_layout
+        )
+        rule_widget.setLayout(rule_outter_layout)
+
+        self.rf_add_general_settings(rule, rule_input, rule_layout)
+        self.rf_add_trigger_settings(rule, rule_input, rule_layout)
+
+        self.stacked_widget.addWidget(rule_widget)
 
         rule_input["conditions"] = []
         for i, condition in enumerate(rule["conditions"]):
@@ -156,11 +159,10 @@ class ConfigEditor(QWidget):
         self.rules_inputs.append(rule_input.copy())
         # print("s\n\n", self.rules_inputs)
 
-        rule_group_box.setLayout(rule_layout)
-        rule_layout = QVBoxLayout()
-        rule_layout.addWidget(rule_group_box)
-        rule_widget.setLayout(rule_layout)
-        self.stacked_widget.addWidget(rule_widget)
+        # rule_group_box.setLayout(rule_layout)
+        # rule_layout = QVBoxLayout()
+        # rule_layout.addWidget(rule_group_box)
+        # rule_widget.setLayout(rule_layout)
 
     def save_config(self):
         # is_valid, message = self.validate_inputs()
