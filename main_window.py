@@ -18,7 +18,7 @@ class MainWindow(QMainWindow):
         self.resize(600, 800)
         self.setMaximumSize(QSize(16777215, 16777215))
         font = QFont()
-        font.setFamilies([".AppleSystemUIFont"])
+        font.setFamilies(["Tahoma"])
 
         self.setFont(font)
 
@@ -26,3 +26,7 @@ class MainWindow(QMainWindow):
 
         self.label = QLabel(self)
         self.setCentralWidget(self.centralWidget)
+
+    # TODO - close event - shut down threads
+    # def closeEvent(self, event):
+    #     pass

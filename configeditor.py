@@ -64,6 +64,20 @@ class ConfigEditor(QWidget):
             self.current_rule_index += 1
             self.stacked_widget.setCurrentIndex(self.current_rule_index)
 
+    def create_text_input_row(
+        self,
+        line_edit_value: str,
+        label_text: str,
+        parent_layout: QFormLayout,
+        rule_input: dict = None,
+        rule_input_path: str = None,
+    ):
+        el = self.create_input_field(line_edit_value)
+        parent_layout.addRow(label_text, el)
+        if rule_input_path is not None and rule_input is not None:
+            rule_input[rule_input_path] = el
+        return el
+
     def create_input_field(self, initial_value=""):
         field = QLineEdit(initial_value)
         field.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
@@ -90,26 +104,61 @@ class ConfigEditor(QWidget):
     def rf_add_general_settings(self, rule, rule_input, rule_layout):
         general_settings_layout = self.create_form_box("General Settings", rule_layout)
 
-        rule_name = self.create_input_field(rule["rule_name"])
-        rule_category = self.create_input_field(rule["rule_category"])
-
-        general_settings_layout.addRow(QLabel("Rule Name:"), rule_name)
-        general_settings_layout.addRow(QLabel("Rule Category:"), rule_category)
-
-        rule_input["rule_name"] = rule_name
-        rule_input["rule_category"] = rule_category
+        self.create_text_input_row(
+            rule["rule_name"],
+            "Rule Name:",
+            general_settings_layout,
+            rule_input,
+            "rule_name",
+        )
+        self.create_text_input_row(
+            rule["rule_category"],
+            "Rule Category:",
+            general_settings_layout,
+            rule_input,
+            "rule_category",
+        )
 
     def rf_add_trigger_settings(self, rule, rule_input, rule_layout):
         if "frequency_based" in rule:
             frequency_settings_layout = self.create_form_box(
                 "Frequency Settings", rule_layout
             )
+            freq_int = str(rule["frequency_based"]["time_interval"])
+            frequency_based_set = {}
 
-            frequency_input = QLineEdit(str(rule["frequency_based"]["time_interval"]))
+            self.create_text_input_row(
+                freq_int,
+                "Time Interval:",
+                frequency_settings_layout,
+                frequency_based_set,
+                "time_interval",
+            )
 
-            frequency_settings_layout.addRow(QLabel("Time Interval:"), frequency_input)
+            rule_input["frequency_based"] = frequency_based_set
 
-            rule_input["frequency_based"] = {"time_interval": frequency_input}
+    def rf_add_conditions_settings(self, rule, rule_input, rule_layout):
+        rule_input["conditions"] = []
+        for i, condition in enumerate(rule["conditions"]):
+            title = condition["details"]["condition_type"].title()
+
+            condition_layout = self.create_form_box(
+                f"Condition - {(i+1)} - {title}", rule_layout
+            )
+            inputs = self.create_condition_fields(condition_layout, condition)
+            rule_input["conditions"].append(inputs)
+
+    def rf_add_actions_settings(self, rule, rule_input, rule_layout):
+        rule_input["actions"] = []
+        for i, action in enumerate(rule["actions"]):
+            title = action["details"]["action_type"].title()
+
+            action_layout = self.create_form_box(
+                f"Action - {(i+1)} - {title}", rule_layout
+            )
+
+            inputs = self.create_action_fields(action_layout, action)
+            rule_input["actions"].append(inputs)
 
     def create_rule_form(self, rule):
         rule_input = {}
@@ -124,45 +173,11 @@ class ConfigEditor(QWidget):
 
         self.rf_add_general_settings(rule, rule_input, rule_layout)
         self.rf_add_trigger_settings(rule, rule_input, rule_layout)
+        self.rf_add_conditions_settings(rule, rule_input, rule_layout)
+        self.rf_add_actions_settings(rule, rule_input, rule_layout)
 
         self.stacked_widget.addWidget(rule_widget)
-
-        rule_input["conditions"] = []
-        for i, condition in enumerate(rule["conditions"]):
-            title = condition["details"]["condition_type"].title()
-            condition_group_box = QGroupBox(f"Condition - {(i+1)} - {title}")
-            condition_layout = QFormLayout(condition_group_box)
-            condition_layout.setFieldGrowthPolicy(
-                QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
-            )
-            inputs = self.create_condition_fields(condition_layout, condition)
-            # condition_group_box.setLayout(condition_layout)
-            # print("cond", inputs)
-            rule_layout.addRow(condition_group_box)
-            rule_input["conditions"].append(inputs)
-
-        rule_input["actions"] = []
-        for i, action in enumerate(rule["actions"]):
-            action_title = action["details"]["action_type"].title()
-            action_group_box = QGroupBox(f"Action - {(i+1)} - {action_title}")
-            action_layout = QFormLayout(action_group_box)
-            action_layout.setFieldGrowthPolicy(
-                QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
-            )
-            inputs = self.create_action_fields(action_layout, action)
-            # print("inputs", inputs)
-            rule_input["actions"].append(inputs)
-            # action_group_box.setLayout(condition_layout)
-            rule_layout.addRow(action_group_box)
-
-        # print("aaaaaee \n\n", rule_input)
         self.rules_inputs.append(rule_input.copy())
-        # print("s\n\n", self.rules_inputs)
-
-        # rule_group_box.setLayout(rule_layout)
-        # rule_layout = QVBoxLayout()
-        # rule_layout.addWidget(rule_group_box)
-        # rule_widget.setLayout(rule_layout)
 
     def save_config(self):
         # is_valid, message = self.validate_inputs()
@@ -357,76 +372,83 @@ class ConfigEditor(QWidget):
                             rule["actions"][actions_index]["details"]["email_address"]
                         )
 
-    def create_condition_fields(self, layout, condition):
+    def create_condition_fields(self, parent_layout, condition):
         # Common fields
-        condition_general_settings_box = QGroupBox("Condition Provider Settings")
-        condition_general_settings_layout = QFormLayout(condition_general_settings_box)
-        condition_general_settings_layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
-        condition_general_settings_layout.setFieldGrowthPolicy(
-            QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
+        condition_data = {}
+
+        condition_general_settings_layout = self.create_form_box(
+            "Condition Provider Settings", parent_layout
         )
 
-        # Create input fields for provider settings
-        provider_category_input = QLineEdit(condition["provider_category"])
-        condition_general_settings_layout.addRow(
-            QLabel("Provider Category:"), provider_category_input
-        )
+        condition_fields = [
+            (
+                condition["provider_category"],
+                "Provider Category:",
+                "provider_category",
+            ),
+            (
+                condition["provider_instance"],
+                "Provider Instance:",
+                "provider_instance",
+            ),
+            (
+                condition["provider_condition"],
+                "Provider Condition:",
+                "provider_condition",
+            ),
+        ]
 
-        provider_instance_input = QLineEdit(condition["provider_instance"])
-        condition_general_settings_layout.addRow(
-            QLabel("Provider Instance:"), provider_instance_input
-        )
+        for initial_value, label_text, rule_input_path in condition_fields:
+            self.create_text_input_row(
+                initial_value,
+                label_text,
+                condition_general_settings_layout,
+                condition_data,
+                rule_input_path,
+            )
 
-        provider_condition_input = QLineEdit(condition["provider_condition"])
-        condition_general_settings_layout.addRow(
-            QLabel("Provider Condition:"), provider_condition_input
-        )
-
-        layout.addRow(condition_general_settings_box)
-
-        # Initialize the data dictionary
-        data = {
-            "provider_category": provider_category_input,
-            "provider_instance": provider_instance_input,
-            "provider_condition": provider_condition_input,
-            "details": {},
-        }
+        details_data = {}
 
         # Check details for condition type
         details = condition["details"]
         if details["condition_type"] == "stats":
             title = condition["provider_condition"]
-            details_group_box = QGroupBox(f"{title} Settings")
-            details_layout = QFormLayout(details_group_box)
-            details_layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
-            details_layout.setFieldGrowthPolicy(
-                QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
-            )
+            details_layout = self.create_form_box(f"{title} Settings", parent_layout)
 
-            # Create input fields for details
-            provider_condition_type_input = QLineEdit(details["condition_type"])
-            details_layout.addRow(
-                QLabel("Condition Type:"), provider_condition_type_input
-            )
-            data["details"]["condition_type"] = provider_condition_type_input
+            detail_fields = [
+                (
+                    details["condition_type"],
+                    "Condition Type:",
+                    "condition_type",
+                ),
+                (
+                    details["equality_operator"],
+                    "Equality Operator:",
+                    "equality_operator",
+                ),
+                (
+                    str(details["equality_threshold"]),
+                    "Equality Threshold:",
+                    "equality_threshold",
+                ),
+                (
+                    details["queues_source"],
+                    "Queue Source:",
+                    "queues_source",
+                ),
+            ]
 
-            equality_operator_input = QLineEdit(details["equality_operator"])
-            details_layout.addRow(QLabel("Equality Operator:"), equality_operator_input)
-            data["details"]["equality_operator"] = equality_operator_input
+            for initial_value, label_text, rule_input_path in detail_fields:
+                self.create_text_input_row(
+                    initial_value,
+                    label_text,
+                    details_layout,
+                    details_data,
+                    rule_input_path,
+                )
 
-            equality_threshold_input = QLineEdit(str(details["equality_threshold"]))
-            details_layout.addRow(
-                QLabel("Equality Threshold:"), equality_threshold_input
-            )
-            data["details"]["equality_threshold"] = equality_threshold_input
-
-            queues_source_input = QLineEdit(details["queues_source"])
-            details_layout.addRow(QLabel("Queue Source:"), queues_source_input)
-            data["details"]["queues_source"] = queues_source_input
-
-            layout.addRow(details_group_box)
-
-        return data
+        condition_data["details"] = details_data
+        return condition_data
 
     def create_action_fields(self, layout, action):
         condition_general_settings_box = QGroupBox("Action Provider Settings")
