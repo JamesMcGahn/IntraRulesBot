@@ -36,6 +36,6 @@ class MainWindow(QMainWindow):
 
     # TODO - close event - shut down threads
     def closeEvent(self, event):
-        self.send_logs.emit("Closing Application", "Info", True)
+        self.send_logs.emit("Closing Application", "INFO", True)
         self.appshutdown.emit()
         event.accept()

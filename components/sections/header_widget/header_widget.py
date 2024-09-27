@@ -1,41 +1,30 @@
 import json
 
-from jsonschema import ValidationError
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
-    QFileDialog,
-    QLabel,
-    QMessageBox,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QFileDialog, QPushButton, QVBoxLayout, QWidget
 
-from components.sections import ConfigEditor
-from keys import keys
-from rulerunner import RuleRunnerThread
-from services.logger import Logger
 from services.validator import SchemaValidator
 
 
 class HeaderWidget(QWidget):
+    send_logs = Signal(str, str, bool)
+
     def __init__(self):
         super().__init__()
         # self.setAttribute(Qt.WA_StyledBackground, True)
 
         main_layout = QVBoxLayout(self)
-
-        with open("avaya_rules.json") as f:
-            config_data = json.load(f)
-
         self.open_btn = QPushButton("Open File")
 
         main_layout.addWidget(self.open_btn)
         self.open_btn.clicked.connect(self.open_json_file)
 
         self.val = SchemaValidator("./schemas", "/schemas/main")
+        self.validate_errors = []
+        self.json_decode_error = ""
+        self.file_failed = False
 
-    def open_json_file(self):
+    def open_json_file(self) -> None:
         options = QFileDialog.Options()
         file_name, _ = QFileDialog.getOpenFileName(
             self,
@@ -49,16 +38,33 @@ class HeaderWidget(QWidget):
             try:
                 with open(file_name, "r") as file:
                     data = json.load(file)
-                    # self.display_data(data)
-                self.val.validate(data)
-                # validate(instance=data, schema=self.main_schema, res)
-            except ValidationError as e:
-                print(e)
-                # print(e.json_path)
-                QMessageBox.critical(
-                    self,
-                    "Error",
-                    f"Theres an error with your file: \n {e.message} \n {e.instance} \n",
-                )
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to load JSON file: {e}")
+                validate = self.val.get_validator()
+                self.validate_errors = []
+                for error in validate.iter_errors(data):
+                    self.file_failed = True
+                    self.validate_errors.append(error)
+                    failed_feild, error_path_msg, error_msg = (
+                        self.val.format_validation_error(error)
+                    )
+                    self.send_logs.emit(
+                        f"In file {file_name} - {error_path_msg} - Field: {failed_feild} - Reason: {error_msg}",
+                        "ERROR",
+                        True,
+                    )
+                    self.validate_errors.append(
+                        (failed_feild, error_path_msg, error_msg)
+                    )
+
+            except json.JSONDecodeError as e:
+                self.file_failed = True
+                self.send_logs.emit(e, "ERROR", True)
+
+        # try:
+        # TODO add qdialog to display errors - make reusable to use with config editor
+        # if self.file_failed:
+
+        #     QMessageBox.critical(
+        #         self,
+        #         "Error",
+        #         f"Theres an error with your file: \n ",
+        #     )

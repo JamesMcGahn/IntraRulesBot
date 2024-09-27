@@ -24,6 +24,7 @@ class CentralWidget(QWidget):
 
         self.config_editor = ConfigEditor(config_data)
         self.header_widget = HeaderWidget()
+        self.header_widget.send_logs.connect(self.logging)
 
         main_layout.addWidget(self.header_widget)
         main_layout.addWidget(self.config_editor)
@@ -34,10 +35,12 @@ class CentralWidget(QWidget):
 
         self.val = SchemaValidator("./schemas", "/schemas/main")
 
+    @Slot(str, str, bool)
+    def logging(self, msg, level="INFO", print_msg=True):
+        self.send_logs.emit(msg, level, print_msg)
+
     @Slot()
-    def notified_app_shutting(
-        self,
-    ):
+    def notified_app_shutting(self):
         self.appshutdown.emit()
 
     def start_thread(self):
@@ -48,6 +51,6 @@ class CentralWidget(QWidget):
         self.rule_runner_thread = RuleRunnerThread(
             keys["login"], keys["password"], keys["url"], config_data["rules"]
         )
-        self.rule_runner_thread.send_insert_logs.connect(self.send_logs)
+        self.rule_runner_thread.send_insert_logs.connect(self.logging)
         self.appshutdown.connect(self.rule_runner_thread.close)
         self.rule_runner_thread.start()
