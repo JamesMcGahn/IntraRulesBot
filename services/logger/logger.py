@@ -83,10 +83,12 @@ class Logger(QObject, Singleton):
                 if file_age > 30 * 24 * 60 * 60:
                     os.remove(file_path)
 
+    @Slot(bool)
     def close(self):
         """
         Close the log handlers properly.
         """
+
         self.log_worker.stop()  # Signal the logging thread to stop
         self.log_worker.quit()  # Stop the thread
         self.log_worker.wait()  # Wait for the thread to finish

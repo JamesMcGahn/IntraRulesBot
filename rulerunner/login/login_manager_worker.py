@@ -1,5 +1,5 @@
 from PySide6.QtCore import Signal
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import NoSuchWindowException, TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -25,7 +25,13 @@ class LoginManagerWorker(WorkerClass):
             self.enter_login_info()
             self.wait_for_session_alert()
             self.wait_for_success()
+        except NoSuchWindowException:
+            self.logging(
+                "Exception in LoginManagerWorker: the browser was closed", "ERROR"
+            )
+            self.status_signal.emit(False)
         except Exception as e:
+
             self.logging(f"Exception in LoginManagerWorker: {str(e)}", "ERROR")
             self.status_signal.emit(False)
 
@@ -52,10 +58,6 @@ class LoginManagerWorker(WorkerClass):
 
         except TimeoutException:
             self.logging("No session alert was present.", "INFO")
-        except Exception as e:
-            self.logging(e.message, "ERROR")
-
-        return
 
     def wait_for_success(self):
         error_login = self.wELI.wait_for_element(

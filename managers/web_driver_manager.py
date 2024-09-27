@@ -25,4 +25,7 @@ class WebDriverManager:
 
     def close(self):
         if self.driver:
-            self.driver.quit()
+            try:
+                self.driver.quit()
+            except Exception as e:
+                print(e)

@@ -61,22 +61,35 @@ class RuleRunnerThread(QThread):
             self.login_worker.deleteLater()
         else:
             self.login_worker.deleteLater()
+            self.receiver_thread_logs(
+                "Login Failed due to an error. Shutting down thread", "ERROR"
+            )
+            self.process_finished_()
+            self.close()
 
     def process_next_rule(self):
         if not self.rules.empty():
-            self.pause_if_needed(self._paused)
-            rule = self.rules.get()
-            rule_worker = RuleWorker(self.driver, rule)
-            rule_worker.finished.connect(self.on_rule_finished)
-            rule_worker.send_logs.connect(self.receiver_thread_logs)
-            rule_worker.finished.connect(self.process_next_rule)
-            rule_worker.finished.connect(rule_worker.deleteLater)
-            self.executor.submit(rule_worker.do_work)
+            try:
+                self.pause_if_needed(self._paused)
+                rule = self.rules.get()
+                rule_worker = RuleWorker(self.driver, rule)
+                rule_worker.finished.connect(self.on_rule_finished)
+                rule_worker.send_logs.connect(self.receiver_thread_logs)
+                rule_worker.finished.connect(self.process_next_rule)
+                rule_worker.finished.connect(rule_worker.deleteLater)
+                self.executor.submit(rule_worker.do_work)
+            except Exception as e:
+                self.receiver_thread_logs(
+                    f"Failure trying to process next rule: {e}", "ERROR"
+                )
 
         else:
-            self.finished.emit()
-            self.driver_manager.close()
-            self.executor.shutdown()
+            self.process_finished_()
+
+    def process_finished_(self):
+        self.finished.emit()
+        self.driver_manager.close()
+        self.executor.shutdown()
 
     @Slot()
     def on_rule_finished(self):
@@ -115,3 +128,18 @@ class RuleRunnerThread(QThread):
             self._stop = True
             self._paused = False
             self._wait_condition.wakeAll()
+
+    @Slot(bool)
+    def close(self):
+        """
+        Close the  properly.
+        """
+        self.receiver_thread_logs(
+            f"Shutting down RuleRunnerThread: {threading.get_ident()} - {self.thread()}",
+            "INFO",
+        )
+        self.process_finished_()
+        self.finished.emit()
+        self.stop()
+        self.quit()
+        self.wait()
