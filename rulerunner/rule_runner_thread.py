@@ -84,12 +84,12 @@ class RuleRunnerThread(QThread):
                 )
 
         else:
+            self.executor.shutdown()
             self.process_finished_()
 
     def process_finished_(self):
         self.finished.emit()
         self.driver_manager.close()
-        self.executor.shutdown()
 
     @Slot()
     def on_rule_finished(self):
@@ -138,8 +138,8 @@ class RuleRunnerThread(QThread):
             f"Shutting down RuleRunnerThread: {threading.get_ident()} - {self.thread()}",
             "INFO",
         )
+
         self.process_finished_()
-        self.finished.emit()
         self.stop()
         self.quit()
         self.wait()

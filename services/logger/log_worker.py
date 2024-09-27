@@ -33,12 +33,16 @@ class LogWorker(QThread):
     @Slot(tuple)
     def insert_log(self, log):
         level, msg, print_msg = log
+        # level = level.upper()
+        if level not in ["INFO", "WARN", "ERROR"]:
+            level = "INFO"
+
         if print_msg:
             print(log)
         self.log_queue.put((level, msg))
 
     def run(self):
-        while not self.stop_event:
+        while not self.stop_event or not self.log_queue.empty():
 
             try:
                 current_time_str = time.asctime(time.localtime())

@@ -88,7 +88,7 @@ class Logger(QObject, Singleton):
         """
         Close the log handlers properly.
         """
-
+        self.insert("Shutting down logging", "INFO", True)
         self.log_worker.stop()  # Signal the logging thread to stop
         self.log_worker.quit()  # Stop the thread
         self.log_worker.wait()  # Wait for the thread to finish
