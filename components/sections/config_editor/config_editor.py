@@ -25,31 +25,7 @@ class ConfigEditor(QWidget):
         self.ui = ConfigEditorView(self.config)
         main_layout.addWidget(self.ui)
 
-        self.ui.prev_button.clicked.connect(self.show_previous_rule)
-        self.ui.next_button.clicked.connect(self.show_next_rule)
         self.ui.save_button.clicked.connect(self.save_config)
-
-    def show_previous_rule(self):
-        if self.ui.current_rule_index > 0:
-            self.ui.current_rule_index -= 1
-            self.ui.stacked_widget.setCurrentIndex(self.ui.current_rule_index)
-            self.ui.nav_label.setText(
-                f"Rule: {self.ui.current_rule_index + 1} / {self.ui.stacked_widget.count()}"
-            )
-            self.ui.next_button.setDisabled(False)
-            if self.ui.current_rule_index == 0:
-                self.ui.prev_button.setDisabled(True)
-
-    def show_next_rule(self):
-        if self.ui.current_rule_index < self.ui.stacked_widget.count() - 1:
-            self.ui.current_rule_index += 1
-            self.ui.stacked_widget.setCurrentIndex(self.ui.current_rule_index)
-            self.ui.nav_label.setText(
-                f"Rule: {self.ui.current_rule_index + 1} / {self.ui.stacked_widget.count()}"
-            )
-            self.ui.prev_button.setDisabled(False)
-        if self.ui.current_rule_index + 1 >= self.ui.stacked_widget.count():
-            self.ui.next_button.setDisabled(True)
 
     def make_rule_dict(self, field_refs, int_keys):
         x = {}
@@ -98,7 +74,6 @@ class ConfigEditor(QWidget):
             json.dump(data, f, indent=4)
 
     def highlight_errors(self, rule):
-
         def set_sheet(el, status=False):
             if status:
                 color = "green"

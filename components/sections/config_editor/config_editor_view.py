@@ -28,9 +28,6 @@ class ConfigEditorView(QWidget):
     def init_ui(self):
 
         main_layout = QVBoxLayout(self)
-        # self.rules_list_layout = QVBoxLayout()
-        # main_layout.addLayout(self.rules_list_layout)
-
         self.stacked_widget = QStackedWidget()
         main_layout.addWidget(self.stacked_widget)
         scroll_area = QScrollArea(self)
@@ -45,7 +42,6 @@ class ConfigEditorView(QWidget):
             f"Rule: {self.current_rule_index + 1} / {len(self.rules_inputs)}"
         )
         self.prev_button = QPushButton("Previous")
-        self.prev_button.setDisabled(True)
         self.next_button = QPushButton("Next")
         nav_btn_layout.addWidget(self.nav_label)
         nav_btn_layout.addWidget(self.prev_button)
@@ -63,6 +59,32 @@ class ConfigEditorView(QWidget):
         main_layout.addLayout(nav_btn_layout)
         main_layout.addWidget(scroll_area)
         main_layout.addLayout(bottom_btn_layout)
+        self.update_navigation_buttons()
+
+    def update_navigation_buttons(self):
+        self.prev_button.setDisabled(self.current_rule_index == 0)
+        self.next_button.setDisabled(
+            self.current_rule_index >= len(self.rules_inputs) - 1
+        )
+
+    def show_previous_rule(self):
+        if self.current_rule_index > 0:
+            self.current_rule_index -= 1
+            self.stacked_widget.setCurrentIndex(self.current_rule_index)
+            self.nav_label.setText(
+                f"Rule: {self.current_rule_index + 1} / {self.stacked_widget.count()}"
+            )
+        self.update_navigation_buttons()
+
+    def show_next_rule(self):
+        if self.current_rule_index < self.stacked_widget.count() - 1:
+            self.current_rule_index += 1
+            self.stacked_widget.setCurrentIndex(self.current_rule_index)
+            self.nav_label.setText(
+                f"Rule: {self.current_rule_index + 1} / {self.stacked_widget.count()}"
+            )
+            self.prev_button.setDisabled(False)
+        self.update_navigation_buttons()
 
     def create_text_input_row(
         self,
@@ -133,6 +155,7 @@ class ConfigEditorView(QWidget):
 
             rule_input["frequency_based"] = frequency_based_set
 
+    # TODO Refactor
     def rf_add_conditions_settings(self, rule, rule_input, rule_layout):
         rule_input["conditions"] = []
         for i, condition in enumerate(rule["conditions"]):
@@ -144,6 +167,7 @@ class ConfigEditorView(QWidget):
             inputs = self.create_condition_fields(condition_layout, condition)
             rule_input["conditions"].append(inputs)
 
+    # TODO Refactor
     def rf_add_actions_settings(self, rule, rule_input, rule_layout):
         rule_input["actions"] = []
         for i, action in enumerate(rule["actions"]):
