@@ -1,14 +1,10 @@
-import json
-
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QApplication,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QMainWindow,
     QPushButton,
     QScrollArea,
     QSizePolicy,
@@ -18,51 +14,55 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from services.validator import SchemaValidator, ValidationError
+from services.validator import ValidationError
 
 
-class ConfigEditor(QWidget):
+class ConfigEditorView(QWidget):
     def __init__(self, config):
         super().__init__()
         self.config = config
         self.current_rule_index = 0
         self.rules_inputs = []
+        self.init_ui()
+
+    def init_ui(self):
+
         main_layout = QVBoxLayout(self)
         # self.rules_list_layout = QVBoxLayout()
         # main_layout.addLayout(self.rules_list_layout)
 
         self.stacked_widget = QStackedWidget()
-        # main_layout.addWidget(self.stacked_widget)
-        scroll_area = QScrollArea()
+        main_layout.addWidget(self.stacked_widget)
+        scroll_area = QScrollArea(self)
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(self.stacked_widget)
-        main_layout.addWidget(scroll_area)
+
         for rule in self.config["rules"]:
             self.create_rule_form(rule)
 
-        button_layout = QVBoxLayout()
+        nav_btn_layout = QHBoxLayout()
+        self.nav_label = QLabel(
+            f"Rule: {self.current_rule_index + 1} / {len(self.rules_inputs)}"
+        )
         self.prev_button = QPushButton("Previous")
-        self.prev_button.clicked.connect(self.show_previous_rule)
+        self.prev_button.setDisabled(True)
         self.next_button = QPushButton("Next")
-        self.next_button.clicked.connect(self.show_next_rule)
-        button_layout.addWidget(self.prev_button)
-        button_layout.addWidget(self.next_button)
+        nav_btn_layout.addWidget(self.nav_label)
+        nav_btn_layout.addWidget(self.prev_button)
+        nav_btn_layout.addWidget(self.next_button)
 
-        main_layout.addLayout(button_layout)
+        bottom_btn_layout = QHBoxLayout()
+        self.validate_feedback = QPushButton()
+        self.validate_feedback.setStyleSheet("border: none;")
+        self.save_button = QPushButton("Save to File")
+        self.validate_button = QPushButton("Validate")
+        bottom_btn_layout.addWidget(self.validate_feedback)
+        bottom_btn_layout.addWidget(self.save_button)
+        bottom_btn_layout.addWidget(self.validate_button)
 
-        save_button = QPushButton("Save")
-        save_button.clicked.connect(self.save_config)
-        main_layout.addWidget(save_button)
-
-    def show_previous_rule(self):
-        if self.current_rule_index > 0:
-            self.current_rule_index -= 1
-            self.stacked_widget.setCurrentIndex(self.current_rule_index)
-
-    def show_next_rule(self):
-        if self.current_rule_index < self.stacked_widget.count() - 1:
-            self.current_rule_index += 1
-            self.stacked_widget.setCurrentIndex(self.current_rule_index)
+        main_layout.addLayout(nav_btn_layout)
+        main_layout.addWidget(scroll_area)
+        main_layout.addLayout(bottom_btn_layout)
 
     def create_text_input_row(
         self,
@@ -88,17 +88,13 @@ class ConfigEditor(QWidget):
         box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
         layout = QFormLayout(box)
+        layout.setVerticalSpacing(25)
         layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
         layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
 
         box.setLayout(layout)
 
-        if isinstance(parent_layout, QFormLayout):
-            parent_layout.addRow(box)
-        elif isinstance(parent_layout, QVBoxLayout) or isinstance(
-            parent_layout, QHBoxLayout
-        ):
-            parent_layout.addWidget(box)
+        parent_layout.addWidget(box)
         return layout
 
     def rf_add_general_settings(self, rule, rule_input, rule_layout):
@@ -165,7 +161,8 @@ class ConfigEditor(QWidget):
         rules_name = rule["rule_name"]
         rule_widget = QWidget()
 
-        rule_outter_layout = QVBoxLayout()
+        rule_outter_layout = QFormLayout()
+
         rule_layout = self.create_form_box(
             f"Rule Configuration - {rules_name}", rule_outter_layout
         )
@@ -179,55 +176,7 @@ class ConfigEditor(QWidget):
         self.stacked_widget.addWidget(rule_widget)
         self.rules_inputs.append(rule_input.copy())
 
-    def make_rule_dict(self, field_refs, int_keys):
-        x = {}
-        if isinstance(field_refs, ValidationError):
-            return
-        for key, field in field_refs.items():
-            if isinstance(field, dict):
-                x[key] = self.make_rule_dict(field, int_keys)
-            elif isinstance(field, list):
-                x[key] = [self.make_rule_dict(item, int_keys) for item in field]
-            else:
-                if key in int_keys:
-                    if field.text().isdigit():
-                        x[key] = int(field.text())
-                elif isinstance(field, QLineEdit):
-                    x[key] = field.text()
-                elif isinstance(field, QTextEdit):
-                    x[key] = field.toPlainText()
-        return x
-
-    def save_config(self):
-        rules = []
-        val = SchemaValidator("./schemas", "/schemas/rules")
-
-        for rule in self.rules_inputs:
-
-            dat_rule = self.make_rule_dict(
-                rule, ("time_interval", "equality_threshold")
-            )
-
-            validate = val.get_validator()
-            rule["errors"] = []
-            for error in validate.iter_errors(dat_rule):
-                rule["errors"].append(error)
-
-            self.highlight_errors(rule)
-
-            rules.append(dat_rule)
-        # print(rules)
-
-        data = {"rules": rules}
-        with open("./avaya_user.json", "w") as f:
-            json.dump(data, f, indent=4)
-        # print(dat_rule)
-        # rules.append(dat_rule)
-        # print(rules)
-        # Save logic..
-
     def highlight_errors(self, rule):
-        print(rule)
 
         def set_sheet(el, status=False):
             if status:
@@ -261,7 +210,6 @@ class ConfigEditor(QWidget):
             return current
 
         for error in rule["errors"]:
-            print(error.absolute_path)
             path = error.path
             element = get_value_from_path(rule, path)
             if element is not None:
