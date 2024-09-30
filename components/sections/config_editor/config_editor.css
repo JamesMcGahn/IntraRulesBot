@@ -1,0 +1,48 @@
+QScrollArea {
+  padding: 0;
+}
+
+QGroupBox {
+  padding-top: 1.5em;
+  subcontrol-origin: margin;
+  font-weight: bold;
+  color: black;
+  /* border-radius: 5px; */
+}
+
+QGroupBox::title {
+  subcontrol-origin: margin;
+  color: black;
+  left: 10px;
+  top: 0;
+  font-weight: bold;
+  font-family: "Open Sans";
+}
+
+QGroupBox#Rules-Container {
+  margin-top: 7px;
+  padding-top: 1.5em 0 1.5em 0;
+  subcontrol-origin: margin;
+  font-weight: bold;
+  font-size: 1.5em;
+  border: 2px solid #fcfcfc;
+  color: black;
+  border-radius: 5px;
+  margin-left: 0px;
+}
+
+QGroupBox#Rules-Container::title {
+  subcontrol-origin: margin;
+  left: 10px;
+  top: 0;
+  font-weight: bold;
+  font-family: "Open Sans";
+}
+
+QGroupBox#Action-Email,
+QGroupBox#Action-Provider,
+QGroupBox#Condition-Provider,
+QGroupBox#Condition-Stats {
+  border: none;
+  background-color: transparent;
+}

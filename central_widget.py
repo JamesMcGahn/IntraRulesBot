@@ -1,6 +1,7 @@
 import json
 
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtGui import QLinearGradient, QPainter
 from PySide6.QtWidgets import QPushButton, QVBoxLayout, QWidget
 
 from components.sections import ConfigEditor, HeaderWidget
@@ -15,7 +16,7 @@ class CentralWidget(QWidget):
 
     def __init__(self):
         super().__init__()
-        # self.setAttribute(Qt.WA_StyledBackground, True)
+        self.setAttribute(Qt.WA_StyledBackground, True)
 
         main_layout = QVBoxLayout(self)
 
@@ -34,6 +35,15 @@ class CentralWidget(QWidget):
         start.clicked.connect(self.start_thread)
 
         self.val = SchemaValidator("./schemas", "/schemas/main")
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        gradient = QLinearGradient(self.width() / 2, 0, self.width() / 2, self.height())
+        gradient.setColorAt(0.05, "#228752")  #
+        gradient.setColorAt(0.75, "#014637")
+        gradient.setColorAt(1, "#014637")
+        painter.setBrush(gradient)
+        painter.drawRect(self.rect())
 
     @Slot(str, str, bool)
     def logging(self, msg, level="INFO", print_msg=True):
