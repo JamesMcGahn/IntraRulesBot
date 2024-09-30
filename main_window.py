@@ -17,12 +17,17 @@ class MainWindow(QMainWindow):
         self.app = app
         self.setWindowTitle("IntraRulesBot")
         self.setObjectName("MainWindow")
-        self.resize(600, 800)
+        self.resize(550, 800)
         self.setMaximumSize(QSize(16777215, 16777215))
 
-        font_id = QFontDatabase.addApplicationFont(":/fonts/OpenSans.ttf")
-        font_family = QFontDatabase.applicationFontFamilies(font_id)
-        self.app.setFont(QFont(font_family))
+        font_id_reg = QFontDatabase.addApplicationFont(":/fonts/OpenSans-Regular.ttf")
+        font_id_bold = QFontDatabase.addApplicationFont(":/fonts/OpenSans-Bold.ttf")
+        font_family = QFontDatabase.applicationFontFamilies(font_id_reg)
+        font_family2 = QFontDatabase.applicationFontFamilies(font_id_bold)
+        print(font_family, font_family2)
+        font = QFont(font_family2)
+        print(font.weight())
+        self.app.setFont(font_family)
 
         self.centralWidget = CentralWidget()
 
