@@ -34,6 +34,8 @@ class ConfigEditor(QWidget):
                 if key in int_keys:
                     if field.text().isdigit():
                         x[key] = int(field.text())
+                    else:
+                        x[key] = field.text()
                 elif isinstance(field, QLineEdit):
                     x[key] = field.text()
                 elif isinstance(field, QTextEdit):
