@@ -1,6 +1,10 @@
+import os
+
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QFormLayout,
+    QGraphicsDropShadowEffect,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -14,6 +18,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from components.boxes import GradientGroupBox
 from services.validator import ValidationError
 
 
@@ -26,13 +31,28 @@ class ConfigEditorView(QWidget):
         self.init_ui()
 
     def init_ui(self):
+        module_dir = os.path.dirname(os.path.realpath(__file__))
+        file_path = os.path.join(module_dir, "config_editor.css")
 
+        with open(file_path, "r") as ss:
+            self.setStyleSheet(ss.read())
+
+        self.current_rule_index = 0
         main_layout = QVBoxLayout(self)
+
         self.stacked_widget = QStackedWidget()
+        self.stacked_widget.setContentsMargins(10, 10, 15, 10)
         main_layout.addWidget(self.stacked_widget)
         scroll_area = QScrollArea(self)
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(self.stacked_widget)
+
+        shadow_effect = QGraphicsDropShadowEffect(self)
+        shadow_effect.setBlurRadius(5)
+        shadow_effect.setXOffset(3)
+        shadow_effect.setYOffset(3)
+        shadow_effect.setColor(QColor(0, 0, 0, 60))
+        scroll_area.setGraphicsEffect(shadow_effect)
 
         for rule in self.config["rules"]:
             self.create_rule_form(rule)
@@ -43,6 +63,8 @@ class ConfigEditorView(QWidget):
         )
         self.prev_button = QPushButton("Previous")
         self.next_button = QPushButton("Next")
+        self.prev_button.clicked.connect(self.show_previous_rule)
+        self.next_button.clicked.connect(self.show_next_rule)
         nav_btn_layout.addWidget(self.nav_label)
         nav_btn_layout.addWidget(self.prev_button)
         nav_btn_layout.addWidget(self.next_button)
@@ -95,18 +117,39 @@ class ConfigEditorView(QWidget):
         rule_input_path: str = None,
     ):
         el = self.create_input_field(line_edit_value)
-        parent_layout.addRow(label_text, el)
+        label = QLabel(label_text)
+        label.setStyleSheet("background-color: transparent;")
+        parent_layout.addRow(label, el)
         if rule_input_path is not None and rule_input is not None:
             rule_input[rule_input_path] = el
         return el
 
     def create_input_field(self, initial_value=""):
         field = QLineEdit(initial_value)
+        field.setStyleSheet("background-color: #FCFCFC")
         field.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         return field
 
-    def create_form_box(self, title, parent_layout):
-        box = QGroupBox(title)
+    def create_form_box(
+        self,
+        title,
+        parent_layout,
+        gradient_box=False,
+        border_color=None,
+        drop_shadow_effect="default",
+        object_name="",
+    ):
+        if gradient_box:
+            box = GradientGroupBox(
+                title, "black", gradient_box, border_color, drop_shadow_effect
+            )
+            box.set_gradient_start_stop(
+                box.width() / 2, 0, box.width() / 2, box.height()
+            )
+        else:
+            box = QGroupBox(title)
+            box.setObjectName(object_name)
+
         box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
         layout = QFormLayout(box)
@@ -120,7 +163,12 @@ class ConfigEditorView(QWidget):
         return layout
 
     def rf_add_general_settings(self, rule, rule_input, rule_layout):
-        general_settings_layout = self.create_form_box("General Settings", rule_layout)
+        general_settings_layout = self.create_form_box(
+            "General Settings",
+            rule_layout,
+            [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
+            "#f58321",
+        )
 
         self.create_text_input_row(
             rule["rule_name"],
@@ -140,7 +188,10 @@ class ConfigEditorView(QWidget):
     def rf_add_trigger_settings(self, rule, rule_input, rule_layout):
         if "frequency_based" in rule:
             frequency_settings_layout = self.create_form_box(
-                "Frequency Settings", rule_layout
+                "Frequency Settings",
+                rule_layout,
+                [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
+                "#f58321",
             )
             freq_int = str(rule["frequency_based"]["time_interval"])
             frequency_based_set = {}
@@ -162,7 +213,10 @@ class ConfigEditorView(QWidget):
             title = condition["details"]["condition_type"].title()
 
             condition_layout = self.create_form_box(
-                f"Condition - {(i+1)} - {title}", rule_layout
+                f"Condition - {(i+1)} - {title}",
+                rule_layout,
+                [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
+                "#f58321",
             )
             inputs = self.create_condition_fields(condition_layout, condition)
             rule_input["conditions"].append(inputs)
@@ -174,7 +228,10 @@ class ConfigEditorView(QWidget):
             title = action["details"]["action_type"].title()
 
             action_layout = self.create_form_box(
-                f"Action - {(i+1)} - {title}", rule_layout
+                f"Action - {(i+1)} - {title}",
+                rule_layout,
+                [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
+                "#f58321",
             )
 
             inputs = self.create_action_fields(action_layout, action)
@@ -188,7 +245,10 @@ class ConfigEditorView(QWidget):
         rule_outter_layout = QFormLayout()
 
         rule_layout = self.create_form_box(
-            f"Rule Configuration - {rules_name}", rule_outter_layout
+            f"Rule Configuration - {rules_name}",
+            rule_outter_layout,
+            False,
+            object_name="Rules-Container",
         )
         rule_widget.setLayout(rule_outter_layout)
 
@@ -244,7 +304,11 @@ class ConfigEditorView(QWidget):
         condition_data = {}
 
         condition_general_settings_layout = self.create_form_box(
-            "Condition Provider Settings", parent_layout
+            "Condition Provider Settings",
+            parent_layout,
+            False,
+            object_name="Condition-Provider",
+            drop_shadow_effect=False,
         )
 
         condition_fields = [
@@ -280,7 +344,13 @@ class ConfigEditorView(QWidget):
         details = condition["details"]
         if details["condition_type"] == "stats":
             title = condition["provider_condition"]
-            details_layout = self.create_form_box(f"{title} Settings", parent_layout)
+            details_layout = self.create_form_box(
+                f"{title} Settings",
+                parent_layout,
+                False,
+                object_name="Condition-Stats",
+                drop_shadow_effect=False,
+            )
 
             detail_fields = [
                 (
@@ -320,7 +390,11 @@ class ConfigEditorView(QWidget):
     def create_action_fields(self, parent_layout, action):
         action_data = {}
         action_general_settings_layout = self.create_form_box(
-            "Action Provider Settings", parent_layout
+            "Action Provider Settings",
+            parent_layout,
+            False,
+            object_name="Action-Provider",
+            drop_shadow_effect=False,
         )
 
         action_fields = [
@@ -342,7 +416,13 @@ class ConfigEditorView(QWidget):
 
         if details["action_type"] == "email":
             title = action["provider_condition"]
-            details_layout = self.create_form_box(f"{title} Settings", parent_layout)
+            details_layout = self.create_form_box(
+                f"{title} Settings",
+                parent_layout,
+                False,
+                object_name="Action-Email",
+                drop_shadow_effect=False,
+            )
             detail_fields = [
                 (details["action_type"], "Action Type:", "action_type"),
                 (details["email_subject"], "Email Subject:", "email_subject"),
@@ -359,7 +439,9 @@ class ConfigEditorView(QWidget):
                 )
 
             email_body_input = QTextEdit(str(details["email_body"]))
-            details_layout.addRow(QLabel("Email Body:"), email_body_input)
+            email_body_label = QLabel("Email Body:")
+            email_body_label.setStyleSheet("background-color: transparent")
+            details_layout.addRow(email_body_label, email_body_input)
             details_data["email_body"] = email_body_input
 
         action_data["details"] = details_data
