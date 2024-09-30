@@ -1,5 +1,9 @@
-QScrollArea {
-  padding: 0;
+QWidget {
+  background: #ededec;
+  color: black;
+
+  border-radius: 3px;
+  border: none;
 }
 
 QGroupBox {

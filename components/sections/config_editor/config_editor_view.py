@@ -1,5 +1,3 @@
-import os
-
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
@@ -10,7 +8,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
-    QScrollArea,
     QSizePolicy,
     QStackedWidget,
     QTextEdit,
@@ -19,6 +16,7 @@ from PySide6.QtWidgets import (
 )
 
 from components.boxes import GradientGroupBox
+from components.layouts import ScrollArea
 from services.validator import ValidationError
 
 
@@ -31,20 +29,16 @@ class ConfigEditorView(QWidget):
         self.init_ui()
 
     def init_ui(self):
-        module_dir = os.path.dirname(os.path.realpath(__file__))
-        file_path = os.path.join(module_dir, "config_editor.css")
-
-        with open(file_path, "r") as ss:
-            self.setStyleSheet(ss.read())
+        self.setObjectName("Config-Editor-View")
 
         self.current_rule_index = 0
         main_layout = QVBoxLayout(self)
 
         self.stacked_widget = QStackedWidget()
+        self.stacked_widget.setObjectName("Rules-Stacked-Widget")
         self.stacked_widget.setContentsMargins(10, 10, 15, 10)
         main_layout.addWidget(self.stacked_widget)
-        scroll_area = QScrollArea(self)
-        scroll_area.setWidgetResizable(True)
+        scroll_area = ScrollArea(self)
         scroll_area.setWidget(self.stacked_widget)
 
         shadow_effect = QGraphicsDropShadowEffect(self)
@@ -61,6 +55,7 @@ class ConfigEditorView(QWidget):
         self.nav_label = QLabel(
             f"Rule: {self.current_rule_index + 1} / {len(self.rules_inputs)}"
         )
+        self.nav_label.setStyleSheet("background: transparent;")
         self.prev_button = QPushButton("Previous")
         self.next_button = QPushButton("Next")
         self.prev_button.clicked.connect(self.show_previous_rule)
@@ -71,7 +66,9 @@ class ConfigEditorView(QWidget):
 
         bottom_btn_layout = QHBoxLayout()
         self.validate_feedback = QPushButton()
-        self.validate_feedback.setStyleSheet("border: none;")
+        self.validate_feedback.setStyleSheet(
+            "background-color: transparent; border: none;"
+        )
         self.save_button = QPushButton("Save to File")
         self.validate_button = QPushButton("Validate")
         bottom_btn_layout.addWidget(self.validate_feedback)
@@ -441,6 +438,7 @@ class ConfigEditorView(QWidget):
             email_body_input = QTextEdit(str(details["email_body"]))
             email_body_label = QLabel("Email Body:")
             email_body_label.setStyleSheet("background-color: transparent")
+            email_body_input.setStyleSheet("background-color: #FCFCFC")
             details_layout.addRow(email_body_label, email_body_input)
             details_data["email_body"] = email_body_input
 

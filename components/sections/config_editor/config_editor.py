@@ -1,4 +1,5 @@
 import json
+import os
 
 from PySide6.QtWidgets import QLineEdit, QTextEdit, QVBoxLayout, QWidget
 
@@ -11,6 +12,11 @@ class ConfigEditor(QWidget):
     def __init__(self, config):
         super().__init__()
         self.setObjectName("config-editor")
+        module_dir = os.path.dirname(os.path.realpath(__file__))
+        file_path = os.path.join(module_dir, "config_editor.css")
+
+        with open(file_path, "r") as ss:
+            self.setStyleSheet(ss.read())
 
         self.config = config
         self.current_rule_index = 0
