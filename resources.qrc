@@ -2,5 +2,18 @@
   <qresource prefix="">
     <file>fonts/OpenSans-Bold.ttf</file>
     <file>fonts/OpenSans-Regular.ttf</file>
+    <file>images/edit_off.png</file>
+    <file>images/edit_on.png</file>
+    <file>images/green_check.png</file>
+    <file>images/key_off.png</file>
+    <file>images/key_on.png</file>
+    <file>images/log_off.png</file>
+    <file>images/log_on.png</file>
+    <file>images/red_xmark.png</file>
+    <file>images/signout_off.png</file>
+    <file>images/signout_on.png</file>
+    <file>images/hamburger_on.png</file>
+    <file>images/hamburger_off.png</file>
+    <file>images/logo.png</file>
   </qresource>
 </RCC>
