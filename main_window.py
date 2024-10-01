@@ -1,10 +1,10 @@
 from PySide6.QtCore import QSize, Signal
-from PySide6.QtGui import QFont, QFontDatabase
+from PySide6.QtGui import QFontDatabase
 from PySide6.QtWidgets import QLabel, QMainWindow
 
 import resources_rc as resources_rc
-from central_widget import CentralWidget
 from services.logger import Logger
+from views.layout import CentralWidget
 
 
 class MainWindow(QMainWindow):
@@ -17,17 +17,15 @@ class MainWindow(QMainWindow):
         self.app = app
         self.setWindowTitle("IntraRulesBot")
         self.setObjectName("MainWindow")
-        self.resize(550, 800)
+        self.resize(900, 800)
         self.setMaximumSize(QSize(16777215, 16777215))
 
         font_id_reg = QFontDatabase.addApplicationFont(":/fonts/OpenSans-Regular.ttf")
-        font_id_bold = QFontDatabase.addApplicationFont(":/fonts/OpenSans-Bold.ttf")
+        QFontDatabase.addApplicationFont(":/fonts/OpenSans-Bold.ttf")
         font_family = QFontDatabase.applicationFontFamilies(font_id_reg)
-        font_family2 = QFontDatabase.applicationFontFamilies(font_id_bold)
-        print(font_family, font_family2)
-        font = QFont(font_family2)
-        print(font.weight())
-        self.app.setFont(font_family)
+
+        if font_family != -1:
+            self.app.setFont(font_family)
 
         self.centralWidget = CentralWidget()
 
