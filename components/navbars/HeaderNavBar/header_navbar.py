@@ -1,9 +1,11 @@
 import json
 import os
+import uuid
 
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import QFileDialog, QWidget
 
+from models import RulesModel
 from services.validator import SchemaValidator
 
 from .header_navbar_ui import HeaderNavBarView
@@ -12,6 +14,7 @@ from .header_navbar_ui import HeaderNavBarView
 class HeaderNavBar(QWidget):
     hamburger_signal = Signal(bool)
     send_logs = Signal(str, str, bool)
+    load_rules = Signal(list)
 
     def __init__(self):
         super().__init__()
@@ -36,6 +39,9 @@ class HeaderNavBar(QWidget):
         self.validate_errors = []
         self.json_decode_error = ""
         self.file_failed = False
+
+        self.rules = RulesModel()
+        self.load_rules.connect(self.rules.reset_model)
 
     def open_json_file(self) -> None:
         options = QFileDialog.Options()
@@ -67,6 +73,12 @@ class HeaderNavBar(QWidget):
                     self.validate_errors.append(
                         (failed_feild, error_path_msg, error_msg)
                     )
+                if not self.validate_errors:
+                    data = data["rules"]
+                    for rule in data:
+                        rule["guid"] = str(uuid.uuid4())
+
+                    self.load_rules.emit(data)
 
             except json.JSONDecodeError as e:
                 self.file_failed = True

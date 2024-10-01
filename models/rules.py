@@ -8,7 +8,6 @@ class RulesModel(QObject, metaclass=QSingleton):
 
     def __init__(self):
         super().__init__()
-        print(f"RulesModel instance ID: {id(self)}")
         self.rules = []
 
     @Slot(object)

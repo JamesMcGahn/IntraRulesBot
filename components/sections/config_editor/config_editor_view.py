@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Slot
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QFormLayout,
@@ -9,14 +9,13 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QSizePolicy,
-    QStackedWidget,
     QTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
 from components.boxes import GradientGroupBox
-from components.layouts import ScrollArea
+from components.layouts import ScrollArea, StackedWidget
 from services.validator import ValidationError
 
 
@@ -26,18 +25,21 @@ class ConfigEditorView(QWidget):
         self.config = config
         self.current_rule_index = 0
         self.rules_inputs = []
+        self.rules = []
         self.init_ui()
 
     def init_ui(self):
         self.setObjectName("Config-Editor-View")
 
         self.current_rule_index = 0
-        main_layout = QVBoxLayout(self)
+        self.main_layout = QVBoxLayout(self)
 
-        self.stacked_widget = QStackedWidget()
+        self.stacked_widget = StackedWidget()
         self.stacked_widget.setObjectName("Rules-Stacked-Widget")
         self.stacked_widget.setContentsMargins(10, 10, 15, 10)
-        main_layout.addWidget(self.stacked_widget)
+        self.no_rules_label = QLabel("Open a File or Add a Rule.")
+
+        self.main_layout.addWidget(self.stacked_widget)
         scroll_area = ScrollArea(self)
         scroll_area.setWidget(self.stacked_widget)
 
@@ -48,13 +50,10 @@ class ConfigEditorView(QWidget):
         shadow_effect.setColor(QColor(0, 0, 0, 60))
         scroll_area.setGraphicsEffect(shadow_effect)
 
-        for rule in self.config["rules"]:
-            self.create_rule_form(rule)
+        self.set_up_rules()
 
         nav_btn_layout = QHBoxLayout()
-        self.nav_label = QLabel(
-            f"Rule: {self.current_rule_index + 1} / {len(self.rules_inputs)}"
-        )
+        self.nav_label = QLabel()
         self.nav_label.setStyleSheet("background: transparent;")
         self.prev_button = QPushButton("Previous")
         self.next_button = QPushButton("Next")
@@ -75,10 +74,29 @@ class ConfigEditorView(QWidget):
         bottom_btn_layout.addWidget(self.save_button)
         bottom_btn_layout.addWidget(self.validate_button)
 
-        main_layout.addLayout(nav_btn_layout)
-        main_layout.addWidget(scroll_area)
-        main_layout.addLayout(bottom_btn_layout)
+        self.main_layout.addLayout(nav_btn_layout)
+        self.main_layout.addWidget(scroll_area)
+        self.main_layout.addLayout(bottom_btn_layout)
         self.update_navigation_buttons()
+
+    def set_up_rules(self):
+        if self.rules:
+            self.stacked_widget.remove_by_name("No-Rules-Widget")
+            self.no_rules_label.setHidden(True)
+            for rule in self.rules:
+                self.create_rule_form(rule)
+            self.update_navigation_buttons()
+            self.nav_label.setText(
+                f"Rule: {self.current_rule_index + 1} / {len(self.rules_inputs)}"
+            )
+        else:
+            self.stacked_widget.add_widget("No-Rules-Widget", self.no_rules_label)
+
+    @Slot(list)
+    def rules_changed(self, rules):
+        print(rules)
+        self.rules = rules
+        self.set_up_rules()
 
     def update_navigation_buttons(self):
         self.prev_button.setDisabled(self.current_rule_index == 0)
@@ -237,8 +255,9 @@ class ConfigEditorView(QWidget):
     def create_rule_form(self, rule):
         rule_input = {}
         rules_name = rule["rule_name"]
+        rules_guid = rule["guid"]
         rule_widget = QWidget()
-
+        rule_input["guid"] = rules_guid
         rule_outter_layout = QFormLayout()
 
         rule_layout = self.create_form_box(
@@ -254,7 +273,7 @@ class ConfigEditorView(QWidget):
         self.rf_add_conditions_settings(rule, rule_input, rule_layout)
         self.rf_add_actions_settings(rule, rule_input, rule_layout)
 
-        self.stacked_widget.addWidget(rule_widget)
+        self.stacked_widget.add_widget(rules_guid, rule_widget)
         self.rules_inputs.append(rule_input.copy())
 
     def highlight_errors(self, rule):

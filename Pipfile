@@ -8,6 +8,7 @@ selenium = "*"
 webdriver-manager = "*"
 pyside6 = "*"
 jsonschema = "*"
+uuid = "*"
 
 [dev-packages]
 

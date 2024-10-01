@@ -3,6 +3,7 @@ import os
 
 from PySide6.QtWidgets import QLineEdit, QTextEdit, QVBoxLayout, QWidget
 
+from models import RulesModel
 from services.validator import SchemaValidator, ValidationError
 
 from .config_editor_view import ConfigEditorView
@@ -24,6 +25,9 @@ class ConfigEditor(QWidget):
         main_layout = QVBoxLayout(self)
         self.ui = ConfigEditorView(self.config)
         main_layout.addWidget(self.ui)
+        self.rulesModel = RulesModel()
+
+        self.rulesModel.data_changed.connect(self.ui.rules_changed)
 
         self.ui.save_button.clicked.connect(self.save_config)
 
@@ -53,6 +57,7 @@ class ConfigEditor(QWidget):
         val = SchemaValidator("./schemas", "/schemas/rules")
         total_errors = 0
         for rule in self.ui.rules_inputs:
+            rule_guid = rule.pop("guid", None)
 
             dat_rule = self.make_rule_dict(
                 rule, ("time_interval", "equality_threshold")
@@ -67,13 +72,17 @@ class ConfigEditor(QWidget):
             self.highlight_errors(rule)
 
             rules.append(dat_rule)
+            rule["guid"] = rule_guid
         if total_errors > 0:
             self.ui.validate_feedback.setText(f"Total Errors :{total_errors}")
+            # TODO - display notification - display errors
         else:
             self.ui.validate_feedback.setText("No Errors Found")
-        data = {"rules": rules}
-        with open("./avaya_user.json", "w") as f:
-            json.dump(data, f, indent=4)
+            [rule.pop("errors", None) for rule in rules]
+            data = {"rules": rules}
+            with open("./avaya_user.json", "w") as f:
+                json.dump(data, f, indent=4)
+            # TODO Confirmation message - toast
 
     def highlight_errors(self, rule):
         def set_sheet(el, status=False):
