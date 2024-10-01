@@ -3,37 +3,39 @@ from typing import List, Tuple, Union
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QLinearGradient, QPainter, QPen
-from PySide6.QtWidgets import QGraphicsDropShadowEffect, QGroupBox, QSizePolicy
+from PySide6.QtWidgets import QGraphicsDropShadowEffect, QPushButton, QSizePolicy
 
 
-class GradientGroupBox(QGroupBox):
+class GradientButton(QPushButton):
     def __init__(
         self,
-        title: str,
-        title_color: str,
+        text: str,
+        text_color: str,
         gradient_colors: List[Tuple[float, str]],
         border_color: str = None,
-        border_width: int = 2,
+        border_width: int = 3,
         corner_radius: int = 3,
         drop_shadow_effect: Union[
             Tuple[float, float, float, Union[str, QColor]], str
         ] = "default",
     ):
-        super().__init__(title)
+        super().__init__(text=text)
         self.gradient_colors = gradient_colors
-        self.xStart = 0
+        self.xStart = self.contentsRect().width() / 2
         self.yStart = 0
-        self.xStop = self.width()
-        self.yStop = self.height()
-        self.title_color = title_color
+        self.xStop = self.contentsRect().width() / 2
+        self.yStop = self.contentsRect().height()
+        self.text_color = text_color
         self.border_color = border_color
         self.drop_shadow_effect = drop_shadow_effect
-        self.border_width = border_width
-        self.corner_radius = corner_radius
+        self.border_width = 3
+        self.corner_radius = 9
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.is_hovered = False
+        self.pressed = False
 
         module_dir = os.path.dirname(os.path.realpath(__file__))
-        file_path = os.path.join(module_dir, "gradient_group_box.css")
+        file_path = os.path.join(module_dir, "gradient_button.css")
 
         with open(file_path, "r") as ss:
             self.setStyleSheet(ss.read())
@@ -61,13 +63,37 @@ class GradientGroupBox(QGroupBox):
 
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
+
         gradient = QLinearGradient(self.xStart, self.yStart, self.xStop, self.yStop)
+
         for position, color in self.gradient_colors:
             gradient.setColorAt(position, color)
         painter.setBrush(Qt.NoBrush)
         painter.setBrush(gradient)
-        # painter.setPen(Qt.NoPen)
 
+        gradient2 = QLinearGradient(
+            self.contentsRect().width() / 2,
+            0,
+            self.contentsRect().width() / 2,
+            self.contentsRect().height(),
+        )
+        if self.pressed:
+            # gradient2.setColorAt(0.25, "light gray")
+
+            for position, color in self.gradient_colors:
+                color_a = QColor(color)
+                if position >= 0.85:
+
+                    color = QColor(color_a.red(), color_a.green(), color_a.blue(), 200)
+                elif position >= 0.50:
+                    color = QColor(color_a.red(), color_a.green(), color_a.blue(), 220)
+                elif position >= 0.25:
+                    color = QColor(color_a.red(), color_a.green(), color_a.blue(), 235)
+                elif position >= 0:
+                    color = QColor(color_a.red(), color_a.green(), color_a.blue(), 255)
+                gradient2.setColorAt(position, color)
+
+            painter.setBrush(gradient2)
         if self.border_color:
 
             painter.drawRoundedRect(
@@ -103,8 +129,29 @@ class GradientGroupBox(QGroupBox):
 
     def drawTitle(self, painter):
         # Set the title text color
-        painter.setPen(self.title_color)
-        painter.drawText(10, 20, self.title())
+        if not self.text_color:
+            self.text_color = "black"
+        painter.setPen(self.text_color)
+        text_rect = self.contentsRect()
+        painter.drawText(text_rect, Qt.AlignCenter, self.text())
+
+    # def enterEvent(self, event):
+    #     self.is_hovered = True
+    #     self.update()  # Update the button to repaint
+
+    # def leaveEvent(self, event):
+    #     self.is_hovered = False
+    #     self.update()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.pressed = True
+            self.update()
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.pressed = False
+            self.update()
 
     def set_gradient_start_stop(
         self, xStart: float, yStart: float, xStop: float, yStop: float

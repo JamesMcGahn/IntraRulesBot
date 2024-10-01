@@ -17,7 +17,11 @@ class WidgetFactory:
     ):
         if gradient_box:
             box = GradientGroupBox(
-                title, "black", gradient_box, border_color, drop_shadow_effect
+                title,
+                "black",
+                gradient_box,
+                border_color,
+                drop_shadow_effect=drop_shadow_effect,
             )
             box.set_gradient_start_stop(
                 box.width() / 2, 0, box.width() / 2, box.height()
