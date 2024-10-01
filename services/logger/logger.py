@@ -7,12 +7,12 @@ from logging.handlers import RotatingFileHandler
 from PySide6.QtCore import QObject, Signal, Slot
 
 from utils.files import PathManager
-from utils.singleton import Singleton
+from utils.singletons import QSingleton
 
 from .log_worker import LogWorker
 
 
-class Logger(QObject, Singleton):
+class Logger(QObject, metaclass=QSingleton):
     send_log = Signal(str)
     submit_log = Signal(tuple)
 
