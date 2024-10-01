@@ -1,20 +1,17 @@
-from PySide6.QtCore import Qt, Slot
+from PySide6.QtCore import Slot
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QFormLayout,
     QGraphicsDropShadowEffect,
-    QGroupBox,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QPushButton,
-    QSizePolicy,
     QTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
-from components.boxes import GradientGroupBox
+from components.helpers import WidgetFactory
 from components.layouts import ScrollArea, StackedWidget
 from services.validator import ValidationError
 
@@ -131,54 +128,17 @@ class ConfigEditorView(QWidget):
         rule_input: dict = None,
         rule_input_path: str = None,
     ):
-        el = self.create_input_field(line_edit_value)
-        label = QLabel(label_text)
-        label.setStyleSheet("background-color: transparent;")
-        parent_layout.addRow(label, el)
+
+        el = WidgetFactory.create_form_input_row(
+            line_edit_value, label_text, parent_layout
+        )
+
         if rule_input_path is not None and rule_input is not None:
             rule_input[rule_input_path] = el
         return el
 
-    def create_input_field(self, initial_value=""):
-        field = QLineEdit(initial_value)
-        field.setStyleSheet("background-color: #FCFCFC")
-        field.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        return field
-
-    def create_form_box(
-        self,
-        title,
-        parent_layout,
-        gradient_box=False,
-        border_color=None,
-        drop_shadow_effect="default",
-        object_name="",
-    ):
-        if gradient_box:
-            box = GradientGroupBox(
-                title, "black", gradient_box, border_color, drop_shadow_effect
-            )
-            box.set_gradient_start_stop(
-                box.width() / 2, 0, box.width() / 2, box.height()
-            )
-        else:
-            box = QGroupBox(title)
-            box.setObjectName(object_name)
-
-        box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-
-        layout = QFormLayout(box)
-        layout.setVerticalSpacing(25)
-        layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
-        layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
-
-        box.setLayout(layout)
-
-        parent_layout.addWidget(box)
-        return layout
-
     def rf_add_general_settings(self, rule, rule_input, rule_layout):
-        general_settings_layout = self.create_form_box(
+        general_settings_layout = WidgetFactory.create_form_box(
             "General Settings",
             rule_layout,
             [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
@@ -202,7 +162,7 @@ class ConfigEditorView(QWidget):
 
     def rf_add_trigger_settings(self, rule, rule_input, rule_layout):
         if "frequency_based" in rule:
-            frequency_settings_layout = self.create_form_box(
+            frequency_settings_layout = WidgetFactory.create_form_box(
                 "Frequency Settings",
                 rule_layout,
                 [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
@@ -227,7 +187,7 @@ class ConfigEditorView(QWidget):
         for i, condition in enumerate(rule["conditions"]):
             title = condition["details"]["condition_type"].title()
 
-            condition_layout = self.create_form_box(
+            condition_layout = WidgetFactory.create_form_box(
                 f"Condition - {(i+1)} - {title}",
                 rule_layout,
                 [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
@@ -242,7 +202,7 @@ class ConfigEditorView(QWidget):
         for i, action in enumerate(rule["actions"]):
             title = action["details"]["action_type"].title()
 
-            action_layout = self.create_form_box(
+            action_layout = WidgetFactory.create_form_box(
                 f"Action - {(i+1)} - {title}",
                 rule_layout,
                 [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
@@ -260,7 +220,7 @@ class ConfigEditorView(QWidget):
         rule_input["guid"] = rules_guid
         rule_outter_layout = QFormLayout()
 
-        rule_layout = self.create_form_box(
+        rule_layout = WidgetFactory.create_form_box(
             f"Rule Configuration - {rules_name}",
             rule_outter_layout,
             False,
@@ -319,7 +279,7 @@ class ConfigEditorView(QWidget):
         # Common fields
         condition_data = {}
 
-        condition_general_settings_layout = self.create_form_box(
+        condition_general_settings_layout = WidgetFactory.create_form_box(
             "Condition Provider Settings",
             parent_layout,
             False,
@@ -360,7 +320,7 @@ class ConfigEditorView(QWidget):
         details = condition["details"]
         if details["condition_type"] == "stats":
             title = condition["provider_condition"]
-            details_layout = self.create_form_box(
+            details_layout = WidgetFactory.create_form_box(
                 f"{title} Settings",
                 parent_layout,
                 False,
@@ -405,7 +365,7 @@ class ConfigEditorView(QWidget):
 
     def create_action_fields(self, parent_layout, action):
         action_data = {}
-        action_general_settings_layout = self.create_form_box(
+        action_general_settings_layout = WidgetFactory.create_form_box(
             "Action Provider Settings",
             parent_layout,
             False,
@@ -432,7 +392,7 @@ class ConfigEditorView(QWidget):
 
         if details["action_type"] == "email":
             title = action["provider_condition"]
-            details_layout = self.create_form_box(
+            details_layout = WidgetFactory.create_form_box(
                 f"{title} Settings",
                 parent_layout,
                 False,
