@@ -33,6 +33,7 @@ QGroupBox#Rules-Container {
   color: black;
   border-radius: 5px;
   margin-left: 0px;
+  padding: 2em;
 }
 
 QGroupBox#Rules-Container::title {

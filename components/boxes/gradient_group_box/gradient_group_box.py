@@ -91,7 +91,7 @@ class GradientGroupBox(QGroupBox):
     def drawTitle(self, painter):
         # Set the title text color
         painter.setPen(self.title_color)
-        painter.drawText(10, 15, self.title())
+        painter.drawText(10, 20, self.title())
 
     def set_gradient_start_stop(
         self, xStart: float, yStart: float, xStop: float, yStop: float
