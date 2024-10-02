@@ -1,8 +1,5 @@
-import logging
 import os
-import queue
 import time
-from logging.handlers import RotatingFileHandler
 
 from PySide6.QtCore import QObject, Signal, Slot
 

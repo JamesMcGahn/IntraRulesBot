@@ -46,7 +46,7 @@ class SettingsPage(QWidgetBase):
         self.ui.log_backup_count.setText(str(log_backup_count))
         self.ui.log_keep_files_days.setText(str(log_keep_files_days))
         self.ui.log_turn_off_print.setChecked(log_turn_off_print)
-
+        print(log_turn_off_print, type(log_turn_off_print))
         print(
             log_file_path,
             log_file_name,

@@ -73,5 +73,7 @@ class LogSettingsModel(QObject, metaclass=QSingleton):
         self.log_backup_count = self.settings.get_value("log_backup_count", 5)
         self.log_file_max_mbs = self.settings.get_value("log_file_max_mbs", 5)
         self.log_keep_files_days = self.settings.get_value("log_keep_files_days", 30)
-        self.log_turn_off_print = self.settings.get_value("log_turn_off_print", False)
+        self.log_turn_off_print = self.settings.get_value(
+            "log_turn_off_print", False, bool
+        )
         self.settings.end_group()

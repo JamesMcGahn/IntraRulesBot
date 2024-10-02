@@ -11,8 +11,11 @@ class AppSettings(Singleton):
     def set_value(self, key, value):
         self._settings.setValue(key, value)
 
-    def get_value(self, key, default=None):
-        return self._settings.value(key, default)
+    def get_value(self, key, default=None, type=None):
+        if type is not None:
+            return self._settings.value(key, default, type=type)
+        else:
+            return self._settings.value(key, default)
 
     def begin_group(self, group):
         self._settings.beginGroup(group)
