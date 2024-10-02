@@ -28,8 +28,8 @@ class GradientButton(QPushButton):
         self.text_color = text_color
         self.border_color = border_color
         self.drop_shadow_effect = drop_shadow_effect
-        self.border_width = 3
-        self.corner_radius = 9
+        self.border_width = border_width
+        self.corner_radius = corner_radius
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.is_hovered = False
         self.pressed = False
@@ -147,11 +147,13 @@ class GradientButton(QPushButton):
         if event.button() == Qt.LeftButton:
             self.pressed = True
             self.update()
+        super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.pressed = False
             self.update()
+        super().mouseReleaseEvent(event)
 
     def set_gradient_start_stop(
         self, xStart: float, yStart: float, xStop: float, yStop: float

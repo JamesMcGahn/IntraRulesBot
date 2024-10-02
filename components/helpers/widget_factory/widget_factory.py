@@ -1,4 +1,3 @@
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFormLayout, QGroupBox, QLabel, QLineEdit, QSizePolicy
 
 from components.boxes import GradientGroupBox
@@ -14,6 +13,8 @@ class WidgetFactory:
         border_color=None,
         drop_shadow_effect="default",
         object_name="",
+        max_width=None,
+        alignment="left",
     ):
         if gradient_box:
             box = GradientGroupBox(
@@ -32,9 +33,12 @@ class WidgetFactory:
 
         box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
+        if max_width is not None:
+            box.setMaximumWidth(max_width)
+
         layout = QFormLayout(box)
         layout.setVerticalSpacing(25)
-        layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
+
         layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
 
         box.setLayout(layout)
