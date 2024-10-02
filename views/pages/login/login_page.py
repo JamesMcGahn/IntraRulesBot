@@ -1,15 +1,15 @@
 import os
 
 from PySide6.QtCore import Signal, Slot
-from PySide6.QtWidgets import QWidget
 
 from components.toasts import QToast
+from components.utils import QWidgetBase
 from models.login import LoginModel
 
 from .login_page_ui import LoginPageView
 
 
-class LoginPage(QWidget):
+class LoginPage(QWidgetBase):
     send_creds = Signal(str, str, str, str)
 
     def __init__(self):
@@ -46,7 +46,9 @@ class LoginPage(QWidget):
             self.ui.url.text(),
             self.ui.login_url.text(),
         )
+        self.logging("Saving Login Credentials", "INFO")
 
     @Slot()
     def success_save(self):
         QToast(self, "success", "Saved Successful", "Credentials Saved.")
+        self.logging("Login Credentials Saved Successful", "INFO")

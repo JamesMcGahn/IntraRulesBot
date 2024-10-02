@@ -29,6 +29,8 @@ class MainScreen(QWidget):
             self.ui.stackedWidget.setCurrentIndex(1)
         elif btn_name.startswith("logs_btn_"):
             self.ui.stackedWidget.setCurrentIndex(2)
+        elif btn_name.startswith("settings_btn_"):
+            self.ui.stackedWidget.setCurrentIndex(3)
 
     @Slot(str, str, bool)
     def logging(self, msg, level="INFO", print_msg=True):
