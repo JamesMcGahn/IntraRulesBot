@@ -59,12 +59,9 @@ class SettingsPage(QWidgetBase):
     def save_log_settings(self):
 
         folder_path = self.ui.log_file_path.text()
-        if os.name == "nt":  # For Windows
-            if not folder_path.endswith("\\"):
-                folder_path += "\\"
-        else:  # For macOS/Linux
-            if not folder_path.endswith("/"):
-                folder_path += "/"
+        if not folder_path.endswith("/"):
+            folder_path += "/"
+
         self.ui.log_file_path.setText(folder_path)
 
         self.send_settings.emit(
@@ -79,5 +76,5 @@ class SettingsPage(QWidgetBase):
 
     @Slot()
     def success_save(self):
-        QToast(self, "success", "Saved Successful", "Credentials Saved.")
-        self.logging("Log Credentials Saved Successful", "INFO")
+        QToast(self, "success", "Saved Successful", "Log Settings Saved.")
+        self.logging("Logger Settings Saved Successful", "INFO")
