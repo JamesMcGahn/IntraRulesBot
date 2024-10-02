@@ -85,7 +85,7 @@ class LogWorker(QThread):
                         self.logger.error(msg)
                     elif level == "WARNING":
                         self.logger.warning(msg)
-                    self.log_signal.emit(f"{current_time_str} {level} {msg}")
+                    self.log_signal.emit(f"{current_time_str} - {level} - {msg}")
                 self.log_queue.task_done()
             except queue.Empty:
                 continue

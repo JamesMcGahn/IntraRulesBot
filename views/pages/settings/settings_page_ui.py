@@ -28,7 +28,8 @@ class SettingsPageView(QWidget):
             "Application Settings",
             self.settings_layout,
             False,
-            object_name="Login-Information",
+            object_name="Settings-Information",
+            title_color="#fcfcfc",
         )
 
         inner_layout = WidgetFactory.create_form_box(

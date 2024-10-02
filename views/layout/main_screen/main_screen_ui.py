@@ -2,7 +2,7 @@ from PySide6.QtCore import QSize
 from PySide6.QtWidgets import QSizePolicy, QStackedWidget, QVBoxLayout, QWidget
 
 from rules_page import RulesPage
-from views.pages import LoginPage, SettingsPage
+from views.pages import LoginPage, LogsPage, SettingsPage
 
 
 class MainScreenView(QWidget):
@@ -30,10 +30,11 @@ class MainScreenView(QWidget):
         self.rules_page = RulesPage()
         self.login_page = LoginPage()
         self.settings_page = SettingsPage()
+        self.logs_page = LogsPage()
 
         self.stackedWidget.addWidget(self.login_page)
         self.stackedWidget.addWidget(self.rules_page)
-        self.stackedWidget.addWidget(QWidget())
+        self.stackedWidget.addWidget(self.logs_page)
         self.stackedWidget.addWidget(self.settings_page)
 
         self.main_screen_container_v.addWidget(self.stackedWidget)

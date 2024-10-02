@@ -22,7 +22,7 @@ QGroupBox::title {
   font-family: "Open Sans";
 }
 
-QGroupBox#Login-Information {
+QGroupBox#Settings-Information {
   margin-top: 7px;
   padding-top: 1.5em 0 1.5em 0;
   subcontrol-origin: margin;
@@ -33,7 +33,7 @@ QGroupBox#Login-Information {
   padding: 2em;
 }
 
-QGroupBox#Login-Information::title {
+QGroupBox#Settings-Information::title {
   subcontrol-origin: margin;
   left: 10px;
   top: 0;

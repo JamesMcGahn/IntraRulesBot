@@ -20,6 +20,7 @@ class LoginPageView(QWidget):
             self.login_layout,
             False,
             object_name="Login-Information",
+            title_color="#fcfcfc",
         )
 
         inner_layout = WidgetFactory.create_form_box(

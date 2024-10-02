@@ -1,7 +1,8 @@
 {
   "rules": [
     {
-      "rule_name": "Test Rule 1",
+      "rule_name": "zzjmTest Rule 3",
+      "rule_category": "Other - Admin",
       "frequency_based": {
         "time_interval": 5
       },
@@ -18,9 +19,9 @@
           }
         },
         {
-          "provider_category": "ACD2",
-          "provider_instance": "Avaya Test ACD2",
-          "provider_condition": "Agents in Other - By Queue2",
+          "provider_category": "ACD",
+          "provider_instance": "Avaya Test ACD",
+          "provider_condition": "Agents in Other - By Queue",
           "details": {
             "condition_type": "stats",
             "equality_operator": "Greater Than",
@@ -44,14 +45,15 @@
       ]
     },
     {
-      "rule_name": "Test Rule 2",
+      "rule_name": "zzjmTest Rule 5",
+      "rule_category": "Other - Admin",
       "frequency_based": {
         "time_interval": 5
       },
       "conditions": [
         {
           "provider_category": "ACD",
-          "provider_instance": "Avaya Test ACD3",
+          "provider_instance": "Avaya Test ACD",
           "provider_condition": "Agents in Other - By Queue",
           "details": {
             "condition_type": "stats",
@@ -61,9 +63,9 @@
           }
         },
         {
-          "provider_category": "ACD2",
-          "provider_instance": "Avaya Test ACD3",
-          "provider_condition": "Agents in Other - By Queue2",
+          "provider_category": "ACD",
+          "provider_instance": "Avaya Test ACD",
+          "provider_condition": "Agents in Other - By Queue",
           "details": {
             "condition_type": "stats",
             "equality_operator": "Greater Than",
@@ -79,7 +81,7 @@
           "provider_condition": "Send Email",
           "details": {
             "action_type": "email",
-            "email_subject": "Test Subject2",
+            "email_subject": "Test Subject",
             "email_body": "Test body",
             "email_address": "test@example.com"
           }

@@ -15,12 +15,12 @@ class WidgetFactory:
         drop_shadow_effect="default",
         object_name="",
         max_width=None,
-        alignment="left",
+        title_color="black",
     ):
         if gradient_box:
             box = GradientGroupBox(
                 title,
-                "black",
+                title_color,
                 gradient_box,
                 border_color,
                 drop_shadow_effect=drop_shadow_effect,
@@ -31,6 +31,7 @@ class WidgetFactory:
         else:
             box = QGroupBox(title)
             box.setObjectName(object_name)
+            box.setStyleSheet("QGroupBox::title { color:" + f"{title_color}" + ";}")
 
         box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
