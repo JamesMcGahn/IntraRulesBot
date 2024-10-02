@@ -25,6 +25,7 @@ class IconOnlyNavBarView(QWidget):
         self.icon_btn_layout.setObjectName("icon_btn_layout_ico")
         self.keys_btn_ico = QPushButton()
         self.keys_btn_ico.setObjectName("keys_btn_ico")
+
         icon = QIcon()
         icon.addFile(
             ":/images/key_off.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off
@@ -75,6 +76,20 @@ class IconOnlyNavBarView(QWidget):
 
         self.icon_nav_vlayout.addItem(self.verticalSpacer_2)
 
+        self.settings_btn_ico = QPushButton()
+        self.settings_btn_ico.setObjectName("settings_btn_ico")
+        icon4 = QIcon()
+        icon4.addFile(
+            ":/images/settings_off.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off
+        )
+        icon4.addFile(
+            ":/images/settings_on.png", QSize(), QIcon.Mode.Normal, QIcon.State.On
+        )
+        self.settings_btn_ico.setIcon(icon4)
+        self.settings_btn_ico.setIconSize(QSize(100, 20))
+        self.settings_btn_ico.setCheckable(True)
+        self.settings_btn_ico.setAutoExclusive(True)
+
         self.signout_btn_ico = QPushButton()
         self.signout_btn_ico.setObjectName("signout_btn_ico")
         icon5 = QIcon()
@@ -89,4 +104,5 @@ class IconOnlyNavBarView(QWidget):
         self.signout_btn_ico.setCheckable(True)
         self.signout_btn_ico.setAutoExclusive(True)
 
+        self.icon_nav_vlayout.addWidget(self.settings_btn_ico)
         self.icon_nav_vlayout.addWidget(self.signout_btn_ico)

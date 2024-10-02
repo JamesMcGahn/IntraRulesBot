@@ -12,8 +12,11 @@
     <file>images/red_xmark.png</file>
     <file>images/signout_off.png</file>
     <file>images/signout_on.png</file>
+    <file>images/settings_off.png</file>
+    <file>images/settings_on.png</file>
     <file>images/hamburger_on.png</file>
     <file>images/hamburger_off.png</file>
     <file>images/logo.png</file>
+    <file>images/open_folder.png</file>
   </qresource>
 </RCC>

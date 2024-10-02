@@ -60,5 +60,7 @@ class IconTextNavBar(QWidget):
                 self.ui.rules_btn_ict.setChecked(checked)
             case "logs_btn_ico":
                 self.ui.logs_btn_ict.setChecked(checked)
+            case "settings_btn_ico":
+                self.ui.settings_btn_ict.setChecked(checked)
             case "signout_btn_ico":
                 self.ui.signout_btn_ict.setChecked(checked)

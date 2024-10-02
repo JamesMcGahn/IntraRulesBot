@@ -24,6 +24,7 @@ class IconTextNavBarView(QWidget):
             ":/images/key_off.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off
         )
         icon.addFile(":/images/key_on.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+
         icon1 = QIcon()
         icon1.addFile(
             ":/images/edit_off.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off
@@ -36,6 +37,13 @@ class IconTextNavBarView(QWidget):
             ":/images/log_off.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off
         )
         icon2.addFile(":/images/log_on.png", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        icon4 = QIcon()
+        icon4.addFile(
+            ":/images/settings_off.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off
+        )
+        icon4.addFile(
+            ":/images/settings_on.png", QSize(), QIcon.Mode.Normal, QIcon.State.On
+        )
         icon5 = QIcon()
         icon5.addFile(
             ":/images/signout_off.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off
@@ -101,15 +109,25 @@ class IconTextNavBarView(QWidget):
 
         self.icon_text_nav_vlayout.addItem(self.verticalSpacer_3)
 
+        self.settings_btn_ict = QPushButton(self)
+        self.settings_btn_ict.setObjectName("settings_btn_ict")
+        self.settings_btn_ict.setIcon(icon4)
+        self.settings_btn_ict.setIconSize(QSize(100, 20))
+        self.settings_btn_ict.setCheckable(True)
+        self.settings_btn_ict.setAutoExclusive(True)
+
         self.signout_btn_ict = QPushButton(self)
         self.signout_btn_ict.setObjectName("signout_btn_ict")
         self.signout_btn_ict.setIcon(icon5)
         self.signout_btn_ict.setIconSize(QSize(100, 20))
         self.signout_btn_ict.setCheckable(True)
         self.signout_btn_ict.setAutoExclusive(True)
+
         self.keys_btn_ict.setText(" Login Creds")
         self.rules_btn_ict.setText(" Rules")
         self.logs_btn_ict.setText(" Logs")
-
+        self.settings_btn_ict.setText("Settings")
         self.signout_btn_ict.setText("Exit")
+
+        self.icon_text_nav_vlayout.addWidget(self.settings_btn_ict)
         self.icon_text_nav_vlayout.addWidget(self.signout_btn_ict)
