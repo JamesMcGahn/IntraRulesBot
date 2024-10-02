@@ -1,6 +1,7 @@
 import logging
 import os
 import queue
+import threading
 import time
 from logging.handlers import RotatingFileHandler
 
@@ -10,35 +11,65 @@ from PySide6.QtCore import QMutex, QMutexLocker, QThread, Signal, Slot
 class LogWorker(QThread):
     log_signal = Signal(str)
 
-    def __init__(self, log_queue, filename):
+    def __init__(
+        self,
+        log_file_path,
+        log_file_name,
+        log_file_max_mbs,
+        log_backup_count,
+        log_keep_files_days,
+        log_turn_off_print,
+    ):
         super().__init__()
-        self.log_queue = log_queue
-        self.filename = filename
+        self.log_queue = queue.Queue()
+        self.log_file_path = log_file_path
+        self.log_file_name = log_file_name
+        self.log_file_max_mbs = log_file_max_mbs
+        self.log_backup_count = log_backup_count
+        self.log_keep_files_days = log_keep_files_days
+        self.log_turn_off_print = log_turn_off_print
+
         self.stop_event = False
         self.mutex = QMutex()
         self.setup_logging()
 
     def setup_logging(self):
-        self.logger = logging.getLogger(self.filename)
+        complete_path = self.log_file_path + self.log_file_name
+        self.logger = logging.getLogger(complete_path)
         self.logger.setLevel(logging.INFO)
+        if not isinstance(self.log_file_max_mbs, int):
+            self.log_file_max_mbs = 5
+        if not isinstance(self.log_backup_count, int):
+            self.log_file_max_mbs = 5
+
         if not self.logger.handlers:
             logfile = RotatingFileHandler(
-                self.filename, maxBytes=5 * 1024 * 1024, backupCount=5
+                complete_path,
+                maxBytes=self.log_file_max_mbs * 1024 * 1024,
+                backupCount=self.log_backup_count,
             )
             logfile.setFormatter(
                 logging.Formatter("%(asctime)s %(levelname)s %(message)s")
             )
             self.logger.addHandler(logfile)
+            self.insert_log(
+                (
+                    "INFO",
+                    f"Starting LogWorker Thread: {threading.get_ident()} - {self.thread()}",
+                    True,
+                )
+            )
 
     @Slot(tuple)
     def insert_log(self, log):
         level, msg, print_msg = log
-        # level = level.upper()
+
         if level not in ["INFO", "WARN", "ERROR"]:
             level = "INFO"
 
-        if print_msg:
+        if print_msg and not self.log_turn_off_print:
             print(log)
+
         self.log_queue.put((level, msg))
 
     def run(self):
