@@ -10,9 +10,9 @@ class GradientButton(QPushButton):
     def __init__(
         self,
         text: str,
-        text_color: str,
-        gradient_colors: List[Tuple[float, str]],
-        border_color: str = None,
+        text_color: Union[str, QColor, None],
+        gradient_colors: List[Union[Tuple[float, str], Tuple[float, QColor]]],
+        border_color: Union[str, QColor, None] = None,
         border_width: int = 3,
         corner_radius: int = 3,
         drop_shadow_effect: Union[
@@ -67,7 +67,7 @@ class GradientButton(QPushButton):
         gradient = QLinearGradient(self.xStart, self.yStart, self.xStop, self.yStop)
 
         for position, color in self.gradient_colors:
-            gradient.setColorAt(position, color)
+            gradient.setColorAt(position, QColor(color))
         painter.setBrush(Qt.NoBrush)
         painter.setBrush(gradient)
 
@@ -107,8 +107,7 @@ class GradientButton(QPushButton):
                 self.corner_radius,
             )
 
-            painter.setPen(self.border_color)
-            pen = QPen(self.border_color)
+            pen = QPen(QColor(self.border_color))
             pen.setWidth(self.border_width)
             painter.setPen(pen)
 
@@ -131,7 +130,7 @@ class GradientButton(QPushButton):
         # Set the title text color
         if not self.text_color:
             self.text_color = "black"
-        painter.setPen(self.text_color)
+        painter.setPen(QColor(self.text_color))
         text_rect = self.contentsRect()
         painter.drawText(text_rect, Qt.AlignCenter, self.text())
 
