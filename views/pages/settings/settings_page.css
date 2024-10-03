@@ -24,13 +24,11 @@ QGroupBox::title {
 
 QGroupBox#Settings-Information {
   margin-top: 7px;
-  padding-top: 1.5em 0 1.5em 0;
   subcontrol-origin: margin;
   font-weight: bold;
   color: #fcfcfc;
   border-radius: 5px;
   margin-left: 0px;
-  padding: 2em;
 }
 
 QGroupBox#Settings-Information::title {

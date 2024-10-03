@@ -25,7 +25,4 @@ class LogsPage(QWidgetBase):
         self.layout = self.ui.layout()
         self.setLayout(self.layout)
 
-        self.logger.send_log.connect(self.receive_logs)
-
-    def receive_logs(self, log ):
-        self.ui.log_display.append(log)
+        self.logger.send_log.connect(self.ui.update_log_display)

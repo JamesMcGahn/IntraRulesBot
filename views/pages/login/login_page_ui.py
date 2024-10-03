@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QLineEdit, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QVBoxLayout, QWidget
 
 from components.buttons import GradientButton
 from components.helpers import WidgetFactory
@@ -23,13 +23,20 @@ class LoginPageView(QWidget):
             title_color="#fcfcfc",
         )
 
+        inner_h_layout = QHBoxLayout()
+
         inner_layout = WidgetFactory.create_form_box(
             "",
-            outter_layout,
+            inner_h_layout,
             [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
             "#f58321",
             max_width=400,
         )
+
+        inner_h_layout.addLayout(inner_layout)
+        inner_h_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        outter_layout.addRow(inner_h_layout)
 
         self.url = WidgetFactory.create_form_input_row("", "Base URL:", inner_layout)
         self.login_url = WidgetFactory.create_form_input_row(

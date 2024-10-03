@@ -32,12 +32,15 @@ class SettingsPageView(QWidget):
             title_color="#fcfcfc",
         )
 
+        inner_h_layout = QHBoxLayout()
+
         inner_layout = WidgetFactory.create_form_box(
             "Logging Settings",
-            outter_layout,
+            inner_h_layout,
             [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
             "#f58321",
             max_width=400,
+            title_color="#fcfcfc",
         )
 
         log_file_path_label = QLabel("Folder Path:")
@@ -94,6 +97,10 @@ class SettingsPageView(QWidget):
         inner_layout.addRow(self.save_btn)
 
         inner_layout.setAlignment(self.save_btn, Qt.AlignmentFlag.AlignRight)
+        inner_h_layout.addLayout(inner_layout)
+        inner_h_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        outter_layout.addRow(inner_h_layout)
 
     def open_folder_dialog(self):
         folder = QFileDialog.getExistingDirectory(self, "Select Folder")
