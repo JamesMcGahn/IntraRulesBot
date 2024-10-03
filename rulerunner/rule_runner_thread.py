@@ -41,9 +41,18 @@ class RuleRunnerThread(QThread):
             f"Starting RuleRunnerThread: {threading.get_ident()} - {self.thread()}",
             "INFO",
         )
+        self.get_login_url()
+        self.start_login()
+
+    def get_login_url(self):
         self.driver.get(self.url)
+
+    def start_login(self):
         self.login_worker = LoginManagerWorker(
-            self.driver, self.username, self.password, self.url
+            self.driver,
+            self.username,
+            self.password,
+            self.url,
         )
         self.login_worker.status_signal.connect(self.login_responses)
         self.login_worker.send_logs.connect(self.receiver_thread_logs)
