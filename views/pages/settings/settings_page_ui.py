@@ -97,7 +97,7 @@ class SettingsPageView(QWidget):
         inner_layout.addRow(self.save_btn)
 
         inner_layout.setAlignment(self.save_btn, Qt.AlignmentFlag.AlignRight)
-        inner_h_layout.addLayout(inner_layout)
+
         inner_h_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         outter_layout.addRow(inner_h_layout)

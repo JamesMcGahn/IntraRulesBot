@@ -33,7 +33,6 @@ class LoginPageView(QWidget):
             max_width=400,
         )
 
-        inner_h_layout.addLayout(inner_layout)
         inner_h_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         outter_layout.addRow(inner_h_layout)
