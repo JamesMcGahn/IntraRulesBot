@@ -2,7 +2,8 @@ from PySide6.QtCore import QSize, Signal
 from PySide6.QtGui import QFontDatabase
 from PySide6.QtWidgets import QLabel, QMainWindow
 
-import resources_rc as resources_rc
+# trunk-ignore(ruff/F401)
+from resources import resources_rc
 from services.logger import Logger
 from views.layout import CentralWidget
 
