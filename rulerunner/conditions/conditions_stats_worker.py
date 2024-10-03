@@ -46,6 +46,7 @@ class ConditionsStatsWorker(WorkerClass):
             By.XPATH,
             '//*[contains(@id, "overlayContent_conditionParameters_ddExposedDataOperator_Arrow")]',
             WaitConditions.CLICKABLE,
+            raise_exception=True,
         )
         agents_in_after_call_eq_drop.click()
 
@@ -72,6 +73,7 @@ class ConditionsStatsWorker(WorkerClass):
             By.XPATH,
             '//*[contains(@id, "overlayContent_conditionParameters_tbExposedDataValue")]',
             WaitConditions.VISIBILITY,
+            raise_exception=True,
         )
 
         user_agents_in_after_call_eq_condition = condition_details["equality_threshold"]
@@ -97,6 +99,7 @@ class ConditionsStatsWorker(WorkerClass):
             By.XPATH,
             '//*[contains(@id, "overlayContent_conditionParameters_ctl16_1")]',
             WaitConditions.CLICKABLE,
+            raise_exception=True,
         )
         queues_radio_btn.click()
         self.logging(
@@ -108,6 +111,7 @@ class ConditionsStatsWorker(WorkerClass):
             By.XPATH,
             '//*[contains(@id, "overlayContent_conditionParameters_ctl22_Arrow")]',
             WaitConditions.CLICKABLE,
+            raise_exception=True,
         )
         user_queues_dropdown_btn.click()
         queues_list = self.wELI.click_all_items_in_list(

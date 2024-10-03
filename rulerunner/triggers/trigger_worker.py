@@ -29,6 +29,7 @@ class TriggerWorker(WorkerClass):
             By.XPATH,
             '//*[contains(@id, "overlayContent_triggerParameters_frequencyComboBox_Arrow")]',
             WaitConditions.VISIBILITY,
+            raise_exception=True,
         )
         freq_time_dropdown.click()
 
@@ -47,6 +48,6 @@ class TriggerWorker(WorkerClass):
                 f"Unable to select time {user_time_selection}. Check that your time selection is one of '1','5','10','15','30','60'",
                 "ERROR",
             )
-            raise Exception
+            raise ValueError
 
         sleep(2)

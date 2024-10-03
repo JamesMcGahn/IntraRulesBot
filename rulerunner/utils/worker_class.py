@@ -6,6 +6,7 @@ from PySide6.QtCore import QObject, Signal
 class WorkerClass(QObject):
     send_logs = Signal(str, str, bool)
     finished = Signal()
+    error = Signal()
 
     def __init__(self):
         super().__init__()

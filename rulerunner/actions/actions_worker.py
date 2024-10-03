@@ -98,6 +98,7 @@ class ActionsWorker(WorkerClass):
                 By.XPATH,
                 '//*[contains(@id, "overlayContent_lblAddAction")]',
                 WaitConditions.CLICKABLE,
+                raise_exception=True,
             )
             self.logging(f"Adding condition {index+2}...", "INFO")
             add__addit_action.click()

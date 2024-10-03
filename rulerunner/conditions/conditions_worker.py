@@ -106,6 +106,7 @@ class ConditionsWorker(WorkerClass):
                 By.XPATH,
                 '//*[contains(@id, "overlayContent_lblAddCondition")]',
                 WaitConditions.CLICKABLE,
+                raise_exception=True,
             )
             self.logging(f"Adding condition {index+2}...", "INFO")
             add__addit_condition.click()

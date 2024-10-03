@@ -36,6 +36,7 @@ class ActionsEmailWorker(WorkerClass):
             By.XPATH,
             '//*[contains(@id, "overlayContent_actionParameters_lblSettings")]',
             WaitConditions.CLICKABLE,
+            raise_exception=True,
         )
         email_page_settings_btn.click()
 
@@ -46,17 +47,21 @@ class ActionsEmailWorker(WorkerClass):
             By.XPATH,
             '//*[contains(@id, "overlayContent_actionParameters_ctl05")]',
             WaitConditions.VISIBILITY,
+            raise_exception=True,
         )
         email_subject.send_keys(rule_name)
 
     def set_email_message(self, action):
         self.logging(f"Setting email message for Action {self.index+1}...", "INFO")
+        sleep(2)
+        print("here")
         if "frequency_based" in self.rule:
             email_message = self.wELI.wait_for_element(
                 20,
                 By.XPATH,
                 '//*[contains(@id, "overlayContent_actionParameters_ctl12")]',
                 WaitConditions.VISIBILITY,
+                raise_exception=True,
             )
         else:
             email_message = self.wELI.wait_for_element(
@@ -64,6 +69,7 @@ class ActionsEmailWorker(WorkerClass):
                 By.XPATH,
                 '//*[contains(@id, "overlayContent_actionParameters_ctl13")]',
                 WaitConditions.VISIBILITY,
+                raise_exception=True,
             )
 
         email_message.send_keys(action["details"]["email_body"])
@@ -75,6 +81,7 @@ class ActionsEmailWorker(WorkerClass):
             By.XPATH,
             '//*[contains(@id, "overlayButtons_rbContinue_input")]',
             WaitConditions.CLICKABLE,
+            raise_exception=True,
         )
         continue_btn.click()
 
@@ -87,6 +94,7 @@ class ActionsEmailWorker(WorkerClass):
             By.XPATH,
             '//*[contains(@id, "overlayContent_actionParameters_rblIntradiemUsersIndividual_Users_1")]',
             WaitConditions.CLICKABLE,
+            raise_exception=True,
         )
         select_email_individual.click()
 
@@ -96,6 +104,7 @@ class ActionsEmailWorker(WorkerClass):
                 By.XPATH,
                 '//*[contains(@id, "overlayContent_actionParameters_ctl65")]',
                 WaitConditions.VISIBILITY,
+                raise_exception=True,
             )
 
         elif self._rule_condition_queues_source == "queues":
@@ -104,6 +113,7 @@ class ActionsEmailWorker(WorkerClass):
                 By.XPATH,
                 '//*[contains(@id, "overlayContent_actionParameters_ctl61")]',
                 WaitConditions.VISIBILITY,
+                raise_exception=True,
             )
 
         input_email_address.send_keys(action["details"]["email_address"])

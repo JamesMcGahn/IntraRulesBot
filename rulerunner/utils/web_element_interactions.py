@@ -30,6 +30,7 @@ class WebElementInteractions(QObject):
         text: Optional[str] = None,
         failure_message: tuple[str, str] = ("WARN", "default"),
         retries: int = 3,
+        raise_exception: bool = False,
     ):
         """
         Args:
@@ -101,7 +102,10 @@ class WebElementInteractions(QObject):
                     "WARN",
                     True,
                 )
-
+        if raise_exception:
+            raise NoSuchElementException(
+                f"Element with {locator_type} = {locator_value} not found within {timeout} seconds."
+            )
         return None
 
     def select_item_from_list(
@@ -111,6 +115,7 @@ class WebElementInteractions(QObject):
         locator_value: str,
         text_to_select: str,
         retries: int = 3,
+        raise_exception: bool = False,
     ):
         """
         Selects an item from a list of elements, retries in case of stale element reference.
@@ -152,12 +157,19 @@ class WebElementInteractions(QObject):
                     True,
                 )
                 return False
+            except Exception as e:
+                self.send_msg.emit(f"An error occurred: {str(e)}", "ERROR", True)
+                if raise_exception:
+                    raise Exception(e) from Exception
+                return False
 
         self.send_msg.emit(
             f"Failed to select item with text: '{text_to_select}'",
             "ERROR",
             True,
         )
+        if raise_exception:
+            raise NoSuchElementException
         return False
 
     def click_all_items_in_list(
@@ -167,6 +179,7 @@ class WebElementInteractions(QObject):
         locator_value: str,
         retries: int = 3,
         item_name: Optional[str] = None,
+        raise_exception: bool = False,
     ):
         """
         Selects an item from a list of elements, retries in case of stale element reference.
@@ -200,9 +213,17 @@ class WebElementInteractions(QObject):
 
             return False
         self.send_msg.emit(f"Failed to click all {item_name} items", "ERROR", True)
+        if raise_exception:
+            raise Exception
         return False
 
-    def switch_to_frame(self, timeout: int, locator_type: By, locator_value: str):
+    def switch_to_frame(
+        self,
+        timeout: int,
+        locator_type: By,
+        locator_value: str,
+        raise_exception: bool = False,
+    ):
         """
         Selects an item from a list of elements, retries in case of stale element reference.
 
@@ -220,4 +241,6 @@ class WebElementInteractions(QObject):
             return True
         except NoSuchFrameException:
             self.send_msg.emit(f"Cannot not find {locator_value} frame.", "ERROR", True)
+            if raise_exception:
+                raise NoSuchFrameException from NoSuchFrameException
             return False

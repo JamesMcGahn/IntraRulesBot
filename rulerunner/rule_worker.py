@@ -1,7 +1,10 @@
 from time import sleep
 
-from PySide6.QtCore import Signal
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import (
+    NoSuchFrameException,
+    TimeoutException,
+    WebDriverException,
+)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -13,7 +16,6 @@ from .utils import WaitConditions, WebElementInteractions, WorkerClass
 
 
 class RuleWorker(WorkerClass):
-    finished = Signal()
 
     def __init__(self, driver, rule):
         super().__init__()
@@ -23,32 +25,44 @@ class RuleWorker(WorkerClass):
         self.wELI.send_msg.connect(self.logging)
 
     def do_work(self):
-        addRuleBtn = self.wELI.wait_for_element(
-            20,
-            By.ID,
-            "ctl00_ActionBarContent_rbAction_Add",
-            WaitConditions.CLICKABLE,
-        )
-        if addRuleBtn:
-            addRuleBtn.click()
-            self.switch_to_rule_module()
-
-            if self.is_tutorial_page_present():
-                self.logging("Tutorial Page is present...", "INFO")
+        try:
+            addRuleBtn = self.wELI.wait_for_element(
+                20,
+                By.ID,
+                "ctl00_ActionBarContent_rbAction_Add",
+                WaitConditions.CLICKABLE,
+                raise_exception=True,
+            )
+            if addRuleBtn:
+                addRuleBtn.click()
+                print("here")
+                self.switch_to_rule_module()
+                print("here 1")
+                if self.is_tutorial_page_present():
+                    self.logging("Tutorial Page is present...", "INFO")
+                    self.next_page()
+                print("here 2")
+                self.set_rule_name()
+                self.start_trigger_page()
                 self.next_page()
+                self.start_conditions_page()
+                self.next_page()
+                self.start_actions_page()
+                self.set_rule_category()
+                self.switch_to_rule_module()
+                self.next_page()
+                self.submit_rule()
 
-            self.set_rule_name()
-            self.start_trigger_page()
-            self.next_page()
-            self.start_conditions_page()
-            self.next_page()
-            self.start_actions_page()
-            self.set_rule_category()
-            self.switch_to_rule_module()
-            self.next_page()
-            self.submit_rule()
-            # self.wait_for_dup_rule_alert()
-            self.finished.emit()
+                self.finished.emit()
+        except NoSuchFrameException:
+            self.logging("Can't Find Frame. The window was closed.", "ERROR")
+            self.error.emit()
+        except WebDriverException as e:
+            self.logging(f"Something went wrong in RuleWorker: {e}", "ERROR")
+            self.error.emit()
+        except Exception as e:
+            self.logging(f"Something went wrong in RuleWorker: {e}", "ERROR")
+            self.error.emit()
 
     def start_trigger_page(self):
         trigger = TriggerWorker(self.driver, self.rule)
@@ -101,6 +115,7 @@ class RuleWorker(WorkerClass):
             By.XPATH,
             '//*[contains(@id, "overlayButtonsLeft_cbDontAskLead")]',
             WaitConditions.CLICKABLE,
+            raise_exception=True,
         )
 
     def submit_rule(self):
@@ -111,15 +126,17 @@ class RuleWorker(WorkerClass):
             By.XPATH,
             '//*[contains(@id, "overlayButtons_rbSubmit_input")]',
             WaitConditions.CLICKABLE,
+            raise_exception=True,
         )
         submit_btn.click()
         self.wait_for_dup_rule_alert()
         self.driver.switch_to.default_content()
         success_message = self.wELI.wait_for_element(
-            15,
+            5,
             By.XPATH,
             '//*[contains(@id, "lblMessage")]',
             WaitConditions.VISIBILITY,
+            raise_exception=False,
         )
         if "You have successfully added the Rule" in success_message.text:
             self.logging(f"Rule: {rule_name} has been created.", "INFO")
@@ -137,6 +154,7 @@ class RuleWorker(WorkerClass):
             By.XPATH,
             '//*[contains(@id, "overlayContent_divAddEditAction")]/div[3]/a',
             WaitConditions.CLICKABLE,
+            raise_exception=True,
         )
         rule_settings_hamburger.click()
         sleep(2)
@@ -147,6 +165,7 @@ class RuleWorker(WorkerClass):
             By.XPATH,
             '//*[contains(@id, "ddRuleCategory_Arrow")]',
             WaitConditions.CLICKABLE,
+            raise_exception=True,
         )
         rule_category_dropdown_arrow.click()
         rule_category_selection = self.rule["rule_category"]
@@ -155,6 +174,7 @@ class RuleWorker(WorkerClass):
             By.XPATH,
             '//*[contains(@id, "ddRuleCategory_DropDown")]/div/ul/li',
             rule_category_selection,
+            raise_exception=True,
         )
         sleep(2)
         self.logging("Switching the main frame", "INFO")
@@ -167,14 +187,14 @@ class RuleWorker(WorkerClass):
             WebDriverWait(self.driver, 3).until(EC.alert_is_present())
 
             alert = self.driver.switch_to.alert
-            if alert.text == "A Rule with this name already exists":
+            if "A Rule with this name already exists" in alert.text:
                 alert.accept()
                 # TODO Ask user to update
 
                 self.logging(
                     f"A Rule with the name {rule_name} already exists.", "ERROR"
                 )
-                raise ValueError(alert.text)
+                raise ValueError
 
         except TimeoutException:
             self.logging(f"Rule: {rule_name} has been submitted.", "INFO")
