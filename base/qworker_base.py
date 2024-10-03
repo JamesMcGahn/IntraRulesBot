@@ -3,7 +3,7 @@ import threading
 from PySide6.QtCore import QObject, Signal
 
 
-class WorkerClass(QObject):
+class QWorkerBase(QObject):
     send_logs = Signal(str, str, bool)
     finished = Signal()
     error = Signal()

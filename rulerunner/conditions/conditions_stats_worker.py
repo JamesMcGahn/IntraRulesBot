@@ -1,9 +1,11 @@
 from selenium.webdriver.common.by import By
 
-from ..utils import WaitConditions, WebElementInteractions, WorkerClass
+from base import QWorkerBase
+
+from ..utils import WaitConditions, WebElementInteractions
 
 
-class ConditionsStatsWorker(WorkerClass):
+class ConditionsStatsWorker(QWorkerBase):
     def __init__(self, driver, conditions_worker, condition, index):
         super().__init__()
         self.driver = driver

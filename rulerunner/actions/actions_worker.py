@@ -2,11 +2,13 @@ from time import sleep
 
 from selenium.webdriver.common.by import By
 
+from base import QWorkerBase
+
 from ..actions import ActionsEmailWorker
-from ..utils import WaitConditions, WebElementInteractions, WorkerClass
+from ..utils import WaitConditions, WebElementInteractions
 
 
-class ActionsWorker(WorkerClass):
+class ActionsWorker(QWorkerBase):
 
     def __init__(self, driver, rule):
         super().__init__()

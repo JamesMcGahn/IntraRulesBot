@@ -2,10 +2,12 @@ from time import sleep
 
 from selenium.webdriver.common.by import By
 
-from ..utils import WaitConditions, WebElementInteractions, WorkerClass
+from base import QWorkerBase
+
+from ..utils import WaitConditions, WebElementInteractions
 
 
-class TriggerWorker(WorkerClass):
+class TriggerWorker(QWorkerBase):
     def __init__(self, driver, rule):
         super().__init__()
         self.driver = driver

@@ -4,10 +4,12 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from ..utils import WaitConditions, WebElementInteractions, WorkerClass
+from base import QWorkerBase
+
+from ..utils import WaitConditions, WebElementInteractions
 
 
-class LoginManagerWorker(WorkerClass):
+class LoginManagerWorker(QWorkerBase):
     status_signal = Signal(bool)
 
     def __init__(self, driver, username, password, url):

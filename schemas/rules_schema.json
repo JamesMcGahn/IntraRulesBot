@@ -8,14 +8,16 @@
     },
     "rule_category": {
       "type": "string",
-      "minLength": 5
+      "minLength": 5,
+      "default": "Admin - Other"
     },
     "frequency_based": {
       "type": "object",
       "properties": {
         "time_interval": {
           "type": "number",
-          "minimum": 1
+          "minimum": 1,
+          "default": 15
         }
       },
       "required": ["time_interval"]
@@ -58,20 +60,24 @@
               }
             },
             "required": ["condition_type"],
-            "if": {
-              "properties": {
-                "condition_type": {
-                  "const": "stats"
+            "anyOf": [
+              {
+                "if": {
+                  "properties": {
+                    "condition_type": {
+                      "const": "stats"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "equality_operator",
+                    "equality_threshold",
+                    "queues_source"
+                  ]
                 }
               }
-            },
-            "then": {
-              "required": [
-                "equality_operator",
-                "equality_threshold",
-                "queues_source"
-              ]
-            }
+            ]
           }
         },
         "required": [
@@ -121,16 +127,20 @@
               }
             },
             "required": ["action_type"],
-            "if": {
-              "properties": {
-                "action_type": {
-                  "const": "email"
+            "anyOf": [
+              {
+                "if": {
+                  "properties": {
+                    "action_type": {
+                      "const": "email"
+                    }
+                  }
+                },
+                "then": {
+                  "required": ["email_subject", "email_body", "email_address"]
                 }
               }
-            },
-            "then": {
-              "required": ["email_subject", "email_body", "email_address"]
-            }
+            ]
           }
         },
         "required": [

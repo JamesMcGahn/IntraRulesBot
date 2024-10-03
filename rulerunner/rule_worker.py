@@ -9,13 +9,15 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+from base import QWorkerBase
+
 from .actions import ActionsWorker
 from .conditions import ConditionsWorker
 from .triggers import TriggerWorker
-from .utils import WaitConditions, WebElementInteractions, WorkerClass
+from .utils import WaitConditions, WebElementInteractions
 
 
-class RuleWorker(WorkerClass):
+class RuleWorker(QWorkerBase):
 
     def __init__(self, driver, rule):
         super().__init__()

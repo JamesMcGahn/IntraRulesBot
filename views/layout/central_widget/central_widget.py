@@ -4,13 +4,11 @@ from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QLinearGradient, QPainter
 from PySide6.QtWidgets import QGridLayout, QWidget
 
-from components.navbars.HeaderNavBar import HeaderNavBar
-from components.navbars.IconOnlyNavBar import IconOnlyNavBar
-from components.navbars.IconTextNavBar import IconTextNavBar
 from components.sections import ConfigEditor
 from services.validator import SchemaValidator
 
 from ..main_screen import MainScreen
+from ..navbars import HeaderNavBar, IconOnlyNavBar, IconTextNavBar
 
 
 class CentralWidget(QWidget):
