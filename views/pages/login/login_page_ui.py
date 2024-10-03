@@ -56,6 +56,6 @@ class LoginPageView(QWidget):
             1,
             3,
         )
-
+        inner_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
         inner_layout.addRow(self.save_btn)
         inner_layout.setAlignment(self.save_btn, Qt.AlignmentFlag.AlignRight)

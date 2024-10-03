@@ -41,33 +41,32 @@ class SettingsPageView(QWidget):
             "#f58321",
             max_width=400,
             title_color="#fcfcfc",
+            title_font_size=13,
         )
 
         log_file_path_label = QLabel("Folder Path:")
-        log_file_path_label.setMaximumWidth(75)
         self.log_file_path = QLineEdit()
 
         self.log_file_path.setStyleSheet("background-color: #FCFCFC")
-        self.log_file_path.setMaximumWidth(187)
+
         self.select_folder_button = QPushButton()
-        self.select_folder_button.setMaximumWidth(52)
+        self.select_folder_button.setMaximumWidth(30)
 
         folder_icon = QIcon()
         folder_icon.addFile(":/images/open_folder.png", QSize(), QIcon.Mode.Normal)
 
         self.select_folder_button.setIcon(folder_icon)
         self.select_folder_button.setIconSize(QSize(50, 20))
-
         self.select_folder_button.clicked.connect(self.open_folder_dialog)
 
         row_layout = QHBoxLayout()
-        row_layout.addWidget(log_file_path_label)
+
         row_layout.addWidget(self.log_file_path)
         row_layout.addWidget(self.select_folder_button)
         row_layout.setSpacing(0)
         row_layout.setAlignment(Qt.AlignmentFlag.AlignRight)
 
-        inner_layout.addRow(row_layout)
+        inner_layout.addRow(log_file_path_label, row_layout)
 
         self.log_file_name = WidgetFactory.create_form_input_row(
             "file.log", "Log Filename:", inner_layout

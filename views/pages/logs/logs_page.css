@@ -5,6 +5,10 @@ QWidget {
   border: none;
 }
 
+QLabel {
+  font-size: 12px;
+}
+
 QGroupBox {
   /* padding-top: 1.5em; */
   subcontrol-origin: margin;

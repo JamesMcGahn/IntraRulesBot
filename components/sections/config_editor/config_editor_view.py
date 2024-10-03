@@ -40,6 +40,7 @@ class ConfigEditorView(QWidget):
         scroll_area = ScrollArea(self)
         scroll_area.setWidget(self.stacked_widget)
 
+        # TODO: call UI dropshadow helper
         shadow_effect = QGraphicsDropShadowEffect(self)
         shadow_effect.setBlurRadius(5)
         shadow_effect.setXOffset(3)
@@ -143,6 +144,8 @@ class ConfigEditorView(QWidget):
             rule_layout,
             [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
             "#f58321",
+            drop_shadow_effect=False,
+            title_font_size=13,
         )
 
         self.create_text_input_row(
@@ -167,6 +170,8 @@ class ConfigEditorView(QWidget):
                 rule_layout,
                 [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
                 "#f58321",
+                drop_shadow_effect=False,
+                title_font_size=13,
             )
             freq_int = str(rule["frequency_based"]["time_interval"])
             frequency_based_set = {}
@@ -192,6 +197,8 @@ class ConfigEditorView(QWidget):
                 rule_layout,
                 [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
                 "#f58321",
+                drop_shadow_effect=False,
+                title_font_size=13,
             )
             inputs = self.create_condition_fields(condition_layout, condition)
             rule_input["conditions"].append(inputs)
@@ -207,6 +214,8 @@ class ConfigEditorView(QWidget):
                 rule_layout,
                 [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
                 "#f58321",
+                drop_shadow_effect=False,
+                title_font_size=13,
             )
 
             inputs = self.create_action_fields(action_layout, action)
@@ -225,6 +234,8 @@ class ConfigEditorView(QWidget):
             rule_outter_layout,
             False,
             object_name="Rules-Container",
+            drop_shadow_effect=False,
+            title_font_size=16,
         )
         rule_widget.setLayout(rule_outter_layout)
 
@@ -285,6 +296,7 @@ class ConfigEditorView(QWidget):
             False,
             object_name="Condition-Provider",
             drop_shadow_effect=False,
+            title_font_size=12,
         )
 
         condition_fields = [
@@ -326,6 +338,7 @@ class ConfigEditorView(QWidget):
                 False,
                 object_name="Condition-Stats",
                 drop_shadow_effect=False,
+                title_font_size=12,
             )
 
             detail_fields = [
@@ -371,6 +384,7 @@ class ConfigEditorView(QWidget):
             False,
             object_name="Action-Provider",
             drop_shadow_effect=False,
+            title_font_size=12,
         )
 
         action_fields = [
@@ -398,6 +412,7 @@ class ConfigEditorView(QWidget):
                 False,
                 object_name="Action-Email",
                 drop_shadow_effect=False,
+                title_font_size=12,
             )
             detail_fields = [
                 (details["action_type"], "Action Type:", "action_type"),

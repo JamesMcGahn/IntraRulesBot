@@ -5,12 +5,15 @@ QWidget {
   border: none;
 }
 
+QLabel {
+  font-size: 12px;
+}
+
 QGroupBox {
   padding-top: 1.5em;
   subcontrol-origin: margin;
   font-weight: bold;
   color: black;
-  /* border-radius: 5px; */
 }
 
 QGroupBox::title {
