@@ -3,9 +3,9 @@ import time
 
 from PySide6.QtCore import QObject, Signal, Slot
 
+from base import QSingleton
 from models import LogSettingsModel
 from utils.files import PathManager
-from utils.singletons import QSingleton
 
 from .log_worker import LogWorker
 

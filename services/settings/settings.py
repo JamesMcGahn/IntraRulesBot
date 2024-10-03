@@ -1,6 +1,6 @@
 from PySide6.QtCore import QSettings
 
-from utils.singletons import Singleton
+from base import Singleton
 
 
 class AppSettings(Singleton):

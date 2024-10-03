@@ -1,8 +1,8 @@
 import keyring
 from PySide6.QtCore import QObject, Signal, Slot
 
+from base import QSingleton
 from services.settings import AppSettings
-from utils.singletons import QSingleton
 
 
 class LoginModel(QObject, metaclass=QSingleton):

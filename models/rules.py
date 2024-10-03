@@ -1,6 +1,6 @@
 from PySide6.QtCore import QObject, Signal, Slot
 
-from utils.singletons import QSingleton
+from base import QSingleton
 
 
 class RulesModel(QObject, metaclass=QSingleton):

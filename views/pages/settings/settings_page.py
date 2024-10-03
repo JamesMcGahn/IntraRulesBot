@@ -2,8 +2,8 @@ import os
 
 from PySide6.QtCore import Signal, Slot
 
+from base import QWidgetBase
 from components.toasts import QToast
-from components.utils import QWidgetBase
 from models import LogSettingsModel
 
 from .settings_page_ui import SettingsPageView
