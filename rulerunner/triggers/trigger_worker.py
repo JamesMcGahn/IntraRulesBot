@@ -20,6 +20,7 @@ class TriggerWorker(QWorkerBase):
         if "frequency_based" in self.rule:
             self.log_thread()
             self.set_frequency_based()
+        self.finished.emit()
 
     def set_frequency_based(self):
         self.logging("Setting rule frequency time interval...", "INFO")

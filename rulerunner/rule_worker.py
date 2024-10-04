@@ -28,6 +28,7 @@ class RuleWorker(QWorkerBase):
 
     def do_work(self):
         try:
+            self.log_thread()
             addRuleBtn = self.wELI.wait_for_element(
                 20,
                 By.ID,
@@ -37,13 +38,13 @@ class RuleWorker(QWorkerBase):
             )
             if addRuleBtn:
                 addRuleBtn.click()
-                print("here")
+
                 self.switch_to_rule_module()
-                print("here 1")
+
                 if self.is_tutorial_page_present():
                     self.logging("Tutorial Page is present...", "INFO")
                     self.next_page()
-                print("here 2")
+
                 self.set_rule_name()
                 self.start_trigger_page()
                 self.next_page()
@@ -67,14 +68,16 @@ class RuleWorker(QWorkerBase):
             self.error.emit()
 
     def start_trigger_page(self):
-        trigger = TriggerWorker(self.driver, self.rule)
-        trigger.send_logs.connect(self.logging)
-        trigger.do_work()
+        self.trigger = TriggerWorker(self.driver, self.rule)
+        self.trigger.send_logs.connect(self.logging)
+        self.trigger.finished.connect(self.trigger.deleteLater)
+        self.trigger.do_work()
 
     def start_conditions_page(self):
         self.conditions = ConditionsWorker(self.driver, self.rule)
         if "conditions" in self.rule and self.rule["conditions"]:
             self.conditions.send_logs.connect(self.logging)
+            self.conditions.finished.connect(self.conditions.deleteLater)
             self.conditions.do_work()
 
     def start_actions_page(self):
@@ -84,6 +87,7 @@ class RuleWorker(QWorkerBase):
                 self.conditions.rule_condition_queues_source
             )
             self.actions.send_logs.connect(self.logging)
+            self.actions.finished.connect(self.actions.deleteLater)
             self.actions.do_work()
 
     def switch_to_rule_module(self):

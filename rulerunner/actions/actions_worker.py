@@ -36,6 +36,7 @@ class ActionsWorker(QWorkerBase):
             self.set_provider_condition(action, i)
             self.set_email_action(action, self.rule, i)
             self.add_additional_action(i)
+            self.finished.emit()
 
     def set_provider_category(self, action, i):
         self.logging(f"Selecting provider category for Action {i+1}...", "INFO")
@@ -88,6 +89,7 @@ class ActionsWorker(QWorkerBase):
         if action["details"]["action_type"] == "email":
             actions_worker = ActionsEmailWorker(self.driver, self, action, rule, i)
             actions_worker.send_logs.connect(self.logging)
+            actions_worker.finished.connect(actions_worker.deleteLater)
             actions_worker.do_work()
 
     def add_additional_action(self, index):

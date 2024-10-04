@@ -53,7 +53,6 @@ class ActionsEmailWorker(QWorkerBase):
     def set_email_message(self, action):
         self.logging(f"Setting email message for Action {self.index+1}...", "INFO")
         sleep(2)
-        print("here")
         if "frequency_based" in self.rule:
             email_message = self.wELI.wait_for_element(
                 20,
