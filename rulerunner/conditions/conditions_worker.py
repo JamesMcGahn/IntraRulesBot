@@ -36,7 +36,7 @@ class ConditionsWorker(QWorkerBase):
             self.set_stats_based_condition(condition, i)
             self.add_additional_condition(i)
 
-            sleep(2)
+            sleep(1)
             self.finished.emit()
 
     def set_provider_category(self, condition, i):
@@ -54,7 +54,7 @@ class ConditionsWorker(QWorkerBase):
                 f"For Condition {i+1} - Unable to select provider category: {user_provider_category}"
             )
 
-        sleep(2)
+        sleep(1)
 
     def set_provider_instance(self, condition, i):
         self.logging(f"Selecting provider instance for Condition {i+1}...", "INFO")
@@ -70,7 +70,7 @@ class ConditionsWorker(QWorkerBase):
                 f"For Condition {i+1} - Unable to select provider instance: {user_provider_instance}"
             )
 
-        sleep(2)
+        sleep(1)
 
     def set_provider_condition(self, condition, i):
         self.logging(f"Selecting condition selection for Condition {i+1}...", "INFO")
@@ -87,7 +87,7 @@ class ConditionsWorker(QWorkerBase):
                 f"For Condition {i+1} - Unable to select provider condition: {user_provider_condition}"
             )
 
-        sleep(2)
+        sleep(1)
 
     def set_stats_based_condition(self, condition, index):
         condition_details = condition["details"]

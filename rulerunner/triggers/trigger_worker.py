@@ -50,4 +50,4 @@ class TriggerWorker(QWorkerBase):
             )
             raise ValueError
 
-        sleep(2)
+        sleep(1)

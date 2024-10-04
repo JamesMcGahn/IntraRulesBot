@@ -52,7 +52,7 @@ class ActionsWorker(QWorkerBase):
             raise ValueError(
                 f"For Condition {i+1} - Unable to select provider category: {action_category_dropdown}"
             )
-        sleep(2)
+        sleep(1)
 
     def set_provider_instance(self, action, i):
         self.logging(f"Selecting provider instance for Action {i+1}...", "INFO")
@@ -69,7 +69,7 @@ class ActionsWorker(QWorkerBase):
                 f"For Action {i+1} - Unable to select provider instance: {user_action_provider_instance}"
             )
 
-        sleep(2)
+        sleep(1)
 
     def set_provider_condition(self, action, i):
         self.logging(f"Selecting condition selection for Action {i+1}...", "INFO")
@@ -103,4 +103,4 @@ class ActionsWorker(QWorkerBase):
             )
             self.logging(f"Adding condition {index+2}...", "INFO")
             add__addit_action.click()
-            sleep(2)
+            sleep(1)
