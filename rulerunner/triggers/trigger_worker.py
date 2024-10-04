@@ -2,7 +2,7 @@ from time import sleep
 
 from selenium.webdriver.common.by import By
 
-from base import QWorkerBase
+from base import ErrorWrappers, QWorkerBase
 
 from ..utils import WaitConditions, WebElementInteractions
 
@@ -15,14 +15,11 @@ class TriggerWorker(QWorkerBase):
         self.wELI = WebElementInteractions(self.driver)
         self.wELI.send_msg.connect(self.logging)
 
+    @ErrorWrappers.qworker_web_raise_error
     def do_work(self):
-        try:
-            if "frequency_based" in self.rule:
-                self.log_thread()
-                self.set_frequency_based()
-        except Exception as e:
-            self.logging(f"Something went wrong in TriggerWorker: {e}", "ERROR")
-            raise Exception(e) from Exception
+        if "frequency_based" in self.rule:
+            self.log_thread()
+            self.set_frequency_based()
 
     def set_frequency_based(self):
         self.logging("Setting rule frequency time interval...", "INFO")

@@ -31,11 +31,11 @@ class LoginManagerWorker(QWorkerBase):
             self.logging(
                 "Exception in LoginManagerWorker: the browser was closed", "ERROR"
             )
-            self.status_signal.emit(False)
+            self.error.emit()
         except Exception as e:
 
             self.logging(f"Exception in LoginManagerWorker: {str(e)}", "ERROR")
-            self.status_signal.emit(False)
+            self.error.emit()
 
     def enter_login_info(self):
         login_name_field = self.driver.find_element(By.ID, "inputUserName")
@@ -74,7 +74,7 @@ class LoginManagerWorker(QWorkerBase):
         if error_login:
             self.logging(f"Error during login: {error_login.text}", "ERROR")
 
-            self.status_signal.emit(False)
+            self.error.emit()
         else:
             self.move_to_rules_page()
 
@@ -89,8 +89,8 @@ class LoginManagerWorker(QWorkerBase):
             self.logging("Navigating to the Rules Page...", "INFO")
             self.driver.get(self.url + "/ManagerConsole/Delivery/Rules.aspx")
 
-            self.status_signal.emit(True)
+            self.finished.emit()
         else:
             self.logging("Failed to load the Rules Page", "ERROR")
-            self.status_signal.emit(False)
+            self.error.emit()
         self.logging("Ending Login Worker Thread...", "INFO")

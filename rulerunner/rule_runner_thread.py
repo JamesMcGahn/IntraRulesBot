@@ -59,8 +59,10 @@ class RuleRunnerThread(QThread):
             self.password,
             self.url,
         )
-        self.login_worker.status_signal.connect(self.login_responses)
+
         self.login_worker.send_logs.connect(self.receiver_thread_logs)
+        self.login_worker.error.connect(self.login_error)
+        self.login_worker.finished.connect(self.login_success)
         self.login_worker.moveToThread(self)
         self.login_worker.do_work()
 
@@ -68,18 +70,19 @@ class RuleRunnerThread(QThread):
     def receiver_thread_logs(self, msg, level, print_msg=True):
         self.send_insert_logs.emit(msg, level, print_msg)
 
-    @Slot(bool)
-    def login_responses(self, status):
-        if status:
-            self.process_next_rule()
-            self.login_worker.deleteLater()
-        else:
-            self.login_worker.deleteLater()
-            self.receiver_thread_logs(
-                "Login Failed due to an error. Shutting down thread", "ERROR"
-            )
-            self.process_finished_()
-            self.close()
+    @Slot()
+    def login_error(self):
+        self.login_worker.deleteLater()
+        self.receiver_thread_logs(
+            "Login Failed due to an error. Shutting down thread", "ERROR"
+        )
+        self.process_finished_()
+        self.close()
+
+    @Slot()
+    def login_success(self):
+        self.process_next_rule()
+        self.login_worker.deleteLater()
 
     def process_next_rule(self):
         print("lennnnnnnn", len(self.rules))
@@ -97,7 +100,8 @@ class RuleRunnerThread(QThread):
                 self.executor.submit(rule_worker.do_work)
             except Exception as e:
                 self.receiver_thread_logs(
-                    f"Failure trying to process next rule: {e}", "ERROR"
+                    f"Failure trying to process next rule: {e}",
+                    "ERROR",
                 )
 
         else:
