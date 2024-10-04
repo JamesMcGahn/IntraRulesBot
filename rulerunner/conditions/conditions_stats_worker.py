@@ -1,6 +1,6 @@
 from selenium.webdriver.common.by import By
 
-from base import QWorkerBase
+from base import ErrorWrappers, QWorkerBase
 
 from ..utils import WaitConditions, WebElementInteractions
 
@@ -16,27 +16,24 @@ class ConditionsStatsWorker(QWorkerBase):
         self._rule_condition_queues_source = "queues"
         self.wELI.send_msg.connect(self.logging)
 
+    @ErrorWrappers.qworker_web_raise_error
     def do_work(self):
-        try:
-            self.log_thread()
-            condition_details = self.condition["details"]
+        self.log_thread()
+        condition_details = self.condition["details"]
 
-            # equality comparison dropdown
-            self.set_equality_operator(condition_details)
-            self.set_equality_threshold(condition_details)
-            # Condition numeric value input to compare
+        # equality comparison dropdown
+        self.set_equality_operator(condition_details)
+        self.set_equality_threshold(condition_details)
+        # Condition numeric value input to compare
 
-            user_condition_queues = condition_details["queues_source"]
-            if user_condition_queues == "users":
-                self.set_queues_sources_users()
+        user_condition_queues = condition_details["queues_source"]
+        if user_condition_queues == "users":
+            self.set_queues_sources_users()
 
-            elif user_condition_queues == "queues":
-                self.set_queues_sources_queue()
+        elif user_condition_queues == "queues":
+            self.set_queues_sources_queue()
 
-            self.finished.emit()
-        except Exception as e:
-            self.logging(f"Something went wrong in ConditionsStatsWorker: {e}", "ERROR")
-            raise Exception(e) from Exception
+        self.finished.emit()
 
     def set_equality_operator(self, condition_details):
         self.logging(

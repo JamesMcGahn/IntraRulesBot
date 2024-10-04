@@ -2,7 +2,7 @@ from time import sleep
 
 from selenium.webdriver.common.by import By
 
-from base import QWorkerBase
+from base import ErrorWrappers, QWorkerBase
 
 from ..utils import WaitConditions, WebElementInteractions
 
@@ -18,18 +18,15 @@ class ActionsEmailWorker(QWorkerBase):
         self._rule_condition_queues_source = actions_worker.rule_condition_queues_source
         self.wELI.send_msg.connect(self.logging)
 
+    @ErrorWrappers.qworker_web_raise_error
     def do_work(self):
-        try:
-            self.log_thread()
-            self.click_email_settings_page()
-            self.set_email_subject(self.rule["rule_name"])
-            self.set_email_message(self.action)
-            self.click_next_page()
-            self.set_email_address(self.action)
-            self.finished.emit()
-        except Exception as e:
-            self.logging(f"Something went wrong in ActionsEmailWorker: {e}", "ERROR")
-            raise Exception(e) from Exception
+        self.log_thread()
+        self.click_email_settings_page()
+        self.set_email_subject(self.rule["rule_name"])
+        self.set_email_message(self.action)
+        self.click_next_page()
+        self.set_email_address(self.action)
+        self.finished.emit()
 
     def click_email_settings_page(self):
 

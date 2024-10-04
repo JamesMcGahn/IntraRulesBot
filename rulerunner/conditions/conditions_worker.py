@@ -2,7 +2,7 @@ from time import sleep
 
 from selenium.webdriver.common.by import By
 
-from base import QWorkerBase
+from base import ErrorWrappers, QWorkerBase
 
 from ..utils import WaitConditions, WebElementInteractions
 from .conditions_stats_worker import ConditionsStatsWorker
@@ -26,20 +26,17 @@ class ConditionsWorker(QWorkerBase):
     def rule_condition_queues_source(self, source):
         self._rule_condition_queues_source = source
 
+    @ErrorWrappers.qworker_web_raise_error
     def do_work(self):
-        try:
-            self.log_thread()
-            for i, condition in enumerate(self.rule["conditions"]):
-                self.set_provider_category(condition, i)
-                self.set_provider_instance(condition, i)
-                self.set_provider_condition(condition, i)
-                self.set_stats_based_condition(condition, i)
-                self.add_additional_condition(i)
+        self.log_thread()
+        for i, condition in enumerate(self.rule["conditions"]):
+            self.set_provider_category(condition, i)
+            self.set_provider_instance(condition, i)
+            self.set_provider_condition(condition, i)
+            self.set_stats_based_condition(condition, i)
+            self.add_additional_condition(i)
 
-                sleep(2)
-        except Exception as e:
-            self.logging(f"Something went wrong in ConditionsWorker: {e}", "ERROR")
-            raise Exception(e) from Exception
+            sleep(2)
 
     def set_provider_category(self, condition, i):
         user_provider_category = condition["provider_category"]

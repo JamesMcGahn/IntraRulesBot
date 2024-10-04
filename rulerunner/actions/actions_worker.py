@@ -2,7 +2,7 @@ from time import sleep
 
 from selenium.webdriver.common.by import By
 
-from base import QWorkerBase
+from base import ErrorWrappers, QWorkerBase
 
 from ..actions import ActionsEmailWorker
 from ..utils import WaitConditions, WebElementInteractions
@@ -26,19 +26,16 @@ class ActionsWorker(QWorkerBase):
     def rule_condition_queues_source(self, source):
         self._rule_condition_queues_source = source
 
+    @ErrorWrappers.qworker_web_raise_error
     def do_work(self):
-        try:
-            self.log_thread()
-            for i, action in enumerate(self.rule["actions"]):
+        self.log_thread()
+        for i, action in enumerate(self.rule["actions"]):
 
-                self.set_provider_category(action, i)
-                self.set_provider_instance(action, i)
-                self.set_provider_condition(action, i)
-                self.set_email_action(action, self.rule, i)
-                self.add_additional_action(i)
-        except Exception as e:
-            self.logging(f"Something went wrong in ActionsWorker: {e}", "ERROR")
-            raise Exception(e) from Exception
+            self.set_provider_category(action, i)
+            self.set_provider_instance(action, i)
+            self.set_provider_condition(action, i)
+            self.set_email_action(action, self.rule, i)
+            self.add_additional_action(i)
 
     def set_provider_category(self, action, i):
         self.logging(f"Selecting provider category for Action {i+1}...", "INFO")
