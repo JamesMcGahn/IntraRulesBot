@@ -92,10 +92,12 @@ class ConditionsWorker(QWorkerBase):
     def set_stats_based_condition(self, condition, index):
         condition_details = condition["details"]
         if condition_details["condition_type"] == "stats":
-            stats_worker = ConditionsStatsWorker(self.driver, self, condition, index)
-            stats_worker.send_logs.connect(self.logging)
-            stats_worker.finished.connect(stats_worker.deleteLater)
-            stats_worker.do_work()
+            self.stats_worker = ConditionsStatsWorker(
+                self.driver, self, condition, index
+            )
+            self.stats_worker.send_logs.connect(self.logging)
+            self.finished.connect(self.stats_worker.deleteLater)
+            self.stats_worker.do_work()
 
     def add_additional_condition(self, index):
         if (

@@ -89,7 +89,7 @@ class ActionsWorker(QWorkerBase):
         if action["details"]["action_type"] == "email":
             actions_worker = ActionsEmailWorker(self.driver, self, action, rule, i)
             actions_worker.send_logs.connect(self.logging)
-            actions_worker.finished.connect(actions_worker.deleteLater)
+            self.finished.connect(actions_worker.deleteLater)
             actions_worker.do_work()
 
     def add_additional_action(self, index):
