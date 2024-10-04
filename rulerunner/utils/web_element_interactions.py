@@ -144,7 +144,9 @@ class WebElementInteractions(QObject):
                 for item in elements_list:
                     if item.text.strip() == text_to_select:
                         self.send_msg.emit(f"Selected item: {item.text}", "INFO", True)
-
+                        WebDriverWait(self.driver, timeout).until(
+                            EC.element_to_be_clickable(item)
+                        )
                         item.click()
                         return True  # Successfully clicked, exit
             except StaleElementReferenceException:
@@ -204,6 +206,9 @@ class WebElementInteractions(QObject):
                 )
 
                 for item in elements_list:
+                    WebDriverWait(self.driver, timeout).until(
+                        EC.element_to_be_clickable(item)
+                    )
                     item.click()
                 self.send_msg.emit(f"All {item_name} items clicked", "INFO", True)
 
