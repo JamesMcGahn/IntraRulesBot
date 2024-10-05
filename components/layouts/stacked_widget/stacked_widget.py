@@ -17,6 +17,8 @@ class StackedWidget(QStackedWidget):
         return self.widget_map.get(name)
 
     def remove_by_index(self, index: int):
+        if not isinstance(index, int):
+            return
         if index >= 0 and index <= self.count():
             widget = self.widget(index)
             self.removeWidget(widget)
@@ -24,5 +26,6 @@ class StackedWidget(QStackedWidget):
 
     def remove_by_name(self, name: str):
         index = self.widget_map.get(name, None)
-        if name is not None:
+        if name is not None and index is not None:
             self.remove_by_index(index)
+            del self.widget_map[name]
