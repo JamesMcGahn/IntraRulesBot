@@ -1,10 +1,10 @@
 import json
 import os
 
-from PySide6.QtWidgets import QLineEdit, QTextEdit, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 from models import RulesModel
-from services.validator import SchemaValidator, ValidationError
+from services.validator import ValidationError
 
 from .config_editor_view import ConfigEditorView
 
@@ -31,48 +31,17 @@ class ConfigEditor(QWidget):
 
         self.ui.save_button.clicked.connect(self.save_config)
 
-    def make_rule_dict(self, field_refs, int_keys):
-        x = {}
-        if isinstance(field_refs, ValidationError):
-            return
-        for key, field in field_refs.items():
-            if isinstance(field, dict):
-                x[key] = self.make_rule_dict(field, int_keys)
-            elif isinstance(field, list):
-                x[key] = [self.make_rule_dict(item, int_keys) for item in field]
-            else:
-                if key in int_keys:
-                    if field.text().isdigit():
-                        x[key] = int(field.text())
-                    else:
-                        x[key] = field.text()
-                elif isinstance(field, QLineEdit):
-                    x[key] = field.text()
-                elif isinstance(field, QTextEdit):
-                    x[key] = field.toPlainText()
-        return x
-
     def save_config(self):
         rules = []
-        val = SchemaValidator("./schemas", "/schemas/rules")
         total_errors = 0
-        for rule in self.ui.rules_inputs:
-            rule_guid = rule.pop("guid", None)
+        for rule in self.ui.stacked_widget.get_form_factories():
 
-            dat_rule = self.make_rule_dict(
-                rule, ("time_interval", "equality_threshold")
-            )
+            error_count, form_errors, data = rule.validate_form()
 
-            validate = val.get_validator()
-            rule["errors"] = []
-            for error in validate.iter_errors(dat_rule):
-                rule["errors"].append(error)
-                total_errors = total_errors + 1
+            total_errors = total_errors + error_count
 
-            self.highlight_errors(rule)
+            rules.append(data)
 
-            rules.append(dat_rule)
-            rule["guid"] = rule_guid
         if total_errors > 0:
             self.ui.validate_feedback.setText(f"Total Errors :{total_errors}")
             # TODO - display notification - display errors
