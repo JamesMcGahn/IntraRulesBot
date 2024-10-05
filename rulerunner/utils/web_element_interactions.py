@@ -44,7 +44,7 @@ class WebElementInteractions(QObject):
         Returns:
             Union[None, WebElement]: Returns None if the operation fails or no element is found; returns a WebElement if the operation succeeds.
         """
-        for _ in range(retries):
+        for i in range(retries):
             try:
                 wait = WebDriverWait(self.driver, timeout)
                 if condition == WaitConditions.PRESENCE:
@@ -96,12 +96,12 @@ class WebElementInteractions(QObject):
                         "ERROR",
                         True,
                     )
-
-                self.send_msg.emit(
-                    f"Trying one more time to find Element with {locator_type} = {locator_value}.",
-                    "WARN",
-                    True,
-                )
+                if i < retries - 1:
+                    self.send_msg.emit(
+                        f"Trying one more time to find Element with {locator_type} = {locator_value}.",
+                        "WARN",
+                        True,
+                    )
         if raise_exception:
             raise NoSuchElementException(
                 f"Element with {locator_type} = {locator_value} not found within {timeout} seconds."
