@@ -68,7 +68,7 @@ class LoginManagerWorker(QWorkerBase):
             '//*[@id="loginErrorContainer"]/span',
             WaitConditions.VISIBILITY,
             failure_message=("INFO", "Login successful."),
-            retries=0,
+            retries=1,
         )
 
         if error_login:

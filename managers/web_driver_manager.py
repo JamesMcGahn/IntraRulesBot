@@ -3,16 +3,19 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
+from base import QWorkerBase
 
-class WebDriverManager:
+
+class WebDriverManager(QWorkerBase):
 
     def __init__(self, options=None):
+        super().__init__()
         self.driver = None
         self.options = options
         # chrome_options.add_argument("--headless=new")
-        self.init_driver()
 
     def init_driver(self):
+        self.log_thread()
         chrome_options = Options()
         if self.options:
             chrome_options.add_argument(self.options)
@@ -24,8 +27,9 @@ class WebDriverManager:
         return self.driver
 
     def close(self):
+        self.logging("Shutting down webdriver", "INFO")
         if self.driver:
             try:
                 self.driver.quit()
             except Exception as e:
-                print(e)
+                self.logging(f"There was an error in WebDriverManager: {e}")

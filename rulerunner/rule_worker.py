@@ -1,5 +1,6 @@
 from time import sleep
 
+from PySide6.QtCore import Signal
 from selenium.common.exceptions import (
     NoSuchFrameException,
     TimeoutException,
@@ -10,6 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from base import QWorkerBase
+from base.exceptions import DuplicateRuleName
 
 from .actions import ActionsWorker
 from .conditions import ConditionsWorker
@@ -18,6 +20,8 @@ from .utils import WaitConditions, WebElementInteractions
 
 
 class RuleWorker(QWorkerBase):
+    finished = Signal(str)
+    error = Signal(bool)
 
     def __init__(self, driver, rule):
         super().__init__()
@@ -25,6 +29,8 @@ class RuleWorker(QWorkerBase):
         self.rule = rule
         self.wELI = WebElementInteractions(self.driver)
         self.wELI.send_msg.connect(self.logging)
+        self.rule_rename_attempts = 0
+        self.rule_name = rule["rule_name"]
 
     def do_work(self):
         try:
@@ -45,7 +51,7 @@ class RuleWorker(QWorkerBase):
                     self.logging("Tutorial Page is present...", "INFO")
                     self.next_page()
 
-                self.set_rule_name()
+                self.set_rule_name(self.rule_name)
                 self.start_trigger_page()
                 self.next_page()
                 self.start_conditions_page()
@@ -56,16 +62,23 @@ class RuleWorker(QWorkerBase):
                 self.next_page()
                 self.submit_rule()
 
-                self.finished.emit()
+                if self.rule_rename_attempts == 0:
+                    self.finished.emit(self.rule_name)
+                else:
+                    old_rule_name = self.rule["rule_name"]
+                    self.finished.emit(f"{old_rule_name} renamed {self.rule_name}")
+        except DuplicateRuleName:
+            self.error.emit(False)
+
         except NoSuchFrameException:
             self.logging("Can't Find Frame. The window was closed.", "ERROR")
-            self.error.emit()
+            self.error.emit(True)
         except WebDriverException as e:
             self.logging(f"Something went wrong in RuleWorker: {e}", "ERROR")
-            self.error.emit()
+            self.error.emit(True)
         except Exception as e:
             self.logging(f"Something went wrong in RuleWorker: {e}", "ERROR")
-            self.error.emit()
+            self.error.emit(True)
 
     def start_trigger_page(self):
         self.trigger = TriggerWorker(self.driver, self.rule)
@@ -94,7 +107,7 @@ class RuleWorker(QWorkerBase):
         self.logging("Switching to the Rule Modal...", "INFO")
         self.wELI.switch_to_frame(20, By.NAME, "RadWindowAddEditRule")
 
-    def set_rule_name(self):
+    def set_rule_name(self, rule_name):
         self.logging("Setting the Rule Name...", "INFO")
         rule_name_input = self.wELI.wait_for_element(
             15,
@@ -102,7 +115,8 @@ class RuleWorker(QWorkerBase):
             '//*[contains(@id, "overlayRuleProgressArea_tbRuleName")]',
             WaitConditions.VISIBILITY,
         )
-        rule_name_input.send_keys(self.rule["rule_name"])
+        rule_name_input.clear()
+        rule_name_input.send_keys(rule_name)
 
     def next_page(self):
         self.logging("Navigating to the Next Page...", "INFO")
@@ -112,7 +126,7 @@ class RuleWorker(QWorkerBase):
             '//*[contains(@id, "overlayButtons_rbContinue_input")]',
             WaitConditions.CLICKABLE,
         )
-        sleep(2)
+        sleep(1)
         continue_btn.click()
 
     def is_tutorial_page_present(self):
@@ -125,8 +139,8 @@ class RuleWorker(QWorkerBase):
         )
 
     def submit_rule(self):
-        rule_name = self.rule["rule_name"]
-        self.logging(f"Submitting Rule - {rule_name}...", "INFO")
+
+        self.logging(f"Submitting Rule - {self.rule_name }...", "INFO")
         submit_btn = self.wELI.wait_for_element(
             15,
             By.XPATH,
@@ -134,24 +148,56 @@ class RuleWorker(QWorkerBase):
             WaitConditions.CLICKABLE,
             raise_exception=True,
         )
-        submit_btn.click()
-        self.wait_for_dup_rule_alert()
-        self.driver.switch_to.default_content()
-        success_message = self.wELI.wait_for_element(
-            5,
-            By.XPATH,
-            '//*[contains(@id, "lblMessage")]',
-            WaitConditions.VISIBILITY,
-            raise_exception=False,
-        )
-        if "You have successfully added the Rule" in success_message.text:
-            self.logging(f"Rule: {rule_name} has been created.", "INFO")
 
-        else:
-            self.logging(
-                f"Recevied no success feedback. Cannot confirm if Rule: {rule_name} has been created.",
-                "WARN",
-            )
+        def handle_duplicate_alert():
+            for _ in range(2):
+                print("here")
+                # Retry twice before giving up
+                alert = self.wait_for_dup_rule_alert(10)
+                if alert:
+                    self.rename_rule()
+                    self.logging(
+                        f"Retrying Rule Submission for renamed rule - {self.rule_name }...",
+                        "INFO",
+                    )
+                    submit_btn.click()
+                else:
+                    return False  # No alert found, submission is successful
+            return True
+
+        submit_btn.click()
+
+        if handle_duplicate_alert():
+            if self.wait_for_dup_rule_alert(5):
+                self.logging(
+                    f"Rule '{self.rule_name}' could not be submitted after multiple retries.",
+                    "ERROR",
+                )
+                raise DuplicateRuleName
+
+        self.driver.switch_to.default_content()
+        self.success_message()
+
+    def rename_rule(self):
+        self.rule_rename_attempts += 1
+        old_rule_name = self.rule["rule_name"]
+        self.rule_name = f"{old_rule_name}-{self.rule_rename_attempts}"
+        self.logging(
+            f"Trying to rename rule: {old_rule_name} as {self.rule_name}",
+            "ERROR",
+        )
+        self.set_rule_name(self.rule_name)
+
+    def success_message(self):
+        self.wELI.wait_for_element(
+            20,
+            By.ID,
+            "ctl00_ActionBarContent_rbAction_Add",
+            WaitConditions.CLICKABLE,
+            raise_exception=True,
+        )
+
+        self.logging(f"Rule: {self.rule_name} has been created.", "INFO")
 
     def set_rule_category(self):
         self.logging("Setting the rule category", "INFO")
@@ -163,7 +209,7 @@ class RuleWorker(QWorkerBase):
             raise_exception=True,
         )
         rule_settings_hamburger.click()
-        sleep(2)
+        sleep(1)
         self.driver.switch_to.default_content()
         self.wELI.switch_to_frame(20, By.NAME, "RadWindowAddEditRuleSettings")
         rule_category_dropdown_arrow = self.wELI.wait_for_element(
@@ -182,25 +228,29 @@ class RuleWorker(QWorkerBase):
             rule_category_selection,
             raise_exception=True,
         )
-        sleep(2)
+        sleep(1)
         self.logging("Switching the main frame", "INFO")
         self.driver.switch_to.default_content()
 
-    def wait_for_dup_rule_alert(self):
+    def wait_for_dup_rule_alert(self, wait_time):
 
         try:
-            rule_name = self.rule["rule_name"]
-            WebDriverWait(self.driver, 3).until(EC.alert_is_present())
+            WebDriverWait(self.driver, wait_time).until(EC.alert_is_present())
 
             alert = self.driver.switch_to.alert
             if "A Rule with this name already exists" in alert.text:
-                alert.accept()
-                # TODO Ask user to update
 
                 self.logging(
-                    f"A Rule with the name {rule_name} already exists.", "ERROR"
+                    f"A Rule with the name {self.rule_name} already exists.", "ERROR"
                 )
-                raise ValueError
+                self.logging(
+                    "Accepting window alert notifying of duplicate rule name.", "INFO"
+                )
+                alert.accept()
+
+                if alert:
+                    return True
 
         except TimeoutException:
-            self.logging(f"Rule: {rule_name} has been submitted.", "INFO")
+            self.logging(f"Rule: {self.rule_name} has been submitted.", "INFO")
+            return False
