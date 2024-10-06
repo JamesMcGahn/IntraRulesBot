@@ -38,7 +38,7 @@ class SettingsPageView(QWidget):
             "Logging Settings",
             inner_h_layout,
             [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
-            "#f58321",
+            "#f58220",
             max_width=400,
             title_color="#fcfcfc",
             title_font_size=13,
@@ -88,7 +88,7 @@ class SettingsPageView(QWidget):
             "Save",
             "black",
             [(0.05, "#FEB220"), (0.50, "#f58220"), (1, "#f58220")],
-            "#f58321",
+            "#f58220",
             1,
             3,
         )

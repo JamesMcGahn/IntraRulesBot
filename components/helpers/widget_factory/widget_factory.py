@@ -1,4 +1,5 @@
-from PySide6.QtGui import QColor, QFont, QValidator
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtGui import QColor, QFont, QIcon, QValidator
 from PySide6.QtWidgets import (
     QFormLayout,
     QGraphicsDropShadowEffect,
@@ -101,3 +102,39 @@ class WidgetFactory:
         label.setStyleSheet("background-color: transparent;")
         parent_layout.addRow(label, el)
         return el
+
+    @staticmethod
+    def create_icon(
+        parent, file_location, width, height, checkable=False, file_location_2=None
+    ):
+        icon = QIcon()
+
+        icon.addFile(
+            file_location,
+            QSize(),
+            QIcon.Mode.Normal,
+            QIcon.State.Off,
+        )
+
+        if checkable and file_location_2:
+            icon.addFile(
+                file_location_2,
+                QSize(),
+                QIcon.Mode.Normal,
+                QIcon.State.On,
+            )
+
+        parent.setIcon(icon)
+        parent.setIconSize(QSize(width, height))
+        parent.setCheckable(checkable)
+        parent.setAutoExclusive(True)
+        parent.setCursor(Qt.PointingHandCursor)
+
+    @staticmethod
+    def dropShadow(parent, blur_radius=5, x_offset=3, y_offset=3, color=(0, 0, 0, 60)):
+        shadow_effect = QGraphicsDropShadowEffect(parent)
+        shadow_effect.setBlurRadius(blur_radius)
+        shadow_effect.setXOffset(x_offset)
+        shadow_effect.setYOffset(y_offset)
+        shadow_effect.setColor(QColor(*color))
+        parent.setGraphicsEffect(shadow_effect)

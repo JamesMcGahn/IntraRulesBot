@@ -3,6 +3,8 @@ import os
 from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import QPushButton, QWidget
 
+from components.helpers import WidgetFactory
+
 from .icon_only_navbar_ui import IconOnlyNavBarView
 
 
@@ -24,6 +26,8 @@ class IconOnlyNavBar(QWidget):
         self.ui = IconOnlyNavBarView()
         self.layout = self.ui.layout()
         self.setLayout(self.layout)
+
+        WidgetFactory.dropShadow(self)
 
         self.ui.keys_btn_ico.toggled.connect(self.btn_checked)
         self.ui.keys_btn_ico.clicked.connect(self.btn_clicked)
