@@ -17,6 +17,13 @@
     <file>images/hamburger_on.png</file>
     <file>images/hamburger_off.png</file>
     <file>images/logo.png</file>
+    <file>images/left_arrow.png</file>
+    <file>images/right_arrow.png</file>
+    <file>images/clone.png</file>
+    <file>images/save.png</file>
+    <file>images/download.png</file>
+    <file>images/trash.png</file>
+    <file>images/copy_field.png</file>
     <file>images/open_folder.png</file>
   </qresource>
 </RCC>

@@ -27,7 +27,7 @@ class LogsPageView(QWidget):
             "",
             outter_layout,
             [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
-            "#f58321",
+            "#f58220",
         )
 
         self.log_display = QTextEdit()

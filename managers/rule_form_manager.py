@@ -86,7 +86,7 @@ class RuleFormManager:
             "General Settings",
             rule_layout,
             [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
-            "#f58321",
+            "#f58220",
             drop_shadow_effect=False,
             title_font_size=13,
         )
@@ -112,7 +112,7 @@ class RuleFormManager:
                 "Frequency Settings",
                 rule_layout,
                 [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
-                "#f58321",
+                "#f58220",
                 drop_shadow_effect=False,
                 title_font_size=13,
             )
@@ -138,7 +138,7 @@ class RuleFormManager:
                 f"Condition - {(i+1)} - {title}",
                 rule_layout,
                 [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
-                "#f58321",
+                "#f58220",
                 drop_shadow_effect=False,
                 title_font_size=13,
             )
@@ -154,7 +154,7 @@ class RuleFormManager:
                 f"Action - {(i+1)} - {title}",
                 rule_layout,
                 [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
-                "#f58321",
+                "#f58220",
                 drop_shadow_effect=False,
                 title_font_size=13,
             )
