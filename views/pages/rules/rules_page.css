@@ -9,7 +9,7 @@ QWidget {
   border: 1px solid red;
 } */
 
-QScrollArea {
+QWidget#Editor-Widget {
   border: 2px solid #f58220;
   border-radius: 3px;
 }

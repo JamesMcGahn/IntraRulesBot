@@ -1,4 +1,7 @@
+import faulthandler
 import sys
+
+faulthandler.enable(file=sys.stderr)
 
 from PySide6.QtWidgets import QApplication
 

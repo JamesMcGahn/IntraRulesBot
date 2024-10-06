@@ -24,6 +24,7 @@ class RulesPage(QWidgetBase):
         self.layout = self.ui.layout()
         self.setLayout(self.layout)
 
+        self.setGraphicsEffect(None)
         self.rulesModel = RulesModel()
         self.rulesModel.data_changed.connect(self.ui.rules_changed)
         self.ui.download.clicked.connect(self.save_rules)

@@ -105,7 +105,13 @@ class WidgetFactory:
 
     @staticmethod
     def create_icon(
-        parent, file_location, width, height, checkable=False, file_location_2=None
+        parent,
+        file_location,
+        width,
+        height,
+        checkable=False,
+        file_location_2=None,
+        exclusive=True,
     ):
         icon = QIcon()
 
@@ -127,7 +133,7 @@ class WidgetFactory:
         parent.setIcon(icon)
         parent.setIconSize(QSize(width, height))
         parent.setCheckable(checkable)
-        parent.setAutoExclusive(True)
+        parent.setAutoExclusive(exclusive)
         parent.setCursor(Qt.PointingHandCursor)
 
     @staticmethod

@@ -53,7 +53,7 @@ class SettingsPageView(QWidget):
         self.select_folder_button.setMaximumWidth(30)
 
         folder_icon = QIcon()
-        folder_icon.addFile(":/images/open_folder.png", QSize(), QIcon.Mode.Normal)
+        folder_icon.addFile(":/images/open_folder_off.png", QSize(), QIcon.Mode.Normal)
 
         self.select_folder_button.setIcon(folder_icon)
         self.select_folder_button.setIconSize(QSize(50, 20))

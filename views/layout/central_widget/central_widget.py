@@ -1,11 +1,6 @@
-import json
-
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QLinearGradient, QPainter
 from PySide6.QtWidgets import QGridLayout, QWidget
-
-from components.sections import ConfigEditor
-from services.validator import SchemaValidator
 
 from ..main_screen import MainScreen
 from ..navbars import HeaderNavBar, IconOnlyNavBar, IconTextNavBar
@@ -21,7 +16,6 @@ class CentralWidget(QWidget):
 
         # main_layout = QVBoxLayout(self)
 
-        self.setAttribute(Qt.WA_StyledBackground, True)
         self.gridLayout = QGridLayout(self)
         self.gridLayout.setSpacing(0)
         self.gridLayout.setObjectName("gridLayout")
@@ -30,9 +24,6 @@ class CentralWidget(QWidget):
         self.icon_only_widget = IconOnlyNavBar()
         self.icon_text_widget = IconTextNavBar()
 
-        with open("avaya_rules.json") as f:
-            config_data = json.load(f)
-
         self.header_widget = HeaderNavBar()
         self.main_screen_widget = MainScreen()
         self.gridLayout.addWidget(self.main_screen_widget, 2, 3, 1, 1)
@@ -40,10 +31,6 @@ class CentralWidget(QWidget):
         self.gridLayout.addWidget(self.icon_text_widget, 0, 2, 3, 1)
         self.gridLayout.addWidget(self.header_widget, 0, 3, 1, 1)
         self.setLayout(self.gridLayout)
-
-        self.config_editor = ConfigEditor(config_data)
-
-        self.val = SchemaValidator("./schemas", "/schemas/main")
 
         self.main_screen_widget.send_logs.connect(self.logging)
         self.appshutdown.connect(self.main_screen_widget.notified_app_shutting)

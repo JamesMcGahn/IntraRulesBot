@@ -17,15 +17,24 @@
     <file>images/hamburger_on.png</file>
     <file>images/hamburger_off.png</file>
     <file>images/logo.png</file>
-    <file>images/left_arrow.png</file>
-    <file>images/right_arrow.png</file>
-    <file>images/clone.png</file>
-    <file>images/save.png</file>
-    <file>images/download.png</file>
-    <file>images/trash.png</file>
-    <file>images/copy_field.png</file>
-    <file>images/open_folder.png</file>
-    <file>images/validate.png</file>
+    <file>images/left_arrow_on.png</file>
+    <file>images/left_arrow_off.png</file>
+    <file>images/right_arrow_on.png</file>
+    <file>images/right_arrow_off.png</file>
+    <file>images/clone_on.png</file>
+    <file>images/clone_off.png</file>
+    <file>images/save_on.png</file>
+    <file>images/save_off.png</file>
+    <file>images/download_on.png</file>
+    <file>images/download_off.png</file>
+    <file>images/trash_on.png</file>
+    <file>images/trash_off.png</file>
+    <file>images/copy_field_on.png</file>
+    <file>images/copy_field_off.png</file>
+    <file>images/open_folder_on.png</file>
+    <file>images/open_folder_off.png</file>
+    <file>images/validate_on.png</file>
+    <file>images/validate_off.png</file>
     <file>images/orange_check.png</file>
   </qresource>
 </RCC>
