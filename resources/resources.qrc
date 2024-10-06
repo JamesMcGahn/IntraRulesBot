@@ -25,5 +25,7 @@
     <file>images/trash.png</file>
     <file>images/copy_field.png</file>
     <file>images/open_folder.png</file>
+    <file>images/validate.png</file>
+    <file>images/orange_check.png</file>
   </qresource>
 </RCC>

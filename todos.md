@@ -2,7 +2,6 @@
 
 #### TO-DO NOW
 
-- [ ] :#TODO : move rules page to pages
 - [ ] :#FEATURE : Add Rule via form
 - [ ] :#FEATURE : delete rule
 - [ ] :#FEATURE : save rules to system
@@ -17,12 +16,15 @@
 - [ ] :#FEATURE : Update Field on Form across all rules
 - [ ] :#TODO : Validate on change in config editor
 - [ ] :#TODO : connect rulerunner thread to credentials and validated loaded rules
+- [ ] :#TODO : Display rulerunner progress bar
+- [ ] :#TODO : Stop and Pause buttons for rulerunner
 - [ ] :#TODO : create a helper to drop shadow
 - [ ] :#TODO : Setting to turn off Toasts
 - [ ] :#TODO : Document Functions throughout app
 
 ### COMPLETED
 
+- [x] : move rules page to pages
 - [x] : rf Conditions Worker - modularize code
 - [x] : rf Actions Worker - modularize code
 - [x] : import users config file

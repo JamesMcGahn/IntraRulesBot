@@ -1,13 +1,17 @@
 QWidget {
-  background: #ededec;
+  background: transparent;
   color: black;
-
   border-radius: 3px;
   border: none;
 }
 
-QLabel {
-  font-size: 12px;
+/* QPushButton {
+  border: 1px solid red;
+} */
+
+QScrollArea {
+  border: 2px solid #f58220;
+  border-radius: 3px;
 }
 
 QGroupBox {
@@ -16,6 +20,10 @@ QGroupBox {
   font-weight: bold;
   color: black;
   /* border-radius: 5px; */
+}
+
+QLabel {
+  font-size: 12px;
 }
 
 QGroupBox::title {
@@ -27,31 +35,20 @@ QGroupBox::title {
   font-family: "Open Sans";
 }
 
-QGroupBox#Rules-Container {
+QGroupBox#Settings-Information {
   margin-top: 7px;
-  padding-top: 1.5em 0 1.5em 0;
   subcontrol-origin: margin;
   font-weight: bold;
-  font-size: 1.5em;
-  border: 2px solid #fcfcfc;
-  color: black;
+  color: #fcfcfc;
   border-radius: 5px;
   margin-left: 0px;
-  padding: 2em;
 }
 
-QGroupBox#Rules-Container::title {
+QGroupBox#Settings-Information::title {
   subcontrol-origin: margin;
   left: 10px;
   top: 0;
+  color: #fcfcfc;
   font-weight: bold;
   font-family: "Open Sans";
-}
-
-QGroupBox#Action-Email,
-QGroupBox#Action-Provider,
-QGroupBox#Condition-Provider,
-QGroupBox#Condition-Stats {
-  border: none;
-  background-color: transparent;
 }

@@ -52,6 +52,7 @@ class RuleFormManager:
             object_name="Rules-Container",
             drop_shadow_effect=False,
             title_font_size=16,
+            title_color="#fcfcfc",
         )
         #
 
@@ -89,6 +90,7 @@ class RuleFormManager:
             "#f58220",
             drop_shadow_effect=False,
             title_font_size=13,
+            title_color="#fcfcfc",
         )
 
         self.create_text_input_row(
@@ -115,6 +117,7 @@ class RuleFormManager:
                 "#f58220",
                 drop_shadow_effect=False,
                 title_font_size=13,
+                title_color="#fcfcfc",
             )
             freq_int = str(rule["frequency_based"]["time_interval"])
             frequency_based_set = {}
@@ -141,6 +144,7 @@ class RuleFormManager:
                 "#f58220",
                 drop_shadow_effect=False,
                 title_font_size=13,
+                title_color="#fcfcfc",
             )
             inputs = self.create_condition_fields(condition_layout, condition)
             rule_input["conditions"].append(inputs)
@@ -157,6 +161,7 @@ class RuleFormManager:
                 "#f58220",
                 drop_shadow_effect=False,
                 title_font_size=13,
+                title_color="#fcfcfc",
             )
 
             inputs = self.create_action_fields(action_layout, action)

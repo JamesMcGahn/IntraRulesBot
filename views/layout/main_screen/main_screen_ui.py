@@ -1,8 +1,7 @@
 from PySide6.QtCore import QSize
 from PySide6.QtWidgets import QSizePolicy, QStackedWidget, QVBoxLayout, QWidget
 
-from rules_page import RulesPage
-from views.pages import LoginPage, LogsPage, SettingsPage
+from views.pages import LoginPage, LogsPage, RulesPage, SettingsPage
 
 
 class MainScreenView(QWidget):

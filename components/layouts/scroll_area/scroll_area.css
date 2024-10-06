@@ -12,14 +12,14 @@ QScrollArea > QStackedWidget {
 
 QScrollBar:vertical {
   border: none;
-  background: #f0f0f0; /* Background color of the scrollbar */
+  background: transparent; /* Background color of the scrollbar */
   width: 10px; /* Width of the vertical scrollbar */
   margin: 0 0 0 0; /* Margins for the scrollbar */
 }
 
 QScrollBar::handle:vertical {
-  background: #a0a0a0; /* Color of the scrollbar handle */
-  border-radius: 3px; /* Rounded corners for the scrollbar handle */
+  background: #dedede; /* Color of the scrollbar handle */
+  border-radius: 2px; /* Rounded corners for the scrollbar handle */
 }
 
 QScrollBar::add-line:vertical,
@@ -37,13 +37,13 @@ QScrollBar::down-arrow:vertical {
 
 QScrollBar:horizontal {
   border: none; /* Remove border */
-  background: #f0f0f0; /* Background color of the scrollbar */
+  background: #dedede; /* Background color of the scrollbar */
   height: 10px; /* Height of the horizontal scrollbar */
   margin: 0 0 0 0; /* Margins for the scrollbar */
 }
 
 QScrollBar::handle:horizontal {
-  background: #a0a0a0; /* Color of the scrollbar handle */
+  background: transparent; /* Color of the scrollbar handle */
   border-radius: 3px; /* Rounded corners for the scrollbar handle */
 }
 
