@@ -1,6 +1,8 @@
 import json
 import os
 
+from PySide6.QtCore import Signal, Slot
+
 from base import QWidgetBase
 from keys import keys
 from models import RulesModel
@@ -11,6 +13,7 @@ from .rules_page_ui import RulesPageView
 
 
 class RulesPage(QWidgetBase):
+    send_rules = Signal(list)
 
     def __init__(self):
         super().__init__()
@@ -27,8 +30,11 @@ class RulesPage(QWidgetBase):
         self.setGraphicsEffect(None)
         self.rulesModel = RulesModel()
         self.rulesModel.data_changed.connect(self.ui.rules_changed)
-        self.ui.download.clicked.connect(self.save_rules)
+        self.ui.download.clicked.connect(self.save_rules_to_file)
         self.ui.validate.clicked.connect(self.validate_rules)
+        self.ui.save.clicked.connect(self.save_rules_to_system)
+
+        self.send_rules.connect(self.ui.rules_changed)
 
         # with open("avaya_rules.json") as f:
         #     config_data = json.load(f)
@@ -38,6 +44,10 @@ class RulesPage(QWidgetBase):
         # start.clicked.connect(self.start_thread)
 
         self.val = SchemaValidator("./schemas", "/schemas/main")
+        self.check_for_saved_rules()
+
+    def check_for_saved_rules(self):
+        self.send_rules.emit(self.rulesModel.rules)
 
     def progress_received(self, currentRuleIndex, totalRules):
         print(f"rule - {currentRuleIndex} - {totalRules}")
@@ -57,8 +67,9 @@ class RulesPage(QWidgetBase):
 
     def validate_rules(self):
         rules = []
+        rules_with_guid = []
         total_errors = 0
-        rules_inputs = self.ui.stacked_widget.get_form_factories()
+        rules_inputs = self.ui.get_forms()
 
         if len(rules_inputs) == 0:
             return None
@@ -69,6 +80,9 @@ class RulesPage(QWidgetBase):
 
             total_errors = total_errors + error_count
 
+            rules_with_guid.append(data)
+            data_copy = data.copy()
+            del data_copy["guid"]
             rules.append(data)
 
         if total_errors > 0:
@@ -81,11 +95,16 @@ class RulesPage(QWidgetBase):
             self.ui.validate_feedback.setIcon(self.ui.no_error_icon)
             [rule.pop("errors", None) for rule in rules]
             data = {"rules": rules}
-            return data
+            return (data, rules_with_guid)
 
-    def save_rules(self):
-        data = self.validate_rules()
+    def save_rules_to_file(self):
+        data, _ = self.validate_rules()
         if data:
             with open("./avaya_user.json", "w") as f:
                 json.dump(data, f, indent=4)
             # TODO Confirmation message - toast
+
+    def save_rules_to_system(self):
+        _, data = self.validate_rules()
+        if data:
+            self.rulesModel.save_rules(data)

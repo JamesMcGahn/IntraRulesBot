@@ -40,6 +40,7 @@ class SettingsPage(QWidgetBase):
             log_turn_off_print,
         ) = self.settings.get_log_settings()
 
+        # TODO: Use a method on UI to set values
         self.ui.log_file_path.setText(log_file_path)
         self.ui.log_file_name.setText(log_file_name)
         self.ui.log_file_max_mbs.setText(str(log_file_max_mbs))
@@ -53,6 +54,7 @@ class SettingsPage(QWidgetBase):
         if not folder_path.endswith("/"):
             folder_path += "/"
 
+        # TODO: Use a method on UI to set values
         self.ui.log_file_path.setText(folder_path)
 
         self.send_settings.emit(

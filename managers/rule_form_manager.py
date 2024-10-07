@@ -42,7 +42,7 @@ class RuleFormManager:
         rules_name = rule["rule_name"]
         rule_guid = rule["guid"]
 
-        rule_inputs["guid"] = rule_guid
+        rule_inputs["guid"] = QLineEdit(rule_guid)
         rule_outter_layout = QFormLayout()
 
         rule_layout = WidgetFactory.create_form_box(
@@ -377,7 +377,6 @@ class RuleFormManager:
 
     def create_input_dict(self, int_keys=("time_interval", "equality_threshold")):
         def make_rule_dict(field_refs, int_keys):
-            print("ddddd", field_refs)
             x = {}
             if isinstance(field_refs, ValidationError):
                 return

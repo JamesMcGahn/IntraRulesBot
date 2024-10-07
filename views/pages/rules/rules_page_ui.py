@@ -1,4 +1,4 @@
-from PySide6.QtCore import QSize, Signal, Slot
+from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -17,7 +17,7 @@ from managers import RuleFormManager
 
 
 class RulesPageView(QWidget):
-    send_creds = Signal(str, str, str, str)
+    delete_rule = Signal()
 
     def __init__(self):
         super().__init__()
@@ -28,8 +28,6 @@ class RulesPageView(QWidget):
 
     def init_ui(self):
         self.current_rule_index = 0
-
-        self.no_rules_label = QLabel("Open a File or Add a Rule.")
 
         self.rules_layout = QVBoxLayout(self)
 
@@ -213,19 +211,29 @@ class RulesPageView(QWidget):
         # Signal / Slot Connections
         self.scroll_area.verticalScrollBar().valueChanged.connect(self.repaint_shadow)
         self.scroll_area.horizontalScrollBar().valueChanged.connect(self.repaint_shadow)
+        self.trash.clicked.connect(self.on_delete_rule)
 
         # Setup
         self.update_navigation_buttons()
-        self.set_up_rules()
+        self.set_up_rules(None)
 
     @Slot(list)
     def rules_changed(self, rules):
-        self.rules = rules
-        self.set_up_rules()
+        self.set_up_rules(rules)
+
+    def get_forms(self):
+        return self.stacked_widget.get_form_factories()
 
     def repaint_shadow(self):
         """Repaint shadow of widget. Used for repainting shadow after the scroll bar moves"""
         self.editor_widget.update()
+
+    def on_delete_rule(self):
+        if self.stacked_widget.get_form_factories():
+            self.stacked_widget.remove_form_by_index(self.stacked_widget.currentIndex())
+            self.update_navigation_buttons()
+            if self.stacked_widget.count() == 0:
+                self.setup_no_rules_widget()
 
     def set_disable_action_btns(self):
         actions_buttons = [
@@ -237,28 +245,38 @@ class RulesPageView(QWidget):
             self.trash,
         ]
         for btn in actions_buttons:
-            if self.rules:
+            if self.stacked_widget.get_form_factories():
                 btn.setDisabled(False)
 
             else:
                 btn.setDisabled(True)
 
-    def set_up_rules(self):
-        if self.rules:
+    def set_up_rules(self, rules):
+        if rules:
             self.stacked_widget.remove_by_name("No-Rules-Widget")
-            for rule in self.rules:
+            for rule in rules:
                 rule_form = RuleFormManager(rule)
                 self.stacked_widget.add_form(
                     rule_form, "margin-top: 0px; padding-left: 0px;padding-top: 0px;"
                 )
 
             self.update_navigation_buttons()
-            self.nav_label.setText(
-                f"Rule: {self.current_rule_index + 1} / {self.stacked_widget.count()}"
-            )
         else:
-            self.stacked_widget.add_widget("No-Rules-Widget", self.no_rules_label)
+            self.setup_no_rules_widget()
         self.set_disable_action_btns()
+
+    def setup_no_rules_widget(self):
+        self.no_rules_widget = QWidget()
+        nr_widget_layout = QHBoxLayout(self.no_rules_widget)
+        self.no_rules_label = QLabel(
+            "Open a File or Add a Rule to Get Started with Creating Rules."
+        )
+        nr_widget_layout.addWidget(self.no_rules_label, Qt.AlignmentFlag.AlignTop)
+        self.no_rules_label.setStyleSheet("background: #DEDEDE; padding-left: 1.5em;")
+        self.no_rules_label.setMaximumHeight(60)
+        self.no_rules_label.setMaximumWidth(400)
+        self.stacked_widget.add_widget("No-Rules-Widget", self.no_rules_widget)
+        self.repaint_shadow()
 
     def update_navigation_buttons(self):
         self.prev_button.setDisabled(self.current_rule_index == 0)
@@ -266,22 +284,24 @@ class RulesPageView(QWidget):
         self.next_button.setDisabled(
             self.current_rule_index >= self.stacked_widget.count() - 1
         )
+        if self.rules and self.stacked_widget.count() > 0:
+            self.nav_label.setText(
+                f"Rule: {self.current_rule_index+1} / {self.stacked_widget.count()}"
+            )
+        else:
+            self.nav_label.setText("")
 
     def show_previous_rule(self):
         if self.current_rule_index > 0:
             self.current_rule_index -= 1
             self.stacked_widget.setCurrentIndex(self.current_rule_index)
-            self.nav_label.setText(
-                f"Rule: {self.current_rule_index + 1} / {self.stacked_widget.count()}"
-            )
+
         self.update_navigation_buttons()
 
     def show_next_rule(self):
         if self.current_rule_index < self.stacked_widget.count() - 1:
             self.current_rule_index += 1
             self.stacked_widget.setCurrentIndex(self.current_rule_index)
-            self.nav_label.setText(
-                f"Rule: {self.current_rule_index + 1} / {self.stacked_widget.count()}"
-            )
+
             self.prev_button.setDisabled(False)
         self.update_navigation_buttons()

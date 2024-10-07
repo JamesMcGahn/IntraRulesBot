@@ -31,12 +31,14 @@ class LoginPage(QWidgetBase):
         login_model.success.connect(self.success_save)
         self.send_creds.connect(login_model.save_creds)
 
+        # TODO: Use Method to set values
         username, password, url, login_url = login_model.get_creds()
         self.ui.username.setText(username)
         self.ui.password.setText(password)
         self.ui.url.setText(url)
         self.ui.login_url.setText(login_url)
 
+    # TODO: Use Method to get values
     def save_creds(self):
         if self.ui.url.text() and self.ui.url.text()[-1] != "/":
             self.ui.url.setText(self.ui.url.text() + "/")
