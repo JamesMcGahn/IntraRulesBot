@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from components.helpers import WidgetFactory
+from components.helpers import StyleHelper
 
 
 class IconTextNavBarView(QWidget):
@@ -20,7 +20,7 @@ class IconTextNavBarView(QWidget):
     def init_ui(self):
         self.setMaximumSize(QSize(250, 16777215))
 
-        WidgetFactory.dropShadow(self)
+        StyleHelper.drop_shadow(self)
 
         self.setAttribute(Qt.WA_StyledBackground, True)
         icon = QIcon()

@@ -1,15 +1,10 @@
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QColor, QFont, QIcon, QValidator
-from PySide6.QtWidgets import (
-    QFormLayout,
-    QGraphicsDropShadowEffect,
-    QGroupBox,
-    QLabel,
-    QLineEdit,
-    QSizePolicy,
-)
+from PySide6.QtWidgets import QFormLayout, QGroupBox, QLabel, QLineEdit, QSizePolicy
 
 from components.boxes import GradientGroupBox
+
+from ..style_helper import StyleHelper
 
 
 class WidgetFactory:
@@ -20,7 +15,7 @@ class WidgetFactory:
         parent_layout,
         gradient_box=False,
         border_color=None,
-        drop_shadow_effect="default",
+        drop_shadow_effect=True,
         object_name="",
         max_width=None,
         title_color="black",
@@ -43,19 +38,12 @@ class WidgetFactory:
             box.setStyleSheet("QGroupBox::title { color:" + f"{title_color}" + ";}")
             # TODO - refactor to UI helper function
             if drop_shadow_effect:
-                if isinstance(drop_shadow_effect, str):
-                    if drop_shadow_effect == "default":
-                        drop_shadow_effect = (8, 3, 3, QColor(0, 0, 0, 60))
-                    else:
-                        raise ValueError("Invalid drop shadow effect preset.")
-                radius, xoffset, yoffset, color = drop_shadow_effect
-                shadow_effect = QGraphicsDropShadowEffect(box)
-                shadow_effect.setBlurRadius(radius)
-                shadow_effect.setXOffset(xoffset)
-                shadow_effect.setYOffset(yoffset)
-                shadow_effect.setColor(color)
+                if isinstance(drop_shadow_effect, bool):
+                    drop_shadow_effect = (8, 3, 3, QColor(0, 0, 0, 60))
 
-                box.setGraphicsEffect(shadow_effect)
+                radius, xoffset, yoffset, color = drop_shadow_effect
+                StyleHelper.drop_shadow(box, radius, xoffset, yoffset, color)
+
         font = QFont()
         font.setPointSize(title_font_size)
         box.setFont(font)
@@ -135,12 +123,3 @@ class WidgetFactory:
         parent.setCheckable(checkable)
         parent.setAutoExclusive(exclusive)
         parent.setCursor(Qt.PointingHandCursor)
-
-    @staticmethod
-    def dropShadow(parent, blur_radius=5, x_offset=3, y_offset=3, color=(0, 0, 0, 60)):
-        shadow_effect = QGraphicsDropShadowEffect(parent)
-        shadow_effect.setBlurRadius(blur_radius)
-        shadow_effect.setXOffset(x_offset)
-        shadow_effect.setYOffset(y_offset)
-        shadow_effect.setColor(QColor(*color))
-        parent.setGraphicsEffect(shadow_effect)

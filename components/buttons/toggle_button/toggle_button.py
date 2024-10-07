@@ -2,7 +2,9 @@ from typing import Tuple, Union
 
 from PySide6.QtCore import QPoint, QRect, Qt
 from PySide6.QtGui import QColor, QPainter
-from PySide6.QtWidgets import QCheckBox, QGraphicsDropShadowEffect
+from PySide6.QtWidgets import QCheckBox
+
+from ...helpers import StyleHelper
 
 
 class ToggleButton(QCheckBox):
@@ -14,8 +16,8 @@ class ToggleButton(QCheckBox):
         active_background_color: Union[str, QColor] = "dark gray",
         circle_color: Union[str, QColor] = "light gray",
         drop_shadow_effect: Union[
-            Tuple[float, float, float, Union[str, QColor]], str
-        ] = "default",
+            Tuple[float, float, float, Union[str, QColor]], bool
+        ] = True,
     ):
         super().__init__()
         width = width
@@ -28,19 +30,11 @@ class ToggleButton(QCheckBox):
         self.setCursor(Qt.PointingHandCursor)
 
         if self.drop_shadow_effect:
-            if isinstance(self.drop_shadow_effect, str):
-                if self.drop_shadow_effect == "default":
-                    self.drop_shadow_effect = (8, 3, 3, QColor(0, 0, 0, 60))
-                else:
-                    raise ValueError("Invalid drop shadow effect preset.")
-            radius, xoffset, yoffset, color = self.drop_shadow_effect
-            shadow_effect = QGraphicsDropShadowEffect(self)
-            shadow_effect.setBlurRadius(radius)
-            shadow_effect.setXOffset(xoffset)
-            shadow_effect.setYOffset(yoffset)
-            shadow_effect.setColor(color)
+            if isinstance(self.drop_shadow_effect, bool):
+                self.drop_shadow_effect = (8, 3, 3, QColor(0, 0, 0, 60))
 
-            self.setGraphicsEffect(shadow_effect)
+            radius, xoffset, yoffset, color = self.drop_shadow_effect
+            StyleHelper.drop_shadow(self, radius, xoffset, yoffset, color)
 
     def hitButton(self, pos: QPoint):
         return self.contentsRect().contains(pos)

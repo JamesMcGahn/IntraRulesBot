@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
 )
 
 from components.buttons import EditorActionButton
-from components.helpers import WidgetFactory
+from components.helpers import StyleHelper, WidgetFactory
 from components.layouts import ScrollArea, StackedFormWidget
 from managers import RuleFormManager
 
@@ -42,7 +42,7 @@ class RulesPageView(QWidget):
 
         # Editor Widget
         self.editor_widget = QWidget()
-        WidgetFactory.dropShadow(self.editor_widget)
+        StyleHelper.drop_shadow(self.editor_widget)
         self.editor_layout = QVBoxLayout(self.editor_widget)
 
         # Editor - Top Button Bar

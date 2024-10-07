@@ -3,7 +3,9 @@ from typing import List, Tuple, Union
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QLinearGradient, QPainter, QPen
-from PySide6.QtWidgets import QGraphicsDropShadowEffect, QGroupBox, QSizePolicy
+from PySide6.QtWidgets import QGroupBox, QSizePolicy
+
+from ...helpers import StyleHelper
 
 
 class GradientGroupBox(QGroupBox):
@@ -16,8 +18,8 @@ class GradientGroupBox(QGroupBox):
         border_width: int = 2,
         corner_radius: int = 3,
         drop_shadow_effect: Union[
-            Tuple[float, float, float, Union[str, QColor]], str
-        ] = "default",
+            Tuple[float, float, float, Union[str, QColor]], bool
+        ] = True,
     ):
         super().__init__(title)
         self.gradient_colors = gradient_colors
@@ -43,19 +45,11 @@ class GradientGroupBox(QGroupBox):
         # Create and configure the drop shadow effect
 
         if self.drop_shadow_effect:
-            if isinstance(self.drop_shadow_effect, str):
-                if self.drop_shadow_effect == "default":
-                    self.drop_shadow_effect = (8, 3, 3, QColor(0, 0, 0, 60))
-                else:
-                    raise ValueError("Invalid drop shadow effect preset.")
-            radius, xoffset, yoffset, color = self.drop_shadow_effect
-            shadow_effect = QGraphicsDropShadowEffect(self)
-            shadow_effect.setBlurRadius(radius)
-            shadow_effect.setXOffset(xoffset)
-            shadow_effect.setYOffset(yoffset)
-            shadow_effect.setColor(color)
+            if isinstance(self.drop_shadow_effect, bool):
+                self.drop_shadow_effect = (8, 3, 3, QColor(0, 0, 0, 60))
 
-            self.setGraphicsEffect(shadow_effect)
+            radius, xoffset, yoffset, color = self.drop_shadow_effect
+            StyleHelper.drop_shadow(self, radius, xoffset, yoffset, color)
 
     def paintEvent(self, event):
 

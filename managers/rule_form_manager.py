@@ -54,7 +54,7 @@ class RuleFormManager:
             title_font_size=16,
             title_color="#fcfcfc",
         )
-        rule_layout.setContentsMargins(0, 25, 0, 5)
+        rule_layout.setContentsMargins(12, 25, 12, 5)
 
         self.rf_add_general_settings(rule, rule_inputs, rule_layout)
         self.rf_add_trigger_settings(rule, rule_inputs, rule_layout)
