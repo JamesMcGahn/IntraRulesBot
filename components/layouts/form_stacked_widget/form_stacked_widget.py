@@ -19,6 +19,7 @@ class StackedFormWidget(StackedWidget):
         rule_widget.setStyleSheet(styleSheet)
 
         form = rule_form.rule_form
+        form.setContentsMargins(0, 0, 0, 0)
         rule_widget.setLayout(form)
 
         rule_widget2 = QWidget()

@@ -30,15 +30,6 @@ QGroupBox::title {
   font-family: "Open Sans";
 }
 
-QGroupBox#Settings-Information::title {
-  subcontrol-origin: margin;
-  left: 10px;
-  top: 0;
-  color: #fcfcfc;
-  font-weight: bold;
-  font-family: "Open Sans";
-}
-
 QWidget#actions-btn-widget {
   /* border: 2px solid #f58220; */
   border-radius: 3px;
