@@ -9,17 +9,12 @@ QWidget {
   border: 1px solid red;
 } */
 
-QWidget#Editor-Widget {
-  border: 2px solid #f58220;
-  border-radius: 3px;
-}
-
 QGroupBox {
-  padding-top: 1.5em;
+  padding-top: 1em;
   subcontrol-origin: margin;
   font-weight: bold;
   color: black;
-  /* border-radius: 5px; */
+  margin-top: 0;
 }
 
 QLabel {
@@ -35,15 +30,6 @@ QGroupBox::title {
   font-family: "Open Sans";
 }
 
-QGroupBox#Settings-Information {
-  margin-top: 7px;
-  subcontrol-origin: margin;
-  font-weight: bold;
-  color: #fcfcfc;
-  border-radius: 5px;
-  margin-left: 0px;
-}
-
 QGroupBox#Settings-Information::title {
   subcontrol-origin: margin;
   left: 10px;
@@ -51,4 +37,11 @@ QGroupBox#Settings-Information::title {
   color: #fcfcfc;
   font-weight: bold;
   font-family: "Open Sans";
+}
+
+QWidget#actions-btn-widget {
+  /* border: 2px solid #f58220; */
+  border-radius: 3px;
+  /* background-color: #dedede; */
+  padding: 0;
 }

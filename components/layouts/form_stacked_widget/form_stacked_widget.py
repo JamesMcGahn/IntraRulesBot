@@ -1,4 +1,5 @@
-from PySide6.QtWidgets import QWidget
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QHBoxLayout, QWidget
 
 from managers import RuleFormManager
 
@@ -11,14 +12,24 @@ class StackedFormWidget(StackedWidget):
         self.widget_map = {}
         self.form_factories = []
 
-    def add_form(self, rule_form: RuleFormManager):
+    def add_form(self, rule_form: RuleFormManager, styleSheet=""):
         """Add a widget to the stacked widget and map its name."""
         rule_widget = QWidget()
+        rule_widget.setContentsMargins(0, 0, 0, 0)
+        rule_widget.setStyleSheet(styleSheet)
+
         form = rule_form.rule_form
         rule_widget.setLayout(form)
-        self.addWidget(rule_widget)
 
-        index = self.indexOf(rule_widget)
+        rule_widget2 = QWidget()
+        rule_widget2.setContentsMargins(0, 0, 0, 0)
+        rule_widget2.setStyleSheet("margin-top: 0px; padding-top: 0px;")
+        h_layout = QHBoxLayout(rule_widget2)
+        h_layout.addWidget(rule_widget, alignment=Qt.AlignLeft)
+
+        self.addWidget(rule_widget2)
+
+        index = self.indexOf(rule_widget2)
         self.widget_map[rule_form.rule_guid] = index
         self.form_factories.append(rule_form)
 

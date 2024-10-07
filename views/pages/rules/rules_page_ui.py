@@ -1,7 +1,6 @@
 from PySide6.QtCore import QSize, Signal, Slot
-from PySide6.QtGui import QColor, QIcon
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
-    QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -30,6 +29,8 @@ class RulesPageView(QWidget):
     def init_ui(self):
         self.current_rule_index = 0
 
+        self.no_rules_label = QLabel("Open a File or Add a Rule.")
+
         self.rules_layout = QVBoxLayout(self)
 
         self.outter_layout = WidgetFactory.create_form_box(
@@ -42,76 +43,20 @@ class RulesPageView(QWidget):
 
         self.main_layout = QVBoxLayout()
 
+        # Editor Widget
         self.editor_widget = QWidget()
-        # WidgetFactory.dropShadow(self.editor_widget)
+        WidgetFactory.dropShadow(self.editor_widget)
         self.editor_layout = QVBoxLayout(self.editor_widget)
-        self.editor_widget.setGraphicsEffect(None)
 
-        self.stacked_widget = StackedFormWidget()
-        self.stacked_widget.setObjectName("Rules-Stacked-Widget")
-        self.stacked_widget.setContentsMargins(10, 10, 15, 10)
-        self.no_rules_label = QLabel("Open a File or Add a Rule.")
+        # Editor - Top Button Bar
+        self.top_button_bar_layout = QHBoxLayout()
+        self.editor_layout.addLayout(self.top_button_bar_layout)
 
-        self.scroll_area = ScrollArea(self)
-        self.scroll_area.setWidget(self.stacked_widget)
-        self.scroll_area.setGraphicsEffect(None)
-
-        self.set_up_rules()
-
-        top_button_bar_layout = QHBoxLayout()
-
-        self.editor_layout.addLayout(top_button_bar_layout)
-        self.editor_layout.addWidget(self.scroll_area)
-
+        # Editor - Top Button Bar - Validate Section
         h_spacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Fixed)
 
-        form_actions_btn_layout = QHBoxLayout()
-        form_actions_btn_layout.setSpacing(2)
-        self.download = EditorActionButton("")
-        self.download.setToolTip("Save to File")
-        self.download.setFixedWidth(30)
-        WidgetFactory.create_icon(
-            self.download,
-            ":/images/download_off.png",
-            50,
-            20,
-            True,
-            ":/images/download_on.png",
-            False,
-        )
-        self.clone = QPushButton()
-        self.clone.setFixedWidth(30)
-        self.clone.setToolTip("Clone Rule")
-        WidgetFactory.create_icon(self.clone, ":/images/clone_off.png", 50, 20)
-        self.copy_field = QPushButton()
-        self.copy_field.setFixedWidth(30)
-        self.copy_field.setToolTip("Apply Field Value Across Rules")
-        WidgetFactory.create_icon(
-            self.copy_field, ":/images/copy_field_off.png", 50, 20
-        )
-        self.save = QPushButton()
-        self.save.setFixedWidth(30)
-        self.save.setToolTip("Save")
-        WidgetFactory.create_icon(self.save, ":/images/save_off.png", 50, 20)
-        self.trash = QPushButton()
-        self.trash.setFixedWidth(30)
-        self.trash.setToolTip("Delete Rule")
-        WidgetFactory.create_icon(self.trash, ":/images/trash_off.png", 50, 20)
-        self.validate = QPushButton()
-        self.validate.setFixedWidth(30)
-        self.validate.setToolTip("Validate Rule")
-        WidgetFactory.create_icon(self.validate, ":/images/validate_off.png", 50, 20)
-        form_actions_btn_layout.addWidget(self.save)
-        form_actions_btn_layout.addWidget(self.download)
-        form_actions_btn_layout.addWidget(self.validate)
-        form_actions_btn_layout.addWidget(self.clone)
-        form_actions_btn_layout.addWidget(self.copy_field)
-        form_actions_btn_layout.addWidget(self.trash)
-
-        top_button_bar_layout.addLayout(form_actions_btn_layout)
-        top_button_bar_layout.addItem(h_spacer)
-
         self.validate_feedback = QPushButton()
+        self.top_button_bar_layout.addWidget(self.validate_feedback)
         self.validate_feedback.setStyleSheet(
             "background-color: transparent; border: none; font-size: 13px; color: white;"
         )
@@ -123,52 +68,189 @@ class RulesPageView(QWidget):
         self.error_icon.addFile(
             ":/images/red_xmark.png", QSize(50, 20), QIcon.Mode.Normal
         )
+        self.top_button_bar_layout.addItem(h_spacer)
 
-        top_button_bar_layout.addWidget(self.validate_feedback)
-        top_button_bar_layout.addItem(h_spacer)
-
+        # Editor - Top Button Bar - Navigation Layout
         nav_btn_layout = QHBoxLayout()
-        self.nav_label = QLabel()
-        self.nav_label.setStyleSheet("background: transparent;")
+        nav_btn_layout.setSpacing(1)
+        self.top_button_bar_layout.addLayout(nav_btn_layout)
         self.prev_button = QPushButton()
         self.next_button = QPushButton()
-        self.prev_button.clicked.connect(self.show_previous_rule)
-        self.next_button.clicked.connect(self.show_next_rule)
+        self.prev_button.setFixedWidth(30)
+        self.next_button.setFixedWidth(30)
+        self.nav_label = QLabel()
+        self.nav_label.setStyleSheet("background: transparent;")
         nav_btn_layout.addWidget(self.nav_label)
         nav_btn_layout.addWidget(self.prev_button)
         nav_btn_layout.addWidget(self.next_button)
-        self.prev_button.setFixedWidth(50)
-        self.next_button.setFixedWidth(50)
+
         WidgetFactory.create_icon(
-            self.prev_button, ":/images/left_arrow_off.png", 50, 20
+            self.prev_button,
+            ":/images/left_arrow_on.png",
+            50,
+            20,
         )
         WidgetFactory.create_icon(
-            self.next_button, ":/images/right_arrow_off.png", 50, 20
+            self.next_button,
+            ":/images/right_arrow_on.png",
+            50,
+            20,
+        )
+        self.prev_button.clicked.connect(self.show_previous_rule)
+        self.next_button.clicked.connect(self.show_next_rule)
+
+        # Main Section
+        hlayout = QHBoxLayout()
+
+        # Vertical Button Bar - Actions Layout
+        actions_btn_widget = QWidget()
+        hlayout.addWidget(actions_btn_widget)
+        actions_btn_widget.setStyleSheet("padding: 0; ")
+        actions_btn_widget.setObjectName("actions-btn-widget")
+        form_actions_btn_layout = QVBoxLayout(actions_btn_widget)
+
+        form_actions_btn_layout.setSpacing(1)
+
+        actions_btn_widget_inner = QWidget()
+        actions_btn_widget_inner.setStyleSheet(
+            "border: 1px solid #f58220; border-radius: 3px;"
         )
 
-        top_button_bar_layout.addLayout(nav_btn_layout)
+        form_actions_btn_inner_layout = QVBoxLayout(actions_btn_widget_inner)
+        form_actions_btn_inner_layout.setSpacing(0)
+        form_actions_btn_inner_layout.setContentsMargins(0, 0, 0, 0)
+        self.save = EditorActionButton("")
+        self.download = EditorActionButton("")
+        self.validate = EditorActionButton("")
+        self.clone = EditorActionButton("")
+        self.copy_field = EditorActionButton("")
+        self.trash = EditorActionButton("")
 
-        bottom_btn_layout = QHBoxLayout()
+        actionBtns = [
+            (
+                self.save,
+                "Save",
+                ":/images/save_off_b.png",
+                ":/images/save_on.png",
+            ),
+            (
+                self.validate,
+                "Validate Fields",
+                ":/images/validate_off_b.png",
+                ":/images/validate_on.png",
+            ),
+            (
+                self.clone,
+                "Clone Rule",
+                ":/images/clone_off_b.png",
+                ":/images/clone_on.png",
+            ),
+            (
+                self.copy_field,
+                "Apply Field Value Across Rules",
+                ":/images/copy_field_off_b.png",
+                ":/images/copy_field_on.png",
+            ),
+            (
+                self.trash,
+                "Delete Rule",
+                ":/images/trash_off_b.png",
+                ":/images/trash_on.png",
+            ),
+            (
+                self.download,
+                "Save to File",
+                ":/images/download_off_b.png",
+                ":/images/download_on.png",
+            ),
+        ]
+
+        for index, btn in enumerate(actionBtns):
+            btn_ref, tool_tip, image_loc1, image_loc2 = btn
+            btn_ref.setToolTip(tool_tip)
+            btn_ref.setFixedWidth(40)
+            style = ""
+            if index == 0:
+                style = "border-top-left-radius: 3px; border-top-right-radius: 3px; border-bottom-left-radius: 0px; border-bottom-right-radius: 0px;"
+            elif index == len(actionBtns) - 1:
+                style = "border-top-left-radius: 0px; border-top-right-radius: 0px; border-bottom-left-radius: 3px; border-bottom-right-radius: 3px;"
+            else:
+                style = "border-radius: 0px;"
+            WidgetFactory.create_icon(
+                btn_ref,
+                image_loc1,
+                50,
+                20,
+                True,
+                image_loc2,
+                False,
+            )
+            btn_ref.setStyleSheet(
+                f"{style} padding: 5px 5px ; background: #DEDEDE; border-bottom: 1px solid #f58220;"
+            )
+            form_actions_btn_inner_layout.addWidget(btn_ref)
+
+        form_actions_btn_layout.addWidget(actions_btn_widget_inner)
+        v_spacer = QSpacerItem(20, 40, QSizePolicy.Fixed, QSizePolicy.Expanding)
+        form_actions_btn_layout.addItem(v_spacer)
+
+        # Editor - Rules
+        self.stacked_widget = StackedFormWidget()
+        self.stacked_widget.setObjectName("Rules-Stacked-Widget")
+        self.stacked_widget.setContentsMargins(0, 0, 15, 10)
+
+        self.scroll_area = ScrollArea(self)
+        self.scroll_area.setWidget(self.stacked_widget)
+
+        hlayout.addWidget(self.scroll_area)
+        self.editor_layout.addLayout(hlayout)
+
+        # self.editor_layout.addWidget(self.scroll_area)
 
         self.main_layout.addWidget(self.editor_widget)
-        self.main_layout.addLayout(bottom_btn_layout)
-        self.update_navigation_buttons()
-
         self.outter_layout.addRow(self.main_layout)
 
+        # Signal / Slot Connections
         self.scroll_area.verticalScrollBar().valueChanged.connect(self.repaint_shadow)
         self.scroll_area.horizontalScrollBar().valueChanged.connect(self.repaint_shadow)
 
+        # Setup
+        self.update_navigation_buttons()
+        self.set_up_rules()
+
+    @Slot(list)
+    def rules_changed(self, rules):
+        self.rules = rules
+        self.set_up_rules()
+
     def repaint_shadow(self):
+        """Repaint shadow of widget. Used for repainting shadow after the scroll bar moves"""
         self.editor_widget.update()
+
+    def set_disable_action_btns(self):
+        actions_buttons = [
+            self.save,
+            self.download,
+            self.validate,
+            self.clone,
+            self.copy_field,
+            self.trash,
+        ]
+        for btn in actions_buttons:
+            if self.rules:
+                btn.setDisabled(False)
+
+            else:
+                btn.setDisabled(True)
 
     def set_up_rules(self):
         if self.rules:
             self.stacked_widget.remove_by_name("No-Rules-Widget")
-
             for rule in self.rules:
                 rule_form = RuleFormManager(rule)
-                self.stacked_widget.add_form(rule_form)
+                self.stacked_widget.add_form(
+                    rule_form, "margin-top: 0px; padding-left: 0px;padding-top: 0px;"
+                )
 
             self.update_navigation_buttons()
             self.nav_label.setText(
@@ -176,15 +258,11 @@ class RulesPageView(QWidget):
             )
         else:
             self.stacked_widget.add_widget("No-Rules-Widget", self.no_rules_label)
-
-    @Slot(list)
-    def rules_changed(self, rules):
-        print(rules)
-        self.rules = rules
-        self.set_up_rules()
+        self.set_disable_action_btns()
 
     def update_navigation_buttons(self):
         self.prev_button.setDisabled(self.current_rule_index == 0)
+
         self.next_button.setDisabled(
             self.current_rule_index >= self.stacked_widget.count() - 1
         )

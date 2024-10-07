@@ -18,8 +18,8 @@ class MainWindow(QMainWindow):
         self.app = app
         self.setWindowTitle("IntraRulesBot")
         self.setObjectName("MainWindow")
-        self.resize(900, 800)
-        self.setMaximumSize(QSize(16777215, 16777215))
+        self.resize(873, 800)
+        self.setMaximumSize(QSize(873, 800))
 
         font_id_reg = QFontDatabase.addApplicationFont(":/fonts/OpenSans-Regular.ttf")
         QFontDatabase.addApplicationFont(":/fonts/OpenSans-Bold.ttf")

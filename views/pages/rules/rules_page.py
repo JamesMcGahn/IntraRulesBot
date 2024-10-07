@@ -72,7 +72,7 @@ class RulesPage(QWidgetBase):
             rules.append(data)
 
         if total_errors > 0:
-            self.ui.validate_feedback.setText(f"Total Errors :{total_errors}")
+            self.ui.validate_feedback.setText(f"Total Errors : {total_errors}")
             self.ui.validate_feedback.setIcon(self.ui.error_icon)
             # TODO - display notification - display errors
             return None
