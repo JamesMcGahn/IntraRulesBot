@@ -1,5 +1,5 @@
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QColor, QFont, QIcon, QValidator
+from PySide6.QtGui import QColor, QIcon, QValidator
 from PySide6.QtWidgets import QFormLayout, QGroupBox, QLabel, QLineEdit, QSizePolicy
 
 from components.boxes import GradientGroupBox
@@ -44,9 +44,7 @@ class WidgetFactory:
                 radius, xoffset, yoffset, color = drop_shadow_effect
                 StyleHelper.drop_shadow(box, radius, xoffset, yoffset, color)
 
-        font = QFont()
-        font.setPointSize(title_font_size)
-        box.setFont(font)
+        StyleHelper.dpi_scale_set_font(box, font_size=title_font_size)
 
         box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 

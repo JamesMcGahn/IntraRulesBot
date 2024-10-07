@@ -2,6 +2,8 @@ from PySide6.QtCore import QSize, Signal
 from PySide6.QtGui import QFontDatabase
 from PySide6.QtWidgets import QLabel, QMainWindow
 
+from components.helpers import StyleHelper
+
 # trunk-ignore(ruff/F401)
 from resources import resources_rc
 from services.logger import Logger
@@ -28,6 +30,7 @@ class MainWindow(QMainWindow):
 
         if font_family != -1:
             self.app.setFont(font_family)
+            StyleHelper.dpi_scale_set_font(self, font_family, 12)
 
         self.centralWidget = CentralWidget()
 

@@ -1,7 +1,7 @@
 from typing import Union
 
-from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QGraphicsDropShadowEffect
+from PySide6.QtGui import QColor, QFont
+from PySide6.QtWidgets import QGraphicsDropShadowEffect, QWidget
 
 
 class StyleHelper:
@@ -23,3 +23,13 @@ class StyleHelper:
         shadow_effect.setYOffset(y_offset)
         shadow_effect.setColor(QColor(color))
         parent.setGraphicsEffect(shadow_effect)
+
+    @staticmethod
+    def dpi_scale_set_font(
+        parent: QWidget, font_family: str = "Open Sans", font_size: int = 12
+    ):
+        dpi_scale = parent.devicePixelRatioF()  # Get the DPI scaling factor
+        font = QFont(font_family)
+        adjusted_font_size = font_size / dpi_scale
+        font.setPointSizeF(adjusted_font_size)
+        parent.setFont(font)
