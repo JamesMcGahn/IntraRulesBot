@@ -29,8 +29,7 @@ class MainWindow(QMainWindow):
         font_family = QFontDatabase.applicationFontFamilies(font_id_reg)
 
         if font_family != -1:
-            self.app.setFont(font_family)
-            StyleHelper.dpi_scale_set_font(self, font_family, 12)
+            StyleHelper.dpi_scale_set_font(self.app, font_family, 12)
 
         self.centralWidget = CentralWidget()
 
