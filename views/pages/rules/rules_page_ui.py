@@ -22,8 +22,7 @@ class RulesPageView(QWidget):
     def __init__(self):
         super().__init__()
         self.current_rule_index = 0
-        self.rules_inputs = []
-        self.rules = []
+
         self.init_ui()
 
     def init_ui(self):
@@ -215,10 +214,10 @@ class RulesPageView(QWidget):
 
         # Setup
         self.update_navigation_buttons()
-        self.set_up_rules(None)
 
     @Slot(list)
     def rules_changed(self, rules):
+        print(rules)
         self.set_up_rules(rules)
 
     def get_forms(self):
@@ -284,7 +283,7 @@ class RulesPageView(QWidget):
         self.next_button.setDisabled(
             self.current_rule_index >= self.stacked_widget.count() - 1
         )
-        if self.rules and self.stacked_widget.count() > 0:
+        if self.stacked_widget.count() > 0:
             self.nav_label.setText(
                 f"Rule: {self.current_rule_index+1} / {self.stacked_widget.count()}"
             )

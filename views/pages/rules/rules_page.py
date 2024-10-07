@@ -98,13 +98,17 @@ class RulesPage(QWidgetBase):
             return (data, rules_with_guid)
 
     def save_rules_to_file(self):
-        data, _ = self.validate_rules()
-        if data:
-            with open("./avaya_user.json", "w") as f:
-                json.dump(data, f, indent=4)
-            # TODO Confirmation message - toast
+        if self.ui.get_forms():
+            data, _ = self.validate_rules()
+            if data:
+                with open("./avaya_user.json", "w") as f:
+                    json.dump(data, f, indent=4)
+                # TODO Confirmation message - toast
 
     def save_rules_to_system(self):
-        _, data = self.validate_rules()
-        if data:
-            self.rulesModel.save_rules(data)
+        if self.ui.get_forms():
+            _, data = self.validate_rules()
+            if data:
+                self.rulesModel.save_rules(data)
+        else:
+            self.rulesModel.save_rules([])
