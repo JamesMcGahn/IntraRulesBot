@@ -232,7 +232,7 @@ class RuleFormManager:
             False,
             object_name="Condition-Provider",
             drop_shadow_effect=False,
-            title_font_size=12,
+            title_font_size=11,
         )
 
         condition_fields = [
@@ -274,7 +274,7 @@ class RuleFormManager:
                 False,
                 object_name="Condition-Stats",
                 drop_shadow_effect=False,
-                title_font_size=12,
+                title_font_size=11,
             )
 
             detail_fields = [
@@ -320,7 +320,7 @@ class RuleFormManager:
             False,
             object_name="Action-Provider",
             drop_shadow_effect=False,
-            title_font_size=12,
+            title_font_size=11,
         )
 
         action_fields = [
@@ -348,7 +348,7 @@ class RuleFormManager:
                 False,
                 object_name="Action-Email",
                 drop_shadow_effect=False,
-                title_font_size=12,
+                title_font_size=11,
             )
             detail_fields = [
                 (details["action_type"], "Action Type:", "action_type"),

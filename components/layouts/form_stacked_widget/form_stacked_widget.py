@@ -15,7 +15,7 @@ class StackedFormWidget(StackedWidget):
     def add_form(self, rule_form: RuleFormManager, styleSheet=""):
         """Add a widget to the stacked widget and map its name."""
         rule_widget = QWidget()
-        rule_widget.setContentsMargins(0, 0, 0, 0)
+        rule_widget.setContentsMargins(12, 0, 0, 0)
         rule_widget.setStyleSheet(styleSheet)
 
         form = rule_form.rule_form
@@ -23,7 +23,7 @@ class StackedFormWidget(StackedWidget):
         rule_widget.setLayout(form)
 
         rule_widget2 = QWidget()
-        rule_widget2.setContentsMargins(0, 0, 0, 0)
+        rule_widget2.setContentsMargins(12, 0, 0, 0)
         rule_widget2.setStyleSheet("margin-top: 0px; padding-top: 0px;")
         h_layout = QHBoxLayout(rule_widget2)
         h_layout.addWidget(rule_widget, alignment=Qt.AlignLeft)

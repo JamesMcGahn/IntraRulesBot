@@ -66,7 +66,7 @@ class WidgetFactory:
             box.setMaximumWidth(max_width)
 
         layout = QFormLayout(box)
-        layout.setVerticalSpacing(25)
+        layout.setVerticalSpacing(20)
 
         layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
 

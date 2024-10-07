@@ -21,6 +21,14 @@ QLabel {
   font-size: 12px;
 }
 
+QTextEdit {
+  font-size: 12px;
+}
+
+QLineEidt {
+  font-size: 12px;
+}
+
 QGroupBox::title {
   subcontrol-origin: margin;
   color: black;
