@@ -50,3 +50,6 @@ class GradientDialog(QDialog):
         self.xStop = xStop
         self.yStop = yStop
         self.update()
+
+    def show(self):
+        self.exec()

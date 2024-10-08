@@ -34,7 +34,8 @@ class SchemaValidator:
     def validate(self, instance: dict) -> None:
         self.validator.validate(instance)
 
-    def format_validation_error(self, error: ValidationError) -> Tuple[str, str, str]:
+    @staticmethod
+    def format_validation_error(error: ValidationError) -> Tuple[str, str, str]:
         error_message = (
             error.json_path.replace("$.", "")
             .replace("[", ".")

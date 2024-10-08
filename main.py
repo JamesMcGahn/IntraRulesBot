@@ -9,6 +9,7 @@ app = QApplication(sys.argv)
 
 
 # faulthandler.enable(file=sys.stderr)
+# faulthandler.enable()
 window = MainWindow(app)
 window.show()
 app.exec()

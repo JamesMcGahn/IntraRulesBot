@@ -4,6 +4,7 @@ import os
 from PySide6.QtCore import Signal, Slot
 
 from base import QWidgetBase
+from components.dialogs import ErrorDialog
 from keys import keys
 from models import RulesModel
 from rulerunner import RuleRunnerThread
@@ -26,15 +27,18 @@ class RulesPage(QWidgetBase):
         self.ui = RulesPageView()
         self.layout = self.ui.layout()
         self.setLayout(self.layout)
-
+        self.forms_errors = []
+        self.total_errors = 0
         self.setGraphicsEffect(None)
         self.rulesModel = RulesModel()
+
+        # Signal / Slot Connections
         self.rulesModel.data_changed.connect(self.ui.rules_changed)
         self.ui.download.clicked.connect(self.save_rules_to_file)
         self.ui.validate.clicked.connect(self.validate_rules)
         self.ui.save.clicked.connect(self.save_rules_to_system)
-
         self.send_rules.connect(self.ui.rules_changed)
+        self.ui.validate_open_dialog.clicked.connect(self.display_errors_dialog)
 
         # with open("avaya_rules.json") as f:
         #     config_data = json.load(f)
@@ -45,6 +49,11 @@ class RulesPage(QWidgetBase):
 
         self.val = SchemaValidator("./schemas", "/schemas/main")
         self.check_for_saved_rules()
+
+    def display_errors_dialog(self):
+        add = ErrorDialog(self.forms_errors)
+        self.ui.set_hidden_errors_dialog_btn(False)
+        add.show()
 
     def check_for_saved_rules(self):
         self.send_rules.emit(self.rulesModel.rules)
@@ -68,29 +77,43 @@ class RulesPage(QWidgetBase):
     def validate_rules(self):
         rules = []
         rules_with_guid = []
-        total_errors = 0
+
         rules_inputs = self.ui.get_forms()
-
+        self.total_errors = 0
+        self.forms_errors = []
         if len(rules_inputs) == 0:
-            return None
+            return (None, None)
 
-        for rule in rules_inputs:
+        for index, rule in enumerate(rules_inputs):
 
             error_count, form_errors, data = rule.validate_form()
+            print(data)
+            rule_name = data.get("rule_name", None)
+            if not rule_name:
+                rule_name = f"Rule {index + 1}: Rule Has No Name"
+            else:
+                rule_name = f"Rule {index + 1}: {rule_name}"
 
-            total_errors = total_errors + error_count
+            self.total_errors = self.total_errors + error_count
 
+            error_dict = {"errors": form_errors, "rule_name": rule_name}
+
+            self.forms_errors.append(error_dict)
             rules_with_guid.append(data)
             data_copy = data.copy()
             del data_copy["guid"]
             rules.append(data)
 
-        if total_errors > 0:
-            self.ui.validate_feedback.setText(f"Total Errors : {total_errors}")
+        if self.total_errors > 0:
+            self.ui.validate_feedback.setText(f"Total Errors : {self.total_errors}")
             self.ui.validate_feedback.setIcon(self.ui.error_icon)
-            # TODO - display notification - display errors
-            return None
+
+            self.display_errors_dialog()
+            return (None, None)
         else:
+            self.total_errors = 0
+            self.forms_errors = []
+            self.ui.set_hidden_errors_dialog_btn(True)
             self.ui.validate_feedback.setText("No Errors Found")
             self.ui.validate_feedback.setIcon(self.ui.no_error_icon)
             [rule.pop("errors", None) for rule in rules]
@@ -99,16 +122,19 @@ class RulesPage(QWidgetBase):
 
     def save_rules_to_file(self):
         if self.ui.get_forms():
-            data, _ = self.validate_rules()
-            if data:
-                with open("./avaya_user.json", "w") as f:
-                    json.dump(data, f, indent=4)
+            if self.validate_rules() is not None:
+                data, _ = self.validate_rules()
+                if data:
+                    with open("./avaya_user.json", "w") as f:
+                        json.dump(data, f, indent=4)
                 # TODO Confirmation message - toast
 
     def save_rules_to_system(self):
         if self.ui.get_forms():
-            _, data = self.validate_rules()
-            if data:
-                self.rulesModel.save_rules(data)
-        else:
-            self.rulesModel.save_rules([])
+            if self.validate_rules() is not None:
+                print(self.ui.get_forms())
+                _, data = self.validate_rules()
+                if data:
+                    self.rulesModel.save_rules(data)
+            else:
+                self.rulesModel.save_rules([])

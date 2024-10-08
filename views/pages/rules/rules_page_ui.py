@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from components.buttons import EditorActionButton
+from components.buttons import EditorActionButton, GradientButton
 from components.helpers import StyleHelper, WidgetFactory
 from components.layouts import ScrollArea, StackedFormWidget
 from managers import RuleFormManager
@@ -53,7 +53,19 @@ class RulesPageView(QWidget):
         h_spacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         self.validate_feedback = QPushButton()
+        self.validate_open_dialog = GradientButton(
+            "View Errors",
+            "black",
+            [(0.05, "#FEB220"), (0.50, "#f58220"), (1, "#f58220")],
+            "#f58220",
+            1,
+            3,
+        )
+        self.validate_open_dialog.setMaximumWidth(100)
         self.top_button_bar_layout.addWidget(self.validate_feedback)
+        self.top_button_bar_layout.addWidget(self.validate_open_dialog)
+        self.validate_open_dialog.setObjectName("open-errors-btn")
+        self.validate_open_dialog.setHidden(True)
         self.validate_feedback.setStyleSheet(
             "background-color: transparent; border: none; font-size: 13px; color: white;"
         )
@@ -76,8 +88,10 @@ class RulesPageView(QWidget):
         self.prev_button.setFixedWidth(30)
         self.next_button.setFixedWidth(30)
         self.nav_label = QLabel()
-        self.nav_label.setStyleSheet("background: transparent;")
+
+        self.nav_label.setObjectName("nav-label")
         nav_btn_layout.addWidget(self.nav_label)
+
         nav_btn_layout.addWidget(self.prev_button)
         nav_btn_layout.addWidget(self.next_button)
 
@@ -93,8 +107,6 @@ class RulesPageView(QWidget):
             50,
             20,
         )
-        self.prev_button.clicked.connect(self.show_previous_rule)
-        self.next_button.clicked.connect(self.show_next_rule)
 
         # Main Section
         hlayout = QHBoxLayout()
@@ -211,6 +223,8 @@ class RulesPageView(QWidget):
         self.scroll_area.verticalScrollBar().valueChanged.connect(self.repaint_shadow)
         self.scroll_area.horizontalScrollBar().valueChanged.connect(self.repaint_shadow)
         self.trash.clicked.connect(self.on_delete_rule)
+        self.prev_button.clicked.connect(self.show_previous_rule)
+        self.next_button.clicked.connect(self.show_next_rule)
 
         # Setup
         self.update_navigation_buttons()
@@ -219,6 +233,9 @@ class RulesPageView(QWidget):
     def rules_changed(self, rules):
         print(rules)
         self.set_up_rules(rules)
+
+    def set_hidden_errors_dialog_btn(self, state):
+        self.validate_open_dialog.setHidden(state)
 
     def get_forms(self):
         return self.stacked_widget.get_form_factories()

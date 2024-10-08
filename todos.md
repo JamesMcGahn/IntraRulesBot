@@ -5,7 +5,7 @@
 - [ ] :#FEATURE : Add Rule via form
 
 - [ ] :#FEATURE : Display Validation errors
-  - [ ] :#TODO : rules page - display validation errors to user
+  - [x] :#TODO : rules page - display validation errors to user
   - [ ] :#TODO : open file - dispaly validation errors to user
 - [ ] :#TODO : switch page to rules page after open file validation
 - [ ] :#TODO : rf GUI files to views and controllers

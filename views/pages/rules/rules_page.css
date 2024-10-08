@@ -32,3 +32,15 @@ QWidget#actions-btn-widget {
   /* background-color: #dedede; */
   padding: 0;
 }
+
+QPushButton#open-errors-btn {
+  background-color: #fcc141;
+  color: black;
+  padding: 5px 20px;
+  text-align: center;
+}
+
+QLabel#nav-label {
+  color: #fcfcfc;
+  background: transparent;
+}
