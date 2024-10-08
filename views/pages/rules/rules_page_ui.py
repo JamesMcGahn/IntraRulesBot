@@ -134,6 +134,7 @@ class RulesPageView(QWidget):
         self.clone = EditorActionButton("")
         self.copy_field = EditorActionButton("")
         self.trash = EditorActionButton("")
+        self.delete_all = EditorActionButton("")
 
         actionBtns = [
             (
@@ -171,6 +172,12 @@ class RulesPageView(QWidget):
                 "Save to File",
                 ":/images/download_off_b.png",
                 ":/images/download_on.png",
+            ),
+            (
+                self.delete_all,
+                "Delete All Rules",
+                ":/images/delete_all_off_b.png",
+                ":/images/delete_all_on.png",
             ),
         ]
 
@@ -225,9 +232,17 @@ class RulesPageView(QWidget):
         self.trash.clicked.connect(self.on_delete_rule)
         self.prev_button.clicked.connect(self.show_previous_rule)
         self.next_button.clicked.connect(self.show_next_rule)
-
+        self.delete_all.clicked.connect(self.delete_all_forms)
         # Setup
         self.update_navigation_buttons()
+
+    def delete_all_forms(self):
+        print(self.stacked_widget.count())
+        self.stacked_widget.remove_all()
+        self.current_rule_index = 0
+        self.set_up_rules([])
+        self.update_navigation_buttons()
+        print(self.stacked_widget.count())
 
     @Slot(list)
     def rules_changed(self, rules):
@@ -259,6 +274,7 @@ class RulesPageView(QWidget):
             self.clone,
             self.copy_field,
             self.trash,
+            self.delete_all,
         ]
         for btn in actions_buttons:
             if self.stacked_widget.get_form_factories():

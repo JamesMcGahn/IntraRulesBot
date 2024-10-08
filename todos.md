@@ -4,9 +4,6 @@
 
 - [ ] :#FEATURE : Add Rule via form
 
-- [ ] :#FEATURE : Display Validation errors
-  - [x] :#TODO : rules page - display validation errors to user
-  - [ ] :#TODO : open file - dispaly validation errors to user
 - [ ] :#TODO : switch page to rules page after open file validation
 - [ ] :#TODO : rf GUI files to views and controllers
 - [ ] :#TODO : standarize Qtoast/log function for qwidget base, implement on Pages
@@ -39,3 +36,7 @@
 - [x] : move base classes to folder
 - [x] : delete rule
 - [x] : save rules to system
+- [x] :#FEATURE : Display Validation errors
+  - [x] :#TODO : rules page - display validation errors to user
+  - [x] :#TODO : open file - dispaly validation errors to user
+- [x] : Delete All Rules Action

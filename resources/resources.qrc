@@ -41,6 +41,8 @@
     <file>images/validate_on.png</file>
     <file>images/validate_on.png</file>
     <file>images/validate_off_b.png</file>
+    <file>images/delete_all_on.png</file>
+    <file>images/delete_all_off_b.png</file>
     <file>images/orange_check.png</file>
   </qresource>
 </RCC>

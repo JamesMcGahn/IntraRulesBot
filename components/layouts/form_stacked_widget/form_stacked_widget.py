@@ -12,6 +12,13 @@ class StackedFormWidget(StackedWidget):
         self.widget_map = {}
         self.form_factories = []
 
+    def remove_all(self):
+        while self.count() > 0 and len(self.form_factories) > 0:
+            widget = self.widget(0)
+            self.removeWidget(widget)
+            widget.deleteLater()
+            del self.form_factories[0]
+
     def add_form(self, rule_form: RuleFormManager, styleSheet=""):
         """Add a widget to the stacked widget and map its name."""
         rule_widget = QWidget()
