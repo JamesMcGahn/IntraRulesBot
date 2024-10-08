@@ -5,12 +5,11 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
-from components.buttons import GradientButton, ToggleButton
+from components.buttons import EditorActionButton, GradientButton, ToggleButton
 from components.helpers import WidgetFactory
 
 
@@ -49,14 +48,21 @@ class SettingsPageView(QWidget):
 
         self.log_file_path.setStyleSheet("background-color: #FCFCFC")
 
-        self.select_folder_button = QPushButton()
+        self.select_folder_button = EditorActionButton("")
         self.select_folder_button.setMaximumWidth(30)
 
         folder_icon = QIcon()
         folder_icon.addFile(":/images/open_folder_off.png", QSize(), QIcon.Mode.Normal)
+        WidgetFactory.create_icon(
+            self.select_folder_button,
+            ":/images/open_folder_on.png",
+            50,
+            20,
+            True,
+            ":/images/open_folder_off.png",
+            False,
+        )
 
-        self.select_folder_button.setIcon(folder_icon)
-        self.select_folder_button.setIconSize(QSize(50, 20))
         self.select_folder_button.clicked.connect(self.open_folder_dialog)
 
         row_layout = QHBoxLayout()
