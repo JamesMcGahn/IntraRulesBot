@@ -59,6 +59,7 @@ class ErrorDialog(GradientDialog):
         outter_layout.setContentsMargins(0, 0, 0, 0)
         self.close_btn = QPushButton("Close")
         self.close_btn.setObjectName("close-btn")
+        self.close_btn.setCursor(Qt.PointingHandCursor)
         outter_layout.addRow(self.close_btn)
         self.close_btn.clicked.connect(self.accept)
 

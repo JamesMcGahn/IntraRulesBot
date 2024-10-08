@@ -37,7 +37,6 @@ class CentralWidget(QWidget):
 
         self.header_widget.hamburger_signal.connect(self.icon_only_widget.hide_nav)
         self.header_widget.hamburger_signal.connect(self.icon_text_widget.hide_nav)
-        self.header_widget.send_logs.connect(self.logging)
 
         self.icon_only_widget.btn_checked_ico.connect(
             self.icon_text_widget.btns_set_checked

@@ -21,11 +21,19 @@ class RulesModel(QObject, metaclass=QSingleton):
     @Slot(object)
     def add_rule(self, rule):
         self._rules.append(rule)
-        self.data_changed.emit(self._rules)
+        self.data_changed.emit(rule)
 
     @Slot(list)
-    def reset_model(self, rules):
-        self._rules = rules
+    def add_rules(self, rules):
+        self._rules.append([rule for rule in rules])
+        self.data_changed.emit(rules)
+
+    @Slot()
+    def reset_model(self):
+        self.settings.begin_group("rules-model")
+        self.settings.set_value("rules_saved", [])
+        self.settings.end_group()
+        self._rules = []
         self.data_changed.emit(self._rules)
 
     @Slot(list)

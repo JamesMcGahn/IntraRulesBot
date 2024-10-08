@@ -1,5 +1,4 @@
-from PySide6.QtCore import QSize
-from PySide6.QtGui import QIcon, QPixmap
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -9,6 +8,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from components.buttons import GradientButton
+from components.helpers import StyleHelper, WidgetFactory
 
 
 class HeaderNavBarView(QWidget):
@@ -34,7 +36,7 @@ class HeaderNavBarView(QWidget):
         original_pixmap = QPixmap(":/images/logo.png")
 
         self.app_logo.setPixmap(original_pixmap)
-
+        StyleHelper.drop_shadow(self.app_logo)
         self.app_logo_vlayout.addWidget(self.app_logo)
 
         self.horizontalSpacer_3 = QSpacerItem(
@@ -44,25 +46,36 @@ class HeaderNavBarView(QWidget):
         self.inner_cont_hlayout.addLayout(self.app_logo_vlayout)
         self.inner_cont_hlayout.addItem(self.horizontalSpacer_3)
 
-        self.open_file_btn = QPushButton("Open File")
+        self.open_file_btn = GradientButton(
+            "Open File",
+            "black",
+            [(0.05, "#FEB220"), (0.50, "#f58220"), (1, "#f58220")],
+            "#f58220",
+            1,
+            3,
+        )
+
+        self.open_file_btn.setMaximumWidth(100)
+        self.open_file_btn.setMaximumHeight(30)
 
         self.inner_cont_hlayout.addWidget(self.open_file_btn)
 
         self.hamburger_icon_btn = QPushButton(self)
+        StyleHelper.drop_shadow(self.hamburger_icon_btn)
         self.hamburger_icon_btn.setObjectName("hamburger-icon-btn")
         self.hamburger_icon_btn.setStyleSheet(
             "QPushButton {\n" "border: none;\n" "padding-right:.5em\n" "}"
         )
-        icon6 = QIcon()
-        icon6.addFile(
-            ":/images/hamburger_off.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off
+
+        WidgetFactory.create_icon(
+            self.hamburger_icon_btn,
+            ":/images/hamburger_off.png",
+            29,
+            35,
+            True,
+            ":/images/hamburger_on.png",
+            False,
         )
-        icon6.addFile(
-            ":/images/hamburger_on.png", QSize(), QIcon.Mode.Normal, QIcon.State.On
-        )
-        self.hamburger_icon_btn.setIcon(icon6)
-        self.hamburger_icon_btn.setIconSize(QSize(29, 35))
-        self.hamburger_icon_btn.setCheckable(True)
 
         self.inner_cont_hlayout.addWidget(self.hamburger_icon_btn)
 

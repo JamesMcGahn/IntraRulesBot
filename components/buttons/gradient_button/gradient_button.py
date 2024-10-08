@@ -35,6 +35,7 @@ class GradientButton(QPushButton):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.is_hovered = False
         self.pressed = False
+        self.setCursor(Qt.PointingHandCursor)
 
         module_dir = os.path.dirname(os.path.realpath(__file__))
         file_path = os.path.join(module_dir, "gradient_button.css")
