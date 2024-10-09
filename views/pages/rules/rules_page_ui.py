@@ -11,9 +11,11 @@ from PySide6.QtWidgets import (
 )
 
 from components.buttons import EditorActionButton, GradientButton
+from components.dialogs import AddRuleWizard
 from components.helpers import StyleHelper, WidgetFactory
 from components.layouts import ScrollArea, StackedFormWidget
 from managers import RuleFormManager
+from translators import GenerateRuleObject
 
 
 class RulesPageView(QWidget):
@@ -128,6 +130,7 @@ class RulesPageView(QWidget):
         form_actions_btn_inner_layout = QVBoxLayout(actions_btn_widget_inner)
         form_actions_btn_inner_layout.setSpacing(0)
         form_actions_btn_inner_layout.setContentsMargins(0, 0, 0, 0)
+        self.add = EditorActionButton("")
         self.save = EditorActionButton("")
         self.download = EditorActionButton("")
         self.validate = EditorActionButton("")
@@ -137,6 +140,12 @@ class RulesPageView(QWidget):
         self.delete_all = EditorActionButton("")
 
         actionBtns = [
+            (
+                self.add,
+                "Add Rule",
+                ":/images/add_off_b.png",
+                ":/images/add_on.png",
+            ),
             (
                 self.save,
                 "Save",
@@ -230,6 +239,9 @@ class RulesPageView(QWidget):
         self.main_layout.addWidget(self.editor_widget)
         self.outter_layout.addRow(self.main_layout)
 
+        self.add_rule = AddRuleWizard()
+        self.add_rule.submit_form.connect(self.add_rule_form_submit)
+
         # Signal / Slot Connections
         self.scroll_area.verticalScrollBar().valueChanged.connect(self.repaint_shadow)
         self.scroll_area.horizontalScrollBar().valueChanged.connect(self.repaint_shadow)
@@ -237,20 +249,34 @@ class RulesPageView(QWidget):
         self.prev_button.clicked.connect(self.show_previous_rule)
         self.next_button.clicked.connect(self.show_next_rule)
         self.delete_all.clicked.connect(self.delete_all_forms)
+        self.add.clicked.connect(self.show_add_rule_dialog)
         # Setup
         self.update_navigation_buttons()
 
+    def show_add_rule_dialog(self):
+        self.add_rule.show()
+
+    @Slot(object)
+    def add_rule_form_submit(self, form):
+        add = GenerateRuleObject("./schemas/rules_schema.json", form)
+        add.load_schema()
+        current_count = self.stacked_widget.count()
+        new_rule = add.generate_dynamic_object()
+        print(new_rule)
+        if new_rule:
+            self.rules_changed([new_rule])
+            self.current_rule_index = current_count
+            self.stacked_widget.setCurrentIndex(current_count)
+            self.update_navigation_buttons()
+
     def delete_all_forms(self):
-        print(self.stacked_widget.count())
         self.stacked_widget.remove_all()
         self.current_rule_index = 0
         self.set_up_rules([])
         self.update_navigation_buttons()
-        print(self.stacked_widget.count())
 
     @Slot(list)
     def rules_changed(self, rules):
-        print(rules)
         self.set_up_rules(rules)
 
     def set_hidden_errors_dialog_btn(self, state):

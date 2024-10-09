@@ -1,7 +1,7 @@
 import json
 import os
 
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import Signal
 
 from base import QWidgetBase
 from components.dialogs import ErrorDialog
@@ -59,6 +59,7 @@ class RulesPage(QWidgetBase):
         self.send_rules.emit(self.rulesModel.rules)
 
     def progress_received(self, currentRuleIndex, totalRules):
+        # TODO: Progress bar
         print(f"rule - {currentRuleIndex} - {totalRules}")
 
     def start_thread(self):
@@ -75,6 +76,7 @@ class RulesPage(QWidgetBase):
         self.rule_runner_thread.start()
 
     def validate_rules(self):
+
         rules = []
         rules_with_guid = []
 
@@ -87,7 +89,7 @@ class RulesPage(QWidgetBase):
         for index, rule in enumerate(rules_inputs):
 
             error_count, form_errors, data = rule.validate_form()
-            print(data)
+
             rule_name = data.get("rule_name", None)
             if not rule_name:
                 rule_name = f"Rule {index + 1}: Rule Has No Name"
@@ -132,7 +134,6 @@ class RulesPage(QWidgetBase):
     def save_rules_to_system(self):
         if self.ui.get_forms():
             if self.validate_rules() is not None:
-                print(self.ui.get_forms())
                 _, data = self.validate_rules()
                 if data:
                     self.rulesModel.save_rules(data)

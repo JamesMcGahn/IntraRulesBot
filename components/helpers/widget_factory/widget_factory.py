@@ -20,6 +20,7 @@ class WidgetFactory:
         max_width=None,
         title_color="black",
         title_font_size=16,
+        style_sheet="",
     ):
         if gradient_box:
             box = GradientGroupBox(
@@ -32,10 +33,15 @@ class WidgetFactory:
             box.set_gradient_start_stop(
                 box.width() / 2, 0, box.width() / 2, box.height()
             )
+            if style_sheet:
+                box.setStyleSheet(f"{style_sheet}")
         else:
+
             box = QGroupBox(title)
             box.setObjectName(object_name)
-            box.setStyleSheet("QGroupBox::title { color:" + f"{title_color}" + ";}")
+            box.setStyleSheet(
+                "QGroupBox::title { color:" + f"{title_color}" + ";}" + f"{style_sheet}"
+            )
             # TODO - refactor to UI helper function
             if drop_shadow_effect:
                 if isinstance(drop_shadow_effect, bool):
@@ -46,7 +52,7 @@ class WidgetFactory:
 
         StyleHelper.dpi_scale_set_font(box, font_size=title_font_size)
 
-        box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         if max_width is not None:
             box.setMaximumWidth(max_width)
