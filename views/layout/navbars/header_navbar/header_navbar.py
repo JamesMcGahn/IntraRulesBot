@@ -58,7 +58,7 @@ class HeaderNavBar(QWidgetBase):
             "JSON Files (*.json);;All Files (*)",
             options=options,
         )
-        print("here")
+
         if file_name:
             self.logging(f"Opening file - {file_name} to load json data.", "INFO")
             try:

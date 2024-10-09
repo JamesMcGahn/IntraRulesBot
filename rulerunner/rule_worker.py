@@ -151,7 +151,7 @@ class RuleWorker(QWorkerBase):
 
         def handle_duplicate_alert():
             for _ in range(2):
-                print("here")
+
                 # Retry twice before giving up
                 alert = self.wait_for_dup_rule_alert(10)
                 if alert:
