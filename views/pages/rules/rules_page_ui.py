@@ -183,6 +183,7 @@ class RulesPageView(QWidget):
 
         for index, btn in enumerate(actionBtns):
             btn_ref, tool_tip, image_loc1, image_loc2 = btn
+
             btn_ref.setToolTip(tool_tip)
             btn_ref.setFixedWidth(40)
             style = ""
@@ -202,7 +203,10 @@ class RulesPageView(QWidget):
                 False,
             )
             btn_ref.setStyleSheet(
-                f"{style} padding: 5px 5px ; background: #DEDEDE; border-bottom: 1px solid #f58220;"
+                "QPushButton { "
+                + f"{style} padding: 5px 5px ; background: #DEDEDE; border-bottom: 1px solid #f58220; "
+                + "} QToolTip"
+                + "{ background: transparent; color: black; border: 1px solid #f58220; border-radius: 0px; padding: 5px; }"
             )
             form_actions_btn_inner_layout.addWidget(btn_ref)
 
