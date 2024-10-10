@@ -3,6 +3,7 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
+    QProgressBar,
     QPushButton,
     QSizePolicy,
     QSpacerItem,
@@ -247,7 +248,14 @@ class RulesPageView(QWidget):
             1,
             3,
         )
-        self.main_layout.addWidget(self.start)
+        self.progress_bar = QProgressBar(self)
+        self.progress_bar.setHidden(True)
+        bottom_h_layout = QHBoxLayout()
+
+        bottom_h_layout.addWidget(self.progress_bar)
+        bottom_h_layout.addWidget(self.start)
+
+        self.main_layout.addLayout(bottom_h_layout)
 
         self.add_rule = AddRuleWizard()
         self.add_rule.submit_form.connect(self.add_rule_form_submit)
@@ -262,6 +270,15 @@ class RulesPageView(QWidget):
         self.add.clicked.connect(self.show_add_rule_dialog)
         # Setup
         self.update_navigation_buttons()
+
+    @Slot(int, int)
+    def set_progress_bar(self, current, total):
+        if current < total:
+            self.progress_bar.setHidden(False)
+        else:
+            self.progress_bar.setHidden(True)
+        self.progress_bar.setRange(0, total)
+        self.progress_bar.setValue(current)
 
     def show_add_rule_dialog(self):
         self.add_rule.show()

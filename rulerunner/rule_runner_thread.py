@@ -45,6 +45,7 @@ class RuleRunnerThread(QThread):
         self.errored_rules = []
         self.success_rules = []
         self.login_attempt = False
+        self.shut_down = False
 
     def run(self):
         self.receiver_thread_logs(
@@ -75,13 +76,15 @@ class RuleRunnerThread(QThread):
         except NoSuchWindowException:
             self.receiver_thread_logs("Error loading URL. Browser closed.","ERROR")
             self.receiver_thread_logs("Restarting WebDriver.....","INFO")
-            self.init_driver()
-            self.driver.get(self.login_url)
+            if not self.shut_down:
+                self.init_driver()
+                self.driver.get(self.login_url)
         except WebDriverException as e:
-            self.receiver_thread_logs(f"Error loading URL. Browser likely closed: {str(e)}","ERROR")
-            self.receiver_thread_logs("Restarting WebDriver.....","INFO")
-            self.init_driver()
-            self.driver.get(self.login_url)
+            if not self.shut_down:
+                self.receiver_thread_logs(f"Error loading URL. Browser likely closed: {str(e)}","ERROR")
+                self.receiver_thread_logs("Restarting WebDriver.....","INFO")
+                self.init_driver()
+                self.driver.get(self.login_url)
         except Exception as e:
             self.receiver_thread_logs(f"Error loading URL.: {str(e)}","ERROR")
             self.close()
@@ -105,7 +108,7 @@ class RuleRunnerThread(QThread):
 
     @Slot()
     def login_error(self):
-        if not self.login_attempt:
+        if not self.login_attempt and not self.shut_down:
             self.login_attempt = True
             self.login_worker.deleteLater()
             self.receiver_thread_logs(
@@ -115,9 +118,10 @@ class RuleRunnerThread(QThread):
             self.start_login()
         else:
             self.login_worker.deleteLater()
-            self.receiver_thread_logs(
-                "Login Failed due to an error. Shutting down thread", "ERROR"
-            )
+            if not self.shut_down:
+                self.receiver_thread_logs(
+                    "Login Failed due to an error. Shutting down thread", "ERROR"
+                )
             self.close()
 
     @Slot()
@@ -168,15 +172,16 @@ class RuleRunnerThread(QThread):
         self.errors_in_a_row += 1
         self.receiver_thread_logs("RuleRunnerThread received error from Rule Worker.", "WARN")
         self.receiver_thread_logs(f"Rule: {self.current_rule["rule_name"]} has errored out {self.errors_in_a_row} times.", "WARN")
-        if self.errors_in_a_row < 2 and shouldRetry:
+        if self.errors_in_a_row < 2 and shouldRetry and not self.shut_down:
             self.receiver_thread_logs(f"Trying Again to create Rule for {self.current_rule["rule_name"]}", "INFO")
             self.rules.appendleft(self.current_rule)
             self.get_login_url()
             self.start_login()
         else:
             msg = f"Skipping Rule due to {self.errors_in_a_row} errors in a row" if shouldRetry else "Skipping Rule - "
+            if not self.shut_down:
 
-            self.receiver_thread_logs(msg, "INFO")
+                self.receiver_thread_logs(msg, "INFO")
             self.errored_rules.append(self.current_rule["rule_name"])
             if len(self.rules) > 0:
                 self.get_login_url()
@@ -212,17 +217,26 @@ class RuleRunnerThread(QThread):
         self.pause()
         self.close()
 
+    def is_thread_pool_running(self):
+        return any(thread.is_alive() for thread in self.executor._threads)
+
+
     @Slot(bool)
     def close(self):
         """
         Close the  properly.
         """
-        if self.isRunning():
+        if self.isRunning() or self.is_thread_pool_running():
+            self.pause()
+            self.shut_down = True
+            self.close_down_driver()
+            self.pause()
+            self.executor.shutdown()
             self.receiver_thread_logs(
                 f"Shutting down RuleRunnerThread: {threading.get_ident()} - {self.thread()}",
                 "INFO",
             )
-            self.close_down_driver()
-            self.finished.emit()
             self.quit()
             self.wait()
+            self.finished.emit()
+            self.deleteLater()

@@ -66,10 +66,6 @@ class RulesPage(QWidgetBase):
     def check_for_saved_rules(self):
         self.send_rules.emit(self.rulesModel.rules)
 
-    def progress_received(self, currentRuleIndex, totalRules):
-        # TODO: Progress bar
-        print(f"rule - {currentRuleIndex} - {totalRules}")
-
     def start_rule_runner(self):
         if self.ui.get_forms():
             if self.validate_rules() is not None:
@@ -89,7 +85,7 @@ class RulesPage(QWidgetBase):
                     )
                     self.rule_runner_thread.send_insert_logs.connect(self.logging)
                     self.appshutdown.connect(self.rule_runner_thread.close)
-                    self.rule_runner_thread.progress.connect(self.progress_received)
+                    self.rule_runner_thread.progress.connect(self.ui.set_progress_bar)
                     self.rule_runner_thread.start()
 
     def validate_rules(self):
