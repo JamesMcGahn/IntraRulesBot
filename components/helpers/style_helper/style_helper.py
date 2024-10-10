@@ -30,12 +30,16 @@ class StyleHelper:
         font_family: str = "Open Sans",
         font_size: int = 12,
     ):
+
         if isinstance(parent, QApplication):
             screen = parent.primaryScreen()
-            dpi_scale = screen.devicePixelRatio()
         else:
-            dpi_scale = parent.devicePixelRatioF()  # Get the DPI scaling factor
+            screen = parent.screen()
+
+        logical_dpi = screen.logicalDotsPerInch() / 96.0
         font = QFont(font_family)
-        adjusted_font_size = font_size / dpi_scale
+
+        adjusted_font_size = font_size * logical_dpi
         font.setPointSizeF(adjusted_font_size)
+
         parent.setFont(font)

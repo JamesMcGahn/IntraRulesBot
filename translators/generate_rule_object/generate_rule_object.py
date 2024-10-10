@@ -1,5 +1,3 @@
-import json
-
 from schemas import RULES_SCHEMA
 
 

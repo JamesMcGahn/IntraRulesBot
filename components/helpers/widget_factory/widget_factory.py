@@ -52,7 +52,7 @@ class WidgetFactory:
 
         StyleHelper.dpi_scale_set_font(box, font_size=title_font_size)
 
-        box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        box.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
 
         if max_width is not None:
             box.setMaximumWidth(max_width)
