@@ -3,7 +3,7 @@ import sys
 
 import keyring
 from keyring import get_keyring
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import Signal, Slot
 
 from base import QObjectBase, QSingleton
 from services.settings import AppSettings

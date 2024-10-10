@@ -10,8 +10,14 @@ from PySide6.QtCore import (
     QTimer,
     Signal,
 )
-from qtpy.QtGui import QFont, QFontMetrics, QGuiApplication, QIcon, QPixmap, QScreen
-from qtpy.QtWidgets import QDialog, QGraphicsOpacityEffect, QLabel, QPushButton, QWidget
+from PySide6.QtGui import QFont, QFontMetrics, QGuiApplication, QIcon, QPixmap, QScreen
+from PySide6.QtWidgets import (
+    QDialog,
+    QGraphicsOpacityEffect,
+    QLabel,
+    QPushButton,
+    QWidget,
+)
 
 # trunk-ignore(ruff/F403)
 from .constants import *
@@ -557,12 +563,12 @@ class Toast(QDialog):
 
         # Calculate title and text width and height
         title_font_metrics = QFontMetrics(self.__title_font)
-        title_width = title_font_metrics.width(self.__title_label.text())
+        title_width = title_font_metrics.horizontalAdvance(self.__title_label.text())
         title_height = title_font_metrics.boundingRect(
             self.__title_label.text()
         ).height()
         text_font_metrics = QFontMetrics(self.__text_font)
-        text_width = text_font_metrics.width(self.__text_label.text())
+        text_width = text_font_metrics.horizontalAdvance(self.__text_label.text())
         text_height = text_font_metrics.boundingRect(self.__text_label.text()).height()
         text_section_spacing = self.__text_section_spacing
         if self.__title == "" or self.__text == "":

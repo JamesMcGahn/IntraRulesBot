@@ -15,15 +15,15 @@ class IconUtils:
         """
 
         if enum_icon == ToastIcon.SUCCESS:
-            return QPixmap(OSUtils.get_current_directory() + "/icons/success.png")
+            return QPixmap(":/images/success.png")
         elif enum_icon == ToastIcon.WARNING:
-            return QPixmap(OSUtils.get_current_directory() + "/icons/warning.png")
+            return QPixmap(":/images/warning.png")
         elif enum_icon == ToastIcon.ERROR:
-            return QPixmap(OSUtils.get_current_directory() + "/icons/error.png")
+            return QPixmap(":/images/error.png")
         elif enum_icon == ToastIcon.INFORMATION:
-            return QPixmap(OSUtils.get_current_directory() + "/icons/information.png")
+            return QPixmap(":/images/information.png")
         elif enum_icon == ToastIcon.CLOSE:
-            return QPixmap(OSUtils.get_current_directory() + "/icons/close.png")
+            return QPixmap(":/images/close.png")
 
     @staticmethod
     def recolor_image(image: QImage, color: QColor | None):
