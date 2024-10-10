@@ -24,10 +24,10 @@ class LoginModel(QObject, metaclass=QSingleton):
 
     @Slot(str, str, str, str)
     def save_creds(self, username, password, url, login_url):
-        self.username = username
-        self.password = password
-        self.url = url
-        self.login_url = login_url
+        self.username = username or None
+        self.password = password or None
+        self.url = url or None
+        self.login_url = login_url or None
 
         keyring.set_password(self.service_name, self.username, self.password)
         self.settings.begin_group("login")

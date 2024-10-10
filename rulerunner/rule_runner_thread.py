@@ -19,7 +19,7 @@ class RuleRunnerThread(QThread):
     progress = Signal(int, int)
     rule_created = Signal(str)
 
-    def __init__(self, username, password, url, rules):
+    def __init__(self, username, password, login_url,url, rules):
         super().__init__()
 
         self._mutex = QMutex()
@@ -30,6 +30,7 @@ class RuleRunnerThread(QThread):
         self.username = username
         self.password = password
         self.url = url
+        self.login_url = login_url
         self.rules = deque()
         self.rules_total_count = len(rules)
         for rule in rules:
@@ -68,19 +69,19 @@ class RuleRunnerThread(QThread):
 
     def get_login_url(self):
         try:
-            self.driver.get(self.url)
+            self.driver.get(self.login_url)
             self.receiver_thread_logs(f"Loaded in the browser: {self.url} ","INFO"
         )
         except NoSuchWindowException:
             self.receiver_thread_logs("Error loading URL. Browser closed.","ERROR")
             self.receiver_thread_logs("Restarting WebDriver.....","INFO")
             self.init_driver()
-            self.driver.get(self.url)
+            self.driver.get(self.login_url)
         except WebDriverException as e:
             self.receiver_thread_logs(f"Error loading URL. Browser likely closed: {str(e)}","ERROR")
             self.receiver_thread_logs("Restarting WebDriver.....","INFO")
             self.init_driver()
-            self.driver.get(self.url)
+            self.driver.get(self.login_url)
         except Exception as e:
             self.receiver_thread_logs(f"Error loading URL.: {str(e)}","ERROR")
             self.close()
@@ -216,11 +217,12 @@ class RuleRunnerThread(QThread):
         """
         Close the  properly.
         """
-        self.receiver_thread_logs(
-            f"Shutting down RuleRunnerThread: {threading.get_ident()} - {self.thread()}",
-            "INFO",
-        )
-        self.close_down_driver()
-        self.finished.emit()
-        self.quit()
-        self.wait()
+        if self.isRunning():
+            self.receiver_thread_logs(
+                f"Shutting down RuleRunnerThread: {threading.get_ident()} - {self.thread()}",
+                "INFO",
+            )
+            self.close_down_driver()
+            self.finished.emit()
+            self.quit()
+            self.wait()

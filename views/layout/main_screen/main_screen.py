@@ -16,7 +16,6 @@ class MainScreen(QWidget):
 
         self.setObjectName("main_screen")
 
-        self.ui.rules_page.send_logs.connect(self.logging)
         self.appshutdown.connect(self.ui.rules_page.notified_app_shutting)
 
     @Slot(QPushButton)

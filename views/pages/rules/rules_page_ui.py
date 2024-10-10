@@ -239,6 +239,16 @@ class RulesPageView(QWidget):
         self.main_layout.addWidget(self.editor_widget)
         self.outter_layout.addRow(self.main_layout)
 
+        self.start = GradientButton(
+            "Start",
+            "black",
+            [(0.05, "#FEB220"), (0.50, "#f58220"), (1, "#f58220")],
+            "#f58220",
+            1,
+            3,
+        )
+        self.main_layout.addWidget(self.start)
+
         self.add_rule = AddRuleWizard()
         self.add_rule.submit_form.connect(self.add_rule_form_submit)
 
