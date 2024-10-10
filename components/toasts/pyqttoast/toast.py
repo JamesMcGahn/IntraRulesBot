@@ -1,6 +1,6 @@
 import math
 
-from qtpy.QtCore import (
+from PySide6.QtCore import (
     QMargins,
     QPoint,
     QPropertyAnimation,

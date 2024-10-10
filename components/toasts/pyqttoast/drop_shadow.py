@@ -1,5 +1,5 @@
-from qtpy.QtCore import QSize
-from qtpy.QtWidgets import QWidget
+from PySide6.QtCore import QSize
+from PySide6.QtWidgets import QWidget
 
 from .css.drop_shadow_css import DROP_SHADOW_CSS
 
