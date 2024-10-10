@@ -168,7 +168,7 @@ class RuleFormManager:
             rule_input["actions"].append(inputs)
 
     def validate_form(self):
-        val = SchemaValidator(self.schema_folder, self.schema_path)
+        val = SchemaValidator(self.schema_path)
         total_errors = 0
         self.form_errors = []
         data_rule = self.create_input_dict(self.int_keys)

@@ -1,24 +1,21 @@
-import json
-from pathlib import Path
 from typing import Tuple
 
 from jsonschema import Draft202012Validator, ValidationError
 from jsonschema.validators import RefResolver
 
+from schemas import MAIN_SCHEMA, RULES_SCHEMA
+
 
 class SchemaValidator:
-    def __init__(self, schemas_folder: str, schemaId: str):
-        self.schemas_folder = Path(schemas_folder)
+    def __init__(self, schemaId: str):
         self.schema_store = {}
         self.validator = None
         self.load_schemas()
         self.select_schema(schemaId)
 
     def load_schemas(self) -> None:
-        for schema_file in self.schemas_folder.glob("*.json"):
-            with open(schema_file, "r") as file:
-                schema = json.load(file)
-                self.schema_store[schema["$id"]] = schema
+        for schema_file in (MAIN_SCHEMA, RULES_SCHEMA):
+            self.schema_store[schema_file["$id"]] = schema_file
 
     def select_schema(self, selected_schema: str) -> Draft202012Validator:
         if selected_schema not in self.schema_store:

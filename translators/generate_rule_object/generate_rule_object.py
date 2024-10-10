@@ -1,19 +1,14 @@
 import json
 
+from schemas import RULES_SCHEMA
+
 
 class GenerateRuleObject:
 
-    def __init__(self, schema_path, user_selection_obj):
-        self.schema_path = schema_path
-        self.schema = None
-        self.user_selection_obj = user_selection_obj
+    def __init__(self, user_selection_obj):
 
-    def load_schema(self):
-        try:
-            with open("schemas/rules_schema.json", "r") as schema_file:
-                self.schema = json.load(schema_file)
-        except Exception as e:
-            (f"An unexpected error occurred: {e}")
+        self.schema = RULES_SCHEMA
+        self.user_selection_obj = user_selection_obj
 
     def evaluate_anyOf_conditions(
         self, schema_key: str, user_value: str, parent_obj: object

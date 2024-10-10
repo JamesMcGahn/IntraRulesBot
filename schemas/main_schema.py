@@ -1,4 +1,4 @@
-{
+MAIN_SCHEMA = {
   "$id": "/schemas/main",
   "type": "object",
   "properties": {
