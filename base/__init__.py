@@ -1,4 +1,5 @@
 from .error_wrappers import ErrorWrappers
+from .qobject_base import QObjectBase
 from .qsingleton import QSingleton
 from .qwidget_base import QWidgetBase
 from .qworker_base import QWorkerBase

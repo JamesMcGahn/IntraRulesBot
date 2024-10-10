@@ -1,11 +1,15 @@
+import platform
+import sys
+
 import keyring
+from keyring import get_keyring
 from PySide6.QtCore import QObject, Signal, Slot
 
-from base import QSingleton
+from base import QObjectBase, QSingleton
 from services.settings import AppSettings
 
 
-class LoginModel(QObject, metaclass=QSingleton):
+class LoginModel(QObjectBase, metaclass=QSingleton):
     creds_changed = Signal(str, str, str, str)
     success = Signal()
 
@@ -17,7 +21,38 @@ class LoginModel(QObject, metaclass=QSingleton):
         self.login_url = None
         self.service_name = "IntraRulesBot"
         self.settings = AppSettings()
+        self.set_keyring_backend()
         self.init_creds()
+
+    def set_keyring_backend(self):
+        try:
+            get_keyring()
+            self.logging("Current Keyring method: " + str(get_keyring()), "INFO")
+            current_os = platform.system()
+
+            if current_os == "Windows":
+                keyring.core.set_keyring(
+                    keyring.core.load_keyring(
+                        "keyring.backends.Windows.WinVaultKeyring"
+                    )
+                )
+                self.logging("Windows keyring backend set successfully.", "INFO")
+
+            elif current_os == "Darwin":
+                # Set the macOS Keychain as the backend
+                keyring.core.set_keyring(
+                    keyring.core.load_keyring("keyring.backends.macOS.Keyring")
+                )
+                self.logging("macOS keyring backend set successfully.", "INFO")
+
+            else:
+                self.logging(
+                    "Unsupported operating system or no suitable backend found.",
+                    "ERROR",
+                )
+
+        except Exception as e:
+            self.logging(f"Error setting keyring backend: {e}", "ERROR")
 
     def get_creds(self):
         return (self.username, self.password, self.url, self.login_url)
