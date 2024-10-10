@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "217d3dd43d0718c1363a4c979169056ebde806510a20704d4097bcb6b28a56e7"
+            "sha256": "fac5f84b973fa276cd0ab606cc902ef873cc9080f20a709b48ddd2d1edc79d5e"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -218,15 +218,6 @@
             "markers": "python_version >= '3.8'",
             "version": "==24.1"
         },
-        "pyqt-toast-notification": {
-            "hashes": [
-                "sha256:135736ec0f16bff41104dee3c60ac318e5d55ae3378bf26892c6d08c36088ae6",
-                "sha256:82688101202737736d51ab6c74a573b32266ecb7c8b0002f913407bd369737d9"
-            ],
-            "index": "pypi",
-            "markers": "python_version >= '3.7'",
-            "version": "==1.3.2"
-        },
         "pyside6": {
             "hashes": [
                 "sha256:1c21c4cf6cdd29bd13bbd7a2514756a19188eab992b92af03e64bf06a9b33d5b",
@@ -273,14 +264,6 @@
             ],
             "markers": "python_version >= '3.8'",
             "version": "==1.0.1"
-        },
-        "qtpy": {
-            "hashes": [
-                "sha256:1c1d8c4fa2c884ae742b069151b0abe15b3f70491f3972698c683b8e38de839b",
-                "sha256:a5a15ffd519550a1361bdc56ffc07fda56a6af7292f17c7b395d4083af632987"
-            ],
-            "markers": "python_version >= '3.7'",
-            "version": "==2.4.1"
         },
         "referencing": {
             "hashes": [

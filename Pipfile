@@ -10,7 +10,6 @@ pyside6 = "*"
 jsonschema = "*"
 uuid = "*"
 keyring = "*"
-pyqt-toast-notification = "*"
 
 [dev-packages]
 

@@ -5,7 +5,7 @@ title = pyside_app_demo
 
 # project directory. the general assumption is that project_dir is the parent directory
 # of input_file
-project_dir = .
+project_dir = ./
 
 # source file path
 input_file = /Users/jamesmcgahn/Documents/GitHub/IntraRulesBot/main.py
@@ -25,7 +25,7 @@ icon = /Users/jamesmcgahn/Documents/GitHub/IntraRulesBot/.venv/lib/python3.12/si
 python_path = /Users/jamesmcgahn/Documents/GitHub/IntraRulesBot/.venv/bin/python
 
 # python packages to install
-packages = Nuitka==2.4.8
+packages = Nuitka==2.4.8,pyqt-toast-notification==1.3.2
 
 # buildozer = for deploying Android application
 android_packages = buildozer==1.5.0,cython==0.29.33
@@ -40,10 +40,10 @@ qml_files =
 excluded_qml_plugins = 
 
 # qt modules used. comma separated
-modules = DBus,Gui,Widgets,Core
+modules = Core,Gui,DBus,Widgets
 
 # qt plugins used by the application
-plugins = accessiblebridge,egldeviceintegrations,platforms/darwin,generic,platforminputcontexts,imageformats,styles,platforms,platformthemes,iconengines,xcbglintegrations
+plugins = platforms/darwin,iconengines,platforms,accessiblebridge,generic,egldeviceintegrations,platformthemes,imageformats,platforminputcontexts,xcbglintegrations,styles
 
 [android]
 
@@ -67,7 +67,7 @@ macos.permissions =
 mode = standalone
 
 # (str) specify any extra nuitka arguments
-extra_args = --quiet --noinclude-qt-translations --add-data "schemas:schemas"
+extra_args = --quiet --noinclude-qt-translations
 
 [buildozer]
 
