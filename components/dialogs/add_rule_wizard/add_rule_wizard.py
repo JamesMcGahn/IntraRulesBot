@@ -1,4 +1,3 @@
-import os
 import uuid
 
 from PySide6.QtCore import Qt, Signal
@@ -17,6 +16,7 @@ from PySide6.QtWidgets import (
 from ...helpers import StyleHelper, WidgetFactory
 from ...toasts import QToast
 from ..gradient_dialog import GradientDialog
+from .add_rule_wizard_css import STYLES
 
 
 class AddRuleWizard(GradientDialog):
@@ -25,10 +25,7 @@ class AddRuleWizard(GradientDialog):
     def __init__(self, parent=None):
         gradient_colors = [(0.05, "#228752"), (0.75, "#014637"), (1, "#014637")]
         super().__init__(gradient_colors, parent)
-        module_dir = os.path.dirname(os.path.realpath(__file__))
-        file_path = os.path.join(module_dir, "add_rule_wizard.css")
-        with open(file_path, "r") as ss:
-            self.setStyleSheet(ss.read())
+        self.setStyleSheet(STYLES)
 
         self.setWindowTitle("Add New Rule Wizard")
         self.setMinimumHeight(400)

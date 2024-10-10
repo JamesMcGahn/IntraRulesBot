@@ -1,4 +1,3 @@
-import os
 from typing import List, Tuple, Union
 
 from PySide6.QtCore import Qt
@@ -6,6 +5,7 @@ from PySide6.QtGui import QColor, QLinearGradient, QPainter, QPen
 from PySide6.QtWidgets import QGroupBox, QSizePolicy
 
 from ...helpers import StyleHelper
+from .gradient_group_box_styles import styles
 
 
 class GradientGroupBox(QGroupBox):
@@ -34,11 +34,7 @@ class GradientGroupBox(QGroupBox):
         self.corner_radius = corner_radius
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
-        module_dir = os.path.dirname(os.path.realpath(__file__))
-        file_path = os.path.join(module_dir, "gradient_group_box.css")
-
-        with open(file_path, "r") as ss:
-            self.setStyleSheet(ss.read())
+        self.setStyleSheet(styles)
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 

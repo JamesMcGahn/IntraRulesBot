@@ -1,11 +1,10 @@
-import os
-
 from PySide6.QtCore import Signal, Slot
 
 from base import QWidgetBase
 from components.toasts import QToast
 from models.login import LoginModel
 
+from .login_page_css import STYLES
 from .login_page_ui import LoginPageView
 
 
@@ -15,11 +14,7 @@ class LoginPage(QWidgetBase):
     def __init__(self):
         super().__init__()
 
-        module_dir = os.path.dirname(os.path.realpath(__file__))
-        file_path = os.path.join(module_dir, "login_page.css")
-
-        with open(file_path, "r") as ss:
-            self.setStyleSheet(ss.read())
+        self.setStyleSheet(STYLES)
 
         self.ui = LoginPageView()
         self.layout = self.ui.layout()

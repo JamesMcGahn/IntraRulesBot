@@ -1,3 +1,5 @@
+STYLES = """
 QPushButton {
   padding: 0.5em 1em;
 }
+"""

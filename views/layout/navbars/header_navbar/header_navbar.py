@@ -1,5 +1,4 @@
 import json
-import os
 import uuid
 
 from PySide6.QtCore import QSize, Qt, Signal
@@ -10,6 +9,7 @@ from components.dialogs import ErrorDialog, MessageDialog
 from models import RulesModel
 from services.validator import SchemaValidator
 
+from .header_navbar_css import STYLES
 from .header_navbar_ui import HeaderNavBarView
 
 
@@ -23,11 +23,8 @@ class HeaderNavBar(QWidgetBase):
         self.setObjectName("header_widget")
         self.setMaximumSize(QSize(16777215, 175))
         self.setAttribute(Qt.WA_StyledBackground, True)
-        module_dir = os.path.dirname(os.path.realpath(__file__))
-        file_path = os.path.join(module_dir, "header_navbar.css")
 
-        with open(file_path, "r") as ss:
-            self.setStyleSheet(ss.read())
+        self.setStyleSheet(STYLES)
 
         self.ui = HeaderNavBarView()
         self.layout = self.ui.layout()
@@ -36,7 +33,7 @@ class HeaderNavBar(QWidgetBase):
         self.ui.hamburger_icon_btn.toggled.connect(self.hamburger_icon_btn_toggled)
         self.ui.open_file_btn.clicked.connect(self.open_json_file)
 
-        self.val = SchemaValidator("./schemas", "/schemas/rules")
+        self.val = SchemaValidator("/schemas/rules")
         self.total_errors = 0
         self.rules_errors = []
 

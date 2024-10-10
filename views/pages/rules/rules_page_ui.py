@@ -258,11 +258,10 @@ class RulesPageView(QWidget):
 
     @Slot(object)
     def add_rule_form_submit(self, form):
-        add = GenerateRuleObject("./schemas/rules_schema.json", form)
-        add.load_schema()
+        add = GenerateRuleObject(form)
         current_count = self.stacked_widget.count()
         new_rule = add.generate_dynamic_object()
-        print(new_rule)
+
         if new_rule:
             self.rules_changed([new_rule])
             self.current_rule_index = current_count

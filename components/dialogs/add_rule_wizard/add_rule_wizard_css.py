@@ -1,3 +1,4 @@
+STYLES = """
 QPushButton {
   background-color: #feb220;
   color: black;
@@ -14,3 +15,4 @@ QLabel {
 QGroupBox {
   margin: 10px 0px;
 }
+"""

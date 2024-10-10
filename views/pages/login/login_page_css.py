@@ -1,3 +1,4 @@
+STYLES = """
 QWidget {
   background: transparent;
   color: black;
@@ -6,7 +7,7 @@ QWidget {
 }
 
 QGroupBox {
-  /* padding-top: 1.5em; */
+  padding-top: 1.5em;
   subcontrol-origin: margin;
   font-weight: bold;
   color: black;
@@ -21,8 +22,9 @@ QGroupBox::title {
   font-family: "Open Sans";
 }
 
-QGroupBox#Logs-Information {
+QGroupBox#Login-Information {
   margin-top: 7px;
+  padding-top: 1.5em 0 1.5em 0;
   subcontrol-origin: margin;
   font-weight: bold;
   color: #fcfcfc;
@@ -30,7 +32,7 @@ QGroupBox#Logs-Information {
   margin-left: 0px;
 }
 
-QGroupBox#Logs-Information::title {
+QGroupBox#Login-Information::title {
   subcontrol-origin: margin;
   left: 10px;
   top: 0;
@@ -38,3 +40,4 @@ QGroupBox#Logs-Information::title {
   font-weight: bold;
   font-family: "Open Sans";
 }
+"""

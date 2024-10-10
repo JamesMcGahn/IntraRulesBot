@@ -1,7 +1,7 @@
-QWidget#icon_text_widget {
+STYLES = """
+QWidget#icon_only_widget {
   background-color: transparent;
   border-right: 2px solid #f58220;
-  border-bottom-left-radius: 9px;
   margin: 0px;
   padding: 0px;
 }
@@ -9,14 +9,16 @@ QWidget#icon_text_widget {
 QPushButton {
   border: none;
   background-color: transparent;
-  padding: 1em;
-  text-align: left;
   color: white;
+  padding: 1em;
 }
 
 QPushButton:checked {
-  background-color: white;
+  border: none;
+  background-color: transparent;
   border-radius: 4px;
-  /* height: 2em; */
   color: black;
 }
+
+
+"""

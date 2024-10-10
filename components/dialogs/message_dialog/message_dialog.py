@@ -1,10 +1,9 @@
-import os
-
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QPushButton, QSizePolicy, QTextEdit, QVBoxLayout
 
 from ...helpers import WidgetFactory
 from ..gradient_dialog import GradientDialog
+from .message_dialog_css import STYLES
 
 
 class MessageDialog(GradientDialog):
@@ -17,11 +16,8 @@ class MessageDialog(GradientDialog):
         self.setFixedWidth(400)
         self.setWindowTitle(self.title)
         self.message = message
-        module_dir = os.path.dirname(os.path.realpath(__file__))
-        file_path = os.path.join(module_dir, "message_dialog.css")
 
-        with open(file_path, "r") as ss:
-            self.setStyleSheet(ss.read())
+        self.setStyleSheet(STYLES)
 
         self.settings_layout = QVBoxLayout(self)
         self.setAttribute(Qt.WA_StyledBackground, True)

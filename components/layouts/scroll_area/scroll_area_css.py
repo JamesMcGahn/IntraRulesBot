@@ -1,3 +1,4 @@
+STYLES = """
 QScrollArea {
   border-radius: 3px;
 }
@@ -58,3 +59,4 @@ QScrollBar::right-arrow:horizontal {
   /* background: none; No background for the arrow buttons */
   width: 0px; /* Remove the width of the buttons */
 }
+"""

@@ -1,11 +1,10 @@
-import os
-
 from PySide6.QtCore import Signal, Slot
 
 from base import QWidgetBase
 from components.toasts import QToast
 from models import LogSettingsModel
 
+from .settings_page_css import STYLES
 from .settings_page_ui import SettingsPageView
 
 
@@ -15,11 +14,7 @@ class SettingsPage(QWidgetBase):
     def __init__(self):
         super().__init__()
 
-        module_dir = os.path.dirname(os.path.realpath(__file__))
-        file_path = os.path.join(module_dir, "settings_page.css")
-
-        with open(file_path, "r") as ss:
-            self.setStyleSheet(ss.read())
+        self.setStyleSheet(STYLES)
 
         self.ui = SettingsPageView()
         self.layout = self.ui.layout()

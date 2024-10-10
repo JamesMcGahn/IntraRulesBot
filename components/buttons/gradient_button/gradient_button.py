@@ -1,4 +1,3 @@
-import os
 from typing import List, Tuple, Union
 
 from PySide6.QtCore import Qt
@@ -6,6 +5,7 @@ from PySide6.QtGui import QColor, QLinearGradient, QPainter, QPen
 from PySide6.QtWidgets import QPushButton, QSizePolicy
 
 from ...helpers import StyleHelper
+from .gradient_button_css import STYLES
 
 
 class GradientButton(QPushButton):
@@ -37,11 +37,7 @@ class GradientButton(QPushButton):
         self.pressed = False
         self.setCursor(Qt.PointingHandCursor)
 
-        module_dir = os.path.dirname(os.path.realpath(__file__))
-        file_path = os.path.join(module_dir, "gradient_button.css")
-
-        with open(file_path, "r") as ss:
-            self.setStyleSheet(ss.read())
+        self.setStyleSheet(STYLES)
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 

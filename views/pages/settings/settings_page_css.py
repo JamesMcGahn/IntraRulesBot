@@ -1,4 +1,4 @@
-QWidget {
+STYLES = """QWidget {
   background: transparent;
   color: black;
   border-radius: 3px;
@@ -39,3 +39,4 @@ QGroupBox#Settings-Information::title {
   font-weight: bold;
   font-family: "Open Sans";
 }
+"""

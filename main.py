@@ -5,11 +5,11 @@ from PySide6.QtWidgets import QApplication
 
 from main_window import MainWindow
 
-app = QApplication(sys.argv)
-
-
 # faulthandler.enable(file=sys.stderr)
 # faulthandler.enable()
-window = MainWindow(app)
-window.show()
-app.exec()
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainWindow(app)
+    window.show()
+    app.exec()

@@ -1,5 +1,3 @@
-import os
-
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -15,6 +13,7 @@ from services.validator import SchemaValidator
 from ...helpers import WidgetFactory
 from ...layouts import ScrollArea
 from ..gradient_dialog import GradientDialog
+from .error_dialog_css import STYLES
 
 
 class ErrorDialog(GradientDialog):
@@ -26,11 +25,8 @@ class ErrorDialog(GradientDialog):
         self.setFixedHeight(450)
         self.setFixedWidth(450)
         self.setWindowTitle("Rule Errors")
-        module_dir = os.path.dirname(os.path.realpath(__file__))
-        file_path = os.path.join(module_dir, "error_dialog.css")
 
-        with open(file_path, "r") as ss:
-            self.setStyleSheet(ss.read())
+        self.setStyleSheet(STYLES)
 
         self.settings_layout = QVBoxLayout(self)
         self.setAttribute(Qt.WA_StyledBackground, True)

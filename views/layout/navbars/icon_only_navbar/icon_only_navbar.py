@@ -1,10 +1,9 @@
-import os
-
 from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import QPushButton, QWidget
 
 from components.helpers import StyleHelper
 
+from .icon_only_navbar_css import STYLES
 from .icon_only_navbar_ui import IconOnlyNavBarView
 
 
@@ -18,10 +17,7 @@ class IconOnlyNavBar(QWidget):
         self.setMaximumSize(QSize(70, 16777215))
         self.setAttribute(Qt.WA_StyledBackground, True)
 
-        module_dir = os.path.dirname(os.path.realpath(__file__))
-        file_path = os.path.join(module_dir, "icon_only_navbar.css")
-        with open(file_path, "r") as ss:
-            self.setStyleSheet(ss.read())
+        self.setStyleSheet(STYLES)
 
         self.ui = IconOnlyNavBarView()
         self.layout = self.ui.layout()

@@ -1,3 +1,4 @@
+STYLES = """
 QGroupBox#Error-Outer {
   background: transparent;
   border: none;
@@ -14,15 +15,8 @@ QWidget#Error-Container {
   background: transparent;
 }
 
-QScrollArea {
+QTextEdit#error-text-edit {
   background: transparent;
-  margin-top: 25px;
-}
-
-QLabel#field-des-label,
-QLabel#fail-des-label {
-  font-weight: bold;
-  margin: 0px;
 }
 
 QPushButton#close-btn {
@@ -33,3 +27,4 @@ QPushButton#close-btn {
   margin-bottom: 5px;
   border-radius: 3px;
 }
+"""

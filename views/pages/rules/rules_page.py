@@ -1,5 +1,4 @@
 import json
-import os
 
 from PySide6.QtCore import Signal
 
@@ -10,6 +9,7 @@ from models import RulesModel
 from rulerunner import RuleRunnerThread
 from services.validator import SchemaValidator
 
+from .rules_page_css import STYLES
 from .rules_page_ui import RulesPageView
 
 
@@ -18,11 +18,8 @@ class RulesPage(QWidgetBase):
 
     def __init__(self):
         super().__init__()
-        module_dir = os.path.dirname(os.path.realpath(__file__))
-        file_path = os.path.join(module_dir, "rules_page.css")
 
-        with open(file_path, "r") as ss:
-            self.setStyleSheet(ss.read())
+        self.setStyleSheet(STYLES)
 
         self.ui = RulesPageView()
         self.layout = self.ui.layout()
@@ -47,7 +44,7 @@ class RulesPage(QWidgetBase):
         # main_layout.addWidget(start)
         # start.clicked.connect(self.start_thread)
 
-        self.val = SchemaValidator("./schemas", "/schemas/main")
+        self.val = SchemaValidator("/schemas/main")
         self.check_for_saved_rules()
 
     def display_errors_dialog(self):

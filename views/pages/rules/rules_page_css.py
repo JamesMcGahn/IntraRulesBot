@@ -1,3 +1,4 @@
+STYLES = """
 QWidget {
   background: transparent;
   color: black;
@@ -5,9 +6,6 @@ QWidget {
   border: none;
 }
 
-/* QPushButton {
-  border: 1px solid red;
-} */
 
 QGroupBox {
   padding-top: 1em;
@@ -27,9 +25,9 @@ QGroupBox::title {
 }
 
 QWidget#actions-btn-widget {
-  /* border: 2px solid #f58220; */
+ 
   border-radius: 3px;
-  /* background-color: #dedede; */
+ 
   padding: 0;
 }
 
@@ -44,3 +42,4 @@ QLabel#nav-label {
   color: #fcfcfc;
   background: transparent;
 }
+"""

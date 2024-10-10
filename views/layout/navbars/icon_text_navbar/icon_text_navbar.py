@@ -1,8 +1,7 @@
-import os
-
 from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import QPushButton, QWidget
 
+from .icon_text_navbar_css import STYLES
 from .icon_text_navbar_ui import IconTextNavBarView
 
 
@@ -17,10 +16,7 @@ class IconTextNavBar(QWidget):
         self.setMaximumSize(QSize(250, 16777215))
         self.setAttribute(Qt.WA_StyledBackground, True)
 
-        module_dir = os.path.dirname(os.path.realpath(__file__))
-        file_path = os.path.join(module_dir, "icon_text_navbar.css")
-        with open(file_path, "r") as ss:
-            self.setStyleSheet(ss.read())
+        self.setStyleSheet(STYLES)
 
         self.ui = IconTextNavBarView()
         self.layout = self.ui.layout()
