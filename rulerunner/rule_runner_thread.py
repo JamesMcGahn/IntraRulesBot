@@ -218,8 +218,7 @@ class RuleRunnerThread(QThread):
             )
             self.shut_down = True
             self.close_down_driver()
-            self.quit()
-            self.executor.shutdown()
-            self.wait()
             self.finished.emit()
+            self.quit()
+            self.wait()
             self.deleteLater()
