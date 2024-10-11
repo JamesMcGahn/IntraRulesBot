@@ -1,6 +1,5 @@
 from PySide6.QtGui import QColor, QImage, QPixmap, qRgba
 
-from .os_utils import OSUtils
 from .toast_enums import ToastIcon
 
 

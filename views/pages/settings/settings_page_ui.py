@@ -1,5 +1,5 @@
-from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QIcon, QIntValidator
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
@@ -51,8 +51,6 @@ class SettingsPageView(QWidget):
         self.select_folder_button = EditorActionButton("")
         self.select_folder_button.setMaximumWidth(30)
 
-        folder_icon = QIcon()
-        folder_icon.addFile(":/images/open_folder_off.png", QSize(), QIcon.Mode.Normal)
         WidgetFactory.create_icon(
             self.select_folder_button,
             ":/images/open_folder_on.png",

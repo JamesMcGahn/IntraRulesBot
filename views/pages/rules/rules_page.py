@@ -36,7 +36,6 @@ class RulesPage(QWidgetBase):
         self.password = password
         self.url = url
         self.login_url = login_url
-        print("rules", username, password, url, login_url)
 
         # Signal / Slot Connections
         self.rulesModel.data_changed.connect(self.ui.rules_changed)
@@ -85,6 +84,7 @@ class RulesPage(QWidgetBase):
                     )
                     self.rule_runner_thread.send_insert_logs.connect(self.logging)
                     self.appshutdown.connect(self.rule_runner_thread.close)
+                    self.ui.stop.clicked.connect(self.rule_runner_thread.stop)
                     self.rule_runner_thread.progress.connect(self.ui.set_progress_bar)
                     self.rule_runner_thread.start()
 
@@ -117,7 +117,7 @@ class RulesPage(QWidgetBase):
             rules_with_guid.append(data)
             data_copy = data.copy()
             del data_copy["guid"]
-            rules.append(data)
+            rules.append(data_copy)
 
         if self.total_errors > 0:
             self.ui.validate_feedback.setText(f"Total Errors : {self.total_errors}")

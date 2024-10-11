@@ -134,9 +134,6 @@ class RuleRunnerThread(QThread):
         self.progress.emit(self.rules_total_count - rules_length, self.rules_total_count)
         if rules_length > 0:
             try:
-                with QMutexLocker(self._mutex):
-                    if self._paused:
-                        self._wait_condition.wait(self._mutex)
                 self.current_rule = self.rules.popleft()
                 rule_worker = RuleWorker(self.driver, self.current_rule)
                 rule_worker.send_logs.connect(self.receiver_thread_logs)
@@ -227,10 +224,8 @@ class RuleRunnerThread(QThread):
         Close the  properly.
         """
         if self.isRunning() or self.is_thread_pool_running():
-            self.pause()
             self.shut_down = True
             self.close_down_driver()
-            self.pause()
             self.executor.shutdown()
             self.receiver_thread_logs(
                 f"Shutting down RuleRunnerThread: {threading.get_ident()} - {self.thread()}",

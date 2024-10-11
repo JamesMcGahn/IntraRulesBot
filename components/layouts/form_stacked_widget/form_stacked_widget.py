@@ -41,6 +41,12 @@ class StackedFormWidget(StackedWidget):
         self.widget_map[rule_form.rule_guid] = index
         self.form_factories.append(rule_form)
 
+    def get_form_by_index(self, index):
+        if not isinstance(index, int):
+            return
+        if index >= 0 and index <= self.count():
+            return self.form_factories[index]
+
     def remove_form_by_index(self, index):
         if not isinstance(index, int):
             return

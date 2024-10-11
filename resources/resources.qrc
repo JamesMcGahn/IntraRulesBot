@@ -51,5 +51,7 @@
     <file>images/error.png</file>
     <file>images/close.png</file>
     <file>images/orange_check.png</file>
+    <file>images/stop.png</file>
+    <file>images/play.png</file>
   </qresource>
 </RCC>

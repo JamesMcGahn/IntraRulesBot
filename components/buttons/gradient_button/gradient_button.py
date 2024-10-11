@@ -1,7 +1,7 @@
 from typing import List, Tuple, Union
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QLinearGradient, QPainter, QPen
+from PySide6.QtCore import QRect, Qt
+from PySide6.QtGui import QColor, QFontMetrics, QLinearGradient, QPainter, QPen
 from PySide6.QtWidgets import QPushButton, QSizePolicy
 
 from ...helpers import StyleHelper
@@ -40,7 +40,7 @@ class GradientButton(QPushButton):
         self.setStyleSheet(STYLES)
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-
+        self.toggled.connect(self.on_toggled)
         # Create and configure the drop shadow effect
 
         if self.drop_shadow_effect:
@@ -118,20 +118,50 @@ class GradientButton(QPushButton):
         self.drawTitle(painter)
 
     def drawTitle(self, painter):
-        # Set the title text color
         if not self.text_color:
             self.text_color = "black"
         painter.setPen(QColor(self.text_color))
+
         text_rect = self.contentsRect()
-        painter.drawText(text_rect, Qt.AlignCenter, self.text())
 
-    # def enterEvent(self, event):
-    #     self.is_hovered = True
-    #     self.update()  # Update the button to repaint
+        icon_size = self.iconSize()
+        if not self.icon().isNull():
+            font_metrics = QFontMetrics(self.font())
+            text_height = font_metrics.boundingRect(self.text()).height()
+            text_width = font_metrics.boundingRect(self.text()).width()
+            icon = self.icon()
 
-    # def leaveEvent(self, event):
-    #     self.is_hovered = False
-    #     self.update()
+            width = (
+                (icon_size.width() + text_width) // 2
+                if self.text()
+                else (icon_size.width() // 2)
+            )
+            icon_rect = QRect(
+                self.contentsRect().center().x() - width,
+                (self.height() - icon_size.height()) // 2,
+                icon_size.width(),
+                icon_size.height(),
+            )
+
+            icon.paint(painter, icon_rect, Qt.AlignCenter)
+
+            text_height = font_metrics.boundingRect(self.text()).height()
+            text_width = font_metrics.boundingRect(self.text()).width()
+
+            text_rect = QRect(
+                icon_rect.right(),
+                (self.height() - text_height) // 2,
+                text_width,
+                text_height,
+            )
+            # Adjust text position to accommodate the icon
+            text_rect.setLeft(icon_rect.right())
+            painter.drawText(text_rect, Qt.AlignLeft, self.text())
+        else:
+            painter.drawText(text_rect, Qt.AlignCenter, self.text())
+
+    def on_toggled(self, checked):
+        self.update()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:

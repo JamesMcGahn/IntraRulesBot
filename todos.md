@@ -9,8 +9,6 @@
 #### TO-DO LATER
 
 - [ ] :#FEATURE : Update Field on Form across all rules
-- [ ] :#TODO : Validate on change in config editor
-- [ ] :#TODO : Stop and Pause buttons for rulerunner
 - [ ] :#TODO : Setting to turn off Toasts
 - [ ] :#TODO : Document Functions throughout app
 - [ ] :#TODO : Settings Page: Use a method on UI to set values
@@ -39,3 +37,5 @@
 - [x] : Add Rule via form
 - [x] : Display rulerunner progress bar
 - [x] : connect rulerunner thread to credentials and validated loaded rules
+- [x] : Stop for rulerunner
+- [x] : Clone Rule

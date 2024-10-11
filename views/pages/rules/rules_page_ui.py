@@ -1,3 +1,5 @@
+import uuid
+
 from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
@@ -241,20 +243,55 @@ class RulesPageView(QWidget):
         self.outter_layout.addRow(self.main_layout)
 
         self.start = GradientButton(
-            "Start",
+            "",
             "black",
             [(0.05, "#FEB220"), (0.50, "#f58220"), (1, "#f58220")],
             "#f58220",
             1,
             3,
         )
+        self.stop = GradientButton(
+            "",
+            "black",
+            [(0.05, "#FEB220"), (0.50, "#f58220"), (1, "#f58220")],
+            "#f58220",
+            1,
+            3,
+        )
+        WidgetFactory.create_icon(
+            self.start,
+            ":/images/play.png",
+            50,
+            20,
+            True,
+            False,
+        )
+        WidgetFactory.create_icon(
+            self.stop,
+            ":/images/stop.png",
+            50,
+            20,
+            True,
+            False,
+        )
+        self.stop.setFixedWidth(30)
+        self.start.setChecked(True)
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setHidden(True)
         bottom_h_layout = QHBoxLayout()
-
+        bottom_h_layout.setSpacing(5)
+        thread_controls = QHBoxLayout()
         bottom_h_layout.addWidget(self.progress_bar)
-        bottom_h_layout.addWidget(self.start)
 
+        thread_controls.addWidget(self.start)
+        thread_controls.addWidget(self.stop)
+        thread_controls.setSpacing(1)
+        thread_controls.setContentsMargins(0, 0, 0, 0)
+        self.start.setFixedWidth(75)
+
+        bottom_h_layout.addLayout(thread_controls)
+        bottom_h_layout.setAlignment(Qt.AlignmentFlag.AlignRight)
+        bottom_h_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.addLayout(bottom_h_layout)
 
         self.add_rule = AddRuleWizard()
@@ -268,6 +305,7 @@ class RulesPageView(QWidget):
         self.next_button.clicked.connect(self.show_next_rule)
         self.delete_all.clicked.connect(self.delete_all_forms)
         self.add.clicked.connect(self.show_add_rule_dialog)
+        self.clone.clicked.connect(self.clone_rule)
         # Setup
         self.update_navigation_buttons()
 
@@ -279,6 +317,15 @@ class RulesPageView(QWidget):
             self.progress_bar.setHidden(True)
         self.progress_bar.setRange(0, total)
         self.progress_bar.setValue(current)
+
+    def clone_rule(self):
+        form = self.stacked_widget.get_form_by_index(self.stacked_widget.currentIndex())
+        data = form.create_input_dict()
+        data["guid"] = str(uuid.uuid4())
+        self.current_rule_index = self.stacked_widget.count()
+        self.rules_changed([data])
+        self.stacked_widget.setCurrentIndex(self.current_rule_index)
+        self.update_navigation_buttons()
 
     def show_add_rule_dialog(self):
         self.add_rule.show()
