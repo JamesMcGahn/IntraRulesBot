@@ -69,11 +69,15 @@ class WidgetFactory:
 
     @staticmethod
     def create_input_field(
-        initial_value="", background_color="#FCFCFC", validator: QValidator = None
+        initial_value="",
+        background_color="#FCFCFC",
+        validator: QValidator = None,
+        objectId="",
     ):
         field = QLineEdit(initial_value)
         field.setStyleSheet(f"background-color: {background_color} ")
         field.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        field.setObjectName(objectId)
         if validator is not None:
             field.setValidator(validator)
 
@@ -86,9 +90,12 @@ class WidgetFactory:
         parent_layout: QFormLayout,
         background_color="#FCFCFC",
         validator: QValidator = None,
+        rule_input_path: str = "",
+        guid: str = "",
     ):
+        objectID = f"{rule_input_path}**{guid}"
         el = WidgetFactory.create_input_field(
-            line_edit_value, background_color, validator
+            line_edit_value, background_color, validator, objectID
         )
         label = QLabel(label_text)
         label.setStyleSheet("background-color: transparent;")

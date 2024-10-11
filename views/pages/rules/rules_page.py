@@ -1,12 +1,14 @@
 import json
 
 from PySide6.QtCore import Signal, Slot
+from PySide6.QtWidgets import QLineEdit, QTextEdit
 
 from base import QWidgetBase
 from components.dialogs import ErrorDialog
 from models import RulesModel
 from models.login import LoginModel
 from rulerunner import RuleRunnerThread
+from services.event_filter import EventFilter
 from services.validator import SchemaValidator
 
 from .rules_page_css import STYLES
@@ -44,11 +46,43 @@ class RulesPage(QWidgetBase):
         self.ui.save.clicked.connect(self.save_rules_to_system)
         self.send_rules.connect(self.ui.rules_changed)
         self.ui.validate_open_dialog.clicked.connect(self.display_errors_dialog)
-
+        self.ui.copy_field.clicked.connect(self.on_copy_fields)
         self.ui.start.clicked.connect(self.start_rule_runner)
 
         self.val = SchemaValidator("/schemas/main")
         self.check_for_saved_rules()
+        self.event_filter = EventFilter()
+        for child in self.findChildren(QLineEdit):
+            child.installEventFilter(self.event_filter)
+        self.event_filter.event_changed.connect(self.focus_changed)
+
+        self.focus_object_name = None
+        self.focus_object_text = None
+
+    @Slot(str, str)
+    def focus_changed(self, obj_name, object_text):
+        print("ham", obj_name, object_text)
+        field_name = obj_name.split("**")[0]
+        self.focus_object_name = field_name
+        self.focus_object_text = object_text
+
+    def on_copy_fields(self):
+        if self.focus_object_name is not None and self.focus_object_text is not None:
+            rules = self.ui.get_forms()
+
+            rule_inputs = [rule.rule_inputs for rule in rules]
+            for rule in rule_inputs:
+                self.find_field_set_field(rule)
+
+    def find_field_set_field(self, rule):
+        for key, value in rule.items():
+            if key == self.focus_object_name:
+                if isinstance(value, QLineEdit) or isinstance(value, QTextEdit):
+                    value.setText(self.focus_object_text)
+            elif isinstance(value, dict):
+                self.find_field_set_field(value)
+            elif isinstance(value, list):
+                [self.find_field_set_field(item) for item in value]
 
     @Slot(str, str, str, str)
     def update_credentials(self, username, password, url, login_url):
@@ -137,18 +171,16 @@ class RulesPage(QWidgetBase):
 
     def save_rules_to_file(self):
         if self.ui.get_forms():
-            if self.validate_rules() is not None:
-                data, _ = self.validate_rules()
-                if data:
-                    with open("./avaya_user.json", "w") as f:
-                        json.dump(data, f, indent=4)
-                # TODO Confirmation message - toast
+            data, _ = self.validate_rules()
+            if data:
+                with open("./avaya_user.json", "w") as f:
+                    json.dump(data, f, indent=4)
+            # TODO Confirmation message - toast
 
     def save_rules_to_system(self):
         if self.ui.get_forms():
-            if self.validate_rules() is not None:
-                _, data = self.validate_rules()
-                if data:
-                    self.rulesModel.save_rules(data)
-            else:
-                self.rulesModel.save_rules([])
+            _, data = self.validate_rules()
+            if data:
+                self.rulesModel.save_rules(data)
+        else:
+            self.rulesModel.save_rules([])

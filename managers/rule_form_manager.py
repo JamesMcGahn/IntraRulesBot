@@ -41,7 +41,7 @@ class RuleFormManager:
         rule_inputs = {}
         rules_name = rule["rule_name"]
         rule_guid = rule["guid"]
-
+        self._rule_guid = rule["guid"]
         rule_inputs["guid"] = QLineEdit(rule_guid)
         rule_outter_layout = QFormLayout()
 
@@ -75,7 +75,11 @@ class RuleFormManager:
     ):
 
         el = WidgetFactory.create_form_input_row(
-            line_edit_value, label_text, parent_layout
+            line_edit_value,
+            label_text,
+            parent_layout,
+            rule_input_path=rule_input_path,
+            guid=self._rule_guid,
         )
 
         if rule_input_path is not None and rule_input is not None:
