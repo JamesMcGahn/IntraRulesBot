@@ -3,7 +3,7 @@ import threading
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 
-from PySide6.QtCore import QMutex, QMutexLocker, QThread, QWaitCondition, Signal, Slot
+from PySide6.QtCore import QMutex, QThread, QWaitCondition, Signal, Slot
 from selenium.common.exceptions import NoSuchWindowException, WebDriverException
 
 from managers import WebDriverManager
@@ -25,7 +25,6 @@ class RuleRunnerThread(QThread):
         self._mutex = QMutex()
         self._wait_condition = QWaitCondition()
         self._stop = False
-        self._paused = False
 
         self.username = username
         self.password = password
@@ -198,20 +197,8 @@ class RuleRunnerThread(QThread):
         self.process_next_rule()
 
 
-
-    @Slot()
-    def resume(self):
-        with QMutexLocker(self._mutex):
-            self._paused = False
-            self._wait_condition.wakeOne()
-
-    @Slot()
-    def pause(self):
-        with QMutexLocker(self._mutex):
-            self._paused = True
     @Slot()
     def stop(self):
-        self.pause()
         self.close()
 
     def is_thread_pool_running(self):
