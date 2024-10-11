@@ -39,4 +39,9 @@ QGroupBox#Settings-Information::title {
   font-weight: bold;
   font-family: "Open Sans";
 }
+
+QLabel#version {
+  color: #fcfcfc;
+  font-weight: bold;
+}
 """

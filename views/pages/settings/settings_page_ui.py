@@ -5,10 +5,13 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QSizePolicy,
+    QSpacerItem,
     QVBoxLayout,
     QWidget,
 )
 
+from __version__ import __version__
 from components.buttons import EditorActionButton, GradientButton, ToggleButton
 from components.helpers import WidgetFactory
 
@@ -104,6 +107,13 @@ class SettingsPageView(QWidget):
         inner_h_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         outter_layout.addRow(inner_h_layout)
+        version = QLabel(f"Version:{__version__}")
+        version.setObjectName("version")
+        vertical_spacer = QSpacerItem(
+            2, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
+        )
+        self.settings_layout.addItem(vertical_spacer)
+        self.settings_layout.addWidget(version)
 
     def open_folder_dialog(self):
         folder = QFileDialog.getExistingDirectory(self, "Select Folder")
