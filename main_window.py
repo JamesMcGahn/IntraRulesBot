@@ -1,5 +1,5 @@
 from PySide6.QtCore import QSize, Signal
-from PySide6.QtGui import QFontDatabase
+from PySide6.QtGui import QFontDatabase, QIcon
 from PySide6.QtWidgets import QLabel, QMainWindow
 
 from components.helpers import StyleHelper
@@ -32,6 +32,14 @@ class MainWindow(QMainWindow):
             StyleHelper.dpi_scale_set_font(self.app, font_family, 13)
 
         self.centralWidget = CentralWidget()
+
+        app_icon = QIcon()
+        app_icon.addFile(":/icons/16_16.png", QSize(16, 16))
+        app_icon.addFile(":/icons/24_24.png", QSize(24, 24))
+        app_icon.addFile(":/icons/32_32.png", QSize(32, 32))
+        app_icon.addFile(":/icons/48_48.png", QSize(48, 48))
+        app_icon.addFile(":/icons/256_256.png", QSize(256, 256))
+        app.setWindowIcon(app_icon)
 
         self.label = QLabel(self)
         self.setCentralWidget(self.centralWidget)

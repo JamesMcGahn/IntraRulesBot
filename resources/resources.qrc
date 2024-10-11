@@ -53,5 +53,10 @@
     <file>images/orange_check.png</file>
     <file>images/stop.png</file>
     <file>images/play.png</file>
+    <file>icons/logo16_16.png</file>
+    <file>icons/logo24_24.png</file>
+    <file>icons/logo32_32.png</file>
+    <file>icons/logo48_48.png</file>
+    <file>icons/logo256_256.png</file>
   </qresource>
 </RCC>

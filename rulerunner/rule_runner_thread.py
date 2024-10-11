@@ -103,7 +103,8 @@ class RuleRunnerThread(QThread):
 
     @Slot(str, str, bool)
     def receiver_thread_logs(self, msg, level, print_msg=True):
-        self.send_insert_logs.emit(msg, level, print_msg)
+        if not self.shut_down:
+            self.send_insert_logs.emit(msg, level, print_msg)
 
     @Slot()
     def login_error(self):
@@ -211,14 +212,14 @@ class RuleRunnerThread(QThread):
         Close the  properly.
         """
         if self.isRunning() or self.is_thread_pool_running():
-            self.shut_down = True
-            self.close_down_driver()
-            self.executor.shutdown()
             self.receiver_thread_logs(
                 f"Shutting down RuleRunnerThread: {threading.get_ident()} - {self.thread()}",
                 "INFO",
             )
+            self.shut_down = True
+            self.close_down_driver()
             self.quit()
+            self.executor.shutdown()
             self.wait()
             self.finished.emit()
             self.deleteLater()
