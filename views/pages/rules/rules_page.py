@@ -1,7 +1,7 @@
 import json
 
 from PySide6.QtCore import Signal, Slot
-from PySide6.QtWidgets import QLineEdit, QTextEdit
+from PySide6.QtWidgets import QFileDialog, QLineEdit, QTextEdit
 
 from base import QWidgetBase
 from components.dialogs import ErrorDialog
@@ -173,14 +173,40 @@ class RulesPage(QWidgetBase):
         if self.ui.get_forms():
             data, _ = self.validate_rules()
             if data:
-                with open("./avaya_user.json", "w") as f:
-                    json.dump(data, f, indent=4)
-            # TODO Confirmation message - toast
+                file_path, _ = QFileDialog.getSaveFileName(
+                    self,
+                    "Save JSON File",
+                    "",
+                    "JSON Files (*.json);;All Files (*)",
+                )
+                if file_path:
+                    # Ensure the file has a .json extension
+                    if not file_path.endswith(".json"):
+                        file_path += ".json"
+
+                    with open(file_path, "w") as f:
+                        json.dump(data, f, indent=4)
+                    self.log_with_toast(
+                        "File Saved",
+                        "Rules JSON File Saved Successfully.",
+                        "INFO",
+                        "SUCCESS",
+                        True,
+                        self,
+                    )
 
     def save_rules_to_system(self):
         if self.ui.get_forms():
             _, data = self.validate_rules()
             if data:
                 self.rulesModel.save_rules(data)
+                self.log_with_toast(
+                    "Rules Saved",
+                    "Rules Saved Successfully.",
+                    "INFO",
+                    "SUCCESS",
+                    True,
+                    self,
+                )
         else:
             self.rulesModel.save_rules([])

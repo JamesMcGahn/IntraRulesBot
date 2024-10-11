@@ -64,5 +64,5 @@ class SettingsPage(QWidgetBase):
 
     @Slot()
     def success_save(self):
-        QToast(self, "success", "Saved Successful", "Log Settings Saved.")
+        QToast(self, "SUCCESS", "Saved Successful", "Log Settings Saved.")
         self.logging("Logger Settings Saved Successful", "INFO")

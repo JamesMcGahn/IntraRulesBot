@@ -8,7 +8,6 @@
 
 #### TO-DO LATER
 
-- [ ] :#FEATURE : Update Field on Form across all rules
 - [ ] :#TODO : Setting to turn off Toasts
 - [ ] :#TODO : Document Functions throughout app
 - [ ] :#TODO : Settings Page: Use a method on UI to set values
@@ -39,3 +38,4 @@
 - [x] : connect rulerunner thread to credentials and validated loaded rules
 - [x] : Stop for rulerunner
 - [x] : Clone Rule
+- [x] : Update Field on Form across all rules

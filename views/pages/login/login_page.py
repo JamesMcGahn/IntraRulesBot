@@ -47,5 +47,5 @@ class LoginPage(QWidgetBase):
 
     @Slot()
     def success_save(self):
-        QToast(self, "success", "Saved Successful", "Credentials Saved.")
+        QToast(self, "SUCCESS", "Saved Successful", "Credentials Saved.")
         self.logging("Login Credentials Saved Successful", "INFO")

@@ -16,16 +16,18 @@ class QToast(Toast):
         self.setTextFont(font)
 
         match (self.status):
-            case "success":
+            case "SUCCESS":
                 self.applyPreset(ToastPreset.SUCCESS)
-            case "error":
+            case "ERROR":
                 self.applyPreset(ToastPreset.ERROR)
-            case "warning":
+            case "WARN":
                 self.applyPreset(ToastPreset.WARNING)
-            case "info":
+            case "INFO":
                 self.applyPreset(ToastPreset.INFORMATION)
-            case "close":
+            case "CLOSE":
                 self.applyPreset(ToastPreset.CLOSE)
+            case _:
+                self.applyPreset(ToastPreset.INFORMATION)
 
         self.setTextColor(QColor("#ffffff"))
         self.setTitleColor(QColor("#FFFFFF"))

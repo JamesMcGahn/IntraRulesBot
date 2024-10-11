@@ -1,6 +1,8 @@
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QWidget
 
+from components.toasts import QToast
+
 
 class QWidgetBase(QWidget):
     send_logs = Signal(str, str, bool)
@@ -20,3 +22,16 @@ class QWidgetBase(QWidget):
     @Slot()
     def notified_app_shutting(self):
         self.appshutdown.emit()
+
+    @Slot()
+    def log_with_toast(
+        self,
+        toast_title,
+        msg,
+        log_level="INFO",
+        toast_level="INFO",
+        print_msg=True,
+        parent=None,
+    ):
+        self.logging(msg, log_level, print_msg)
+        QToast(parent, toast_level, toast_title, msg)
