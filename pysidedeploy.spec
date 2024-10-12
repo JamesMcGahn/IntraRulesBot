@@ -42,7 +42,7 @@ qml_files =
 excluded_qml_plugins = 
 
 # qt modules used. comma separated
-modules = Gui,Widgets,Core
+modules = Widgets,Gui,Core
 
 # qt plugins used by the application
 plugins = accessiblebridge,styles,egldeviceintegrations,xcbglintegrations,iconengines,platforminputcontexts,platforms/darwin,platforms,generic,imageformats,platformthemes
@@ -69,7 +69,7 @@ macos.permissions =
 mode = onefile
 
 # (str) specify any extra nuitka arguments
-extra_args = --quiet --noinclude-qt-translations --windows-console-mode=disable --windows-icon-from-ico=./resources/system_icons/logo48_48.ico
+extra_args = --quiet --noinclude-qt-translations --windows-console-mode=disable --windows-icon-from-ico=./resources/system_icons/logo48_48.ico --company-name=IntraRulesBot --product-name=IntraRulesBot --product-version=1.0.0 --copyright=MIT --file-description="IntraRulesBot Rules Automation"
 
 [buildozer]
 

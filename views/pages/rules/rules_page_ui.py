@@ -218,7 +218,7 @@ class RulesPageView(QWidget):
                 "QPushButton { "
                 + f"{style} padding: 5px 5px ; background: #DEDEDE; border-bottom: 1px solid #f58220; "
                 + "} QToolTip"
-                + "{ background: transparent; color: black; border: 1px solid #f58220; border-radius: 0px; padding: 5px; }"
+                + "{ background: #DEDEDE; color: black; border: 1px solid #f58220; border-radius: 0px; padding: 5px; }"
             )
             form_actions_btn_inner_layout.addWidget(btn_ref)
 
