@@ -34,11 +34,11 @@ class MainWindow(QMainWindow):
         self.centralWidget = CentralWidget()
 
         app_icon = QIcon()
-        app_icon.addFile(":/icons/16_16.ico", QSize(16, 16))
-        app_icon.addFile(":/icons/24_24.ico", QSize(24, 24))
-        app_icon.addFile(":/icons/32_32.ico", QSize(32, 32))
-        app_icon.addFile(":/icons/48_48.ico", QSize(48, 48))
-        app_icon.addFile(":/icons/256_256.ico", QSize(256, 256))
+        app_icon.addFile(":/system_icons/logo16_16.ico", QSize(16, 16))
+        app_icon.addFile(":/system_icons/logo24_24.ico", QSize(24, 24))
+        app_icon.addFile(":/system_icons/logo32_32.ico", QSize(32, 32))
+        app_icon.addFile(":/system_icons/logo48_48.ico", QSize(48, 48))
+        app_icon.addFile(":/system_icons/logo256_256.ico", QSize(256, 256))
         self.app.setWindowIcon(app_icon)
 
         tray_icon = QSystemTrayIcon(app_icon, self.app)

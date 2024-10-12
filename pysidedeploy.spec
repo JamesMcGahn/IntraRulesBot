@@ -1,31 +1,33 @@
 [app]
 
 # title of your application
-title = pyside_app_demo
+title = IntraRulesBot
 
 # project directory. the general assumption is that project_dir is the parent directory
 # of input_file
-project_dir = ./
+project_dir = .
 
+# project_dir = ./
 # source file path
-input_file = /Users/jamesmcgahn/Documents/GitHub/IntraRulesBot/main.py
+input_file = C:\Users\james.mcgahn\Documents\IntraRulesBot\main.py
 
 # directory where exec is stored
-exec_directory = ./build
+exec_directory = C:\Users\james.mcgahn\Documents\IntraRulesBot\build
 
 # path to .pyproject project file
 project_file = 
 
 # application icon
-icon = /Users/jamesmcgahn/Documents/GitHub/IntraRulesBot/.venv/lib/python3.12/site-packages/PySide6/scripts/deploy_lib/pyside_icon.icns
+icon = C:\Users\james.mcgahn\Documents\IntraRulesBot\resources\system_icons\logo48_48.ico
 
 [python]
 
 # python path
-python_path = /Users/jamesmcgahn/Documents/GitHub/IntraRulesBot/.venv/bin/python
+python_path = C:\Users\james.mcgahn\Documents\IntraRulesBot\.venv\Scripts\python.exe
 
+#python_path = /Users/jamesmcgahn/Documents/GitHub/IntraRulesBot/.venv/bin/python
 # python packages to install
-packages = Nuitka==2.4.8,pyqt-toast-notification==1.3.2
+packages = Nuitka==2.4.8,pywin32==307
 
 # buildozer = for deploying Android application
 android_packages = buildozer==1.5.0,cython==0.29.33
@@ -40,10 +42,10 @@ qml_files =
 excluded_qml_plugins = 
 
 # qt modules used. comma separated
-modules = Core,Gui,DBus,Widgets
+modules = Gui,Widgets,Core
 
 # qt plugins used by the application
-plugins = platforms/darwin,iconengines,platforms,accessiblebridge,generic,egldeviceintegrations,platformthemes,imageformats,platforminputcontexts,xcbglintegrations,styles
+plugins = accessiblebridge,styles,egldeviceintegrations,xcbglintegrations,iconengines,platforminputcontexts,platforms/darwin,platforms,generic,imageformats,platformthemes
 
 [android]
 
@@ -64,17 +66,17 @@ plugins =
 macos.permissions = 
 
 # mode of using nuitka. accepts standalone or onefile. default is onefile.
-mode = standalone
+mode = onefile
 
 # (str) specify any extra nuitka arguments
-extra_args = --quiet --noinclude-qt-translations
+extra_args = --quiet --noinclude-qt-translations --windows-console-mode=disable --windows-icon-from-ico=./resources/system_icons/logo48_48.ico
 
 [buildozer]
 
 # build mode
 # possible options = [release, debug]
 # release creates an aab, while debug creates an apk
-mode = debug
+mode = relase
 
 # contrains path to pyside6 and shiboken6 recipe dir
 recipe_dir = 
