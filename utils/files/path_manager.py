@@ -3,16 +3,26 @@ import re
 
 
 class PathManager:
+    """
+    A utility class to manage file and directory paths. It includes methods for checking
+    if paths exist, creating directories, handling duplicates, and parsing file paths.
+    """
+
     @staticmethod
-    def path_exists(path: str, makepath: bool, raiseError: bool = False):
+    def path_exists(path: str, makepath: bool, raiseError: bool = False) -> bool:
         """
+        Check if a path exists, optionally create the path if it doesn't exist, and raise an error if needed.
+
         Args:
-            path (str): the path of the file
-            makepath (bool): if the path doesn't exist, create the path
-            raiseError (bool,optional): if the path doesn't exist' raise error
+            path (str): The path to check.
+            makepath (bool): If True, create the path if it doesn't exist.
+            raiseError (bool, optional): If True, raise a ValueError if the path doesn't exist and makepath is False.
 
         Returns:
-            bool: True the path exists or if the path doesnt exist but is then is created
+            bool: True if the path exists or was successfully created, False otherwise.
+
+        Raises:
+            ValueError: If the path doesn't exist and raiseError is True.
         """
         if os.path.exists(path):
             return True
@@ -30,7 +40,16 @@ class PathManager:
                 return False
 
     @staticmethod
-    def regex_path(path):
+    def regex_path(path: str) -> dict:
+        """
+        Splits a file path into its directory, filename, and extension components.
+
+        Args:
+            path (str): The full file path.
+
+        Returns:
+            dict: A dictionary containing the directory, filename, and extension.
+        """
         directory = os.path.dirname(path)
         filename = os.path.basename(path)
         name, ext = os.path.splitext(filename)
@@ -38,7 +57,18 @@ class PathManager:
         return {"path": directory, "filename": name, "ext": ext}
 
     @staticmethod
-    def check_dup(folderpath, filename, ext):
+    def check_dup(folderpath: str, filename: str, ext: str) -> str:
+        """
+        Checks for duplicate filenames in a folder and appends a number to the filename if necessary.
+
+        Args:
+            folderpath (str): The path to the folder where the file is saved.
+            filename (str): The base filename (without extension).
+            ext (str): The file extension.
+
+        Returns:
+            str: The final unique file path.
+        """
         # if folder path doesnt exist - create it
         PathManager.path_exists(folderpath, True)
         # remove linux illegal characters
