@@ -1,3 +1,5 @@
+from typing import List, Optional, Tuple
+
 from PySide6.QtWidgets import QFormLayout, QLabel, QLineEdit, QTextEdit
 
 from components.helpers.widget_factory import WidgetFactory
@@ -5,12 +7,32 @@ from services.validator import SchemaValidator, ValidationError
 
 
 class RuleFormManager:
+    """
+    A manager for handling rule forms, including creation, validation, and managing input fields.
+
+    Args:
+        rule (dict): The rule data used to populate the form.
+        schema_folder (str): The folder containing the JSON schemas for validation.
+        schema_path (str): The path to the specific schema for rule validation.
+        int_keys (tuple): Keys that should be converted to integers from input fields.
+
+    Attributes:
+        form_errors (List): List to store validation errors.
+        schema_folder (str): Folder containing schemas for validation.
+        schema_path (str): Path to the schema used for validation.
+        int_keys (tuple): Tuple of keys to treat as integer values when processing form data.
+        rule (dict): The rule data that is managed by this form manager.
+        _rule_form (Optional[QFormLayout]): The generated form layout for the rule.
+        _rule_guid (Optional[str]): The GUID of the rule.
+        _rule_inputs (Optional[Dict]): A dictionary mapping input fields to their corresponding form fields.
+    """
+
     def __init__(
         self,
-        rule,
-        schema_folder="./schemas",
-        schema_path="/schemas/rules",
-        int_keys=("time_interval", "equality_threshold"),
+        rule: dict,
+        schema_folder: str = "./schemas",
+        schema_path: str = "/schemas/rules",
+        int_keys: Tuple[str] = ("time_interval", "equality_threshold"),
     ):
         super().__init__()
         self.rule = rule
@@ -26,18 +48,22 @@ class RuleFormManager:
         self.create_rule_form(self.rule)
 
     @property
-    def rule_guid(self):
+    def rule_guid(self) -> Optional[str]:
+        """Returns the GUID of the rule."""
         return self._rule_guid
 
     @property
-    def rule_inputs(self):
+    def rule_inputs(self) -> Optional[str]:
+        """Returns the dictionary of rule input fields."""
         return self._rule_inputs
 
     @property
-    def rule_form(self):
+    def rule_form(self) -> Optional[str]:
+        """Returns the generated form layout for the rule."""
         return self._rule_form
 
-    def create_rule_form(self, rule):
+    def create_rule_form(self, rule: dict) -> None:
+        """Create the form layout for the given rule."""
         rule_inputs = {}
         rules_name = rule["rule_name"]
         rule_guid = rule["guid"]
@@ -70,9 +96,10 @@ class RuleFormManager:
         line_edit_value: str,
         label_text: str,
         parent_layout: QFormLayout,
-        rule_input: dict = None,
-        rule_input_path: str = None,
-    ):
+        rule_input: Optional[dict] = None,
+        rule_input_path: Optional[str] = None,
+    ) -> QLineEdit:
+        """Creates a text input row in the form and optionally updates the rule input dictionary."""
 
         el = WidgetFactory.create_form_input_row(
             line_edit_value,
@@ -86,7 +113,10 @@ class RuleFormManager:
             rule_input[rule_input_path] = el
         return el
 
-    def rf_add_general_settings(self, rule, rule_input, rule_layout):
+    def rf_add_general_settings(
+        self, rule: dict, rule_input: dict, rule_layout: QFormLayout
+    ) -> None:
+        """Adds general settings fields to the form layout."""
         general_settings_layout = WidgetFactory.create_form_box(
             "General Settings",
             rule_layout,
@@ -112,7 +142,10 @@ class RuleFormManager:
             "rule_category",
         )
 
-    def rf_add_trigger_settings(self, rule, rule_input, rule_layout):
+    def rf_add_trigger_settings(
+        self, rule: dict, rule_input: dict, rule_layout: QFormLayout
+    ) -> None:
+        """Adds trigger settings fields to the form layout."""
         if "frequency_based" in rule:
             frequency_settings_layout = WidgetFactory.create_form_box(
                 "Frequency Settings",
@@ -136,7 +169,10 @@ class RuleFormManager:
 
             rule_input["frequency_based"] = frequency_based_set
 
-    def rf_add_conditions_settings(self, rule, rule_input, rule_layout):
+    def rf_add_conditions_settings(
+        self, rule: dict, rule_input: dict, rule_layout: QFormLayout
+    ) -> None:
+        """Adds condition settings fields to the form layout."""
         rule_input["conditions"] = []
         for i, condition in enumerate(rule["conditions"]):
             title = condition["details"]["condition_type"].title()
@@ -153,7 +189,10 @@ class RuleFormManager:
             inputs = self.create_condition_fields(condition_layout, condition)
             rule_input["conditions"].append(inputs)
 
-    def rf_add_actions_settings(self, rule, rule_input, rule_layout):
+    def rf_add_actions_settings(
+        self, rule: dict, rule_input: dict, rule_layout: QFormLayout
+    ) -> None:
+        """Adds action settings fields to the form layout."""
         rule_input["actions"] = []
         for i, action in enumerate(rule["actions"]):
             title = action["details"]["action_type"].title()
@@ -171,7 +210,8 @@ class RuleFormManager:
             inputs = self.create_action_fields(action_layout, action)
             rule_input["actions"].append(inputs)
 
-    def validate_form(self):
+    def validate_form(self) -> Tuple[int, List[ValidationError], dict]:
+        """Validates the form based on the provided JSON schema."""
         val = SchemaValidator(self.schema_path)
         total_errors = 0
         self.form_errors = []
@@ -185,7 +225,8 @@ class RuleFormManager:
 
         return (total_errors, self.form_errors, data_rule)
 
-    def highlight_errors(self, rule):
+    def highlight_errors(self, rule: dict) -> None:
+        """Highlights form fields that have validation errors."""
 
         def set_sheet(el, status=False):
             if status:
@@ -227,7 +268,10 @@ class RuleFormManager:
             if element is not None:
                 set_sheet(element)
 
-    def create_condition_fields(self, parent_layout, condition):
+    def create_condition_fields(
+        self, parent_layout: QFormLayout, condition: dict
+    ) -> dict:
+        """Creates form fields for the given condition."""
         # Common fields
         condition_data = {}
 
@@ -317,7 +361,8 @@ class RuleFormManager:
         condition_data["details"] = details_data
         return condition_data
 
-    def create_action_fields(self, parent_layout, action):
+    def create_action_fields(self, parent_layout: QFormLayout, action: dict) -> dict:
+        """Creates form fields for the given action."""
         action_data = {}
         action_general_settings_layout = WidgetFactory.create_form_box(
             "Action Provider Settings",
@@ -380,7 +425,11 @@ class RuleFormManager:
         action_data["details"] = details_data
         return action_data
 
-    def create_input_dict(self, int_keys=("time_interval", "equality_threshold")):
+    def create_input_dict(
+        self, int_keys: Tuple[str] = ("time_interval", "equality_threshold")
+    ) -> dict:
+        """Creates a dictionary from the form inputs, converting fields to the appropriate types (e.g. string,int)."""
+
         def make_rule_dict(field_refs, int_keys):
             x = {}
             if isinstance(field_refs, ValidationError):

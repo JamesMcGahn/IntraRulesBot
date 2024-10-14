@@ -1,5 +1,6 @@
 import platform
 import sys
+from typing import Tuple
 
 import keyring
 from keyring import get_keyring
@@ -10,10 +11,32 @@ from services.settings import AppSettings
 
 
 class LoginModel(QObjectBase, metaclass=QSingleton):
+    """
+    Manages the login credentials for the application, handling saving, retrieval,
+    and secure storage of username and password using keyring.
+
+    Attributes:
+        username (str or None): The username for login.
+        password (str or None): The password for login, securely stored in keyring.
+        url (str or None): The main URL for the login service.
+        login_url (str or None): The URL endpoint for the login action.
+        service_name (str): The service name used in keyring for storing credentials.
+        settings (AppSettings): The application settings instance for persistent storage.
+
+    Signals:
+        creds_changed (Signal): Emitted when credentials are successfully saved.
+        success (Signal): Emitted after credentials are saved successfully.
+    """
+
     creds_changed = Signal(str, str, str, str)
     success = Signal()
 
     def __init__(self):
+        """
+        Initializes the LoginModel with default values and loads saved credentials.
+        Sets up the keyring backend based on the operating system and retrieves
+        stored credentials from the application settings and keyring if available.
+        """
         super().__init__()
         self.username = None
         self.password = None
@@ -24,7 +47,12 @@ class LoginModel(QObjectBase, metaclass=QSingleton):
         self.set_keyring_backend()
         self.init_creds()
 
-    def set_keyring_backend(self):
+    def set_keyring_backend(self) -> None:
+        """
+        Configures the keyring backend based on the operating system. Windows and macOS
+        have specific keyring backends set. Logs the current keyring backend or errors
+        during setup.
+        """
         try:
             get_keyring()
             self.logging("Current Keyring method: " + str(get_keyring()), "INFO")
@@ -54,11 +82,33 @@ class LoginModel(QObjectBase, metaclass=QSingleton):
         except Exception as e:
             self.logging(f"Error setting keyring backend: {e}", "ERROR")
 
-    def get_creds(self):
+    def get_creds(self) -> Tuple[str, str, str, str]:
+        """
+        Retrieves the stored credentials, including username, password, URL, and login URL.
+
+        Returns:
+            Tuple: Contains username, password, URL, and login URL.
+        """
         return (self.username, self.password, self.url, self.login_url)
 
     @Slot(str, str, str, str)
-    def save_creds(self, username, password, url, login_url):
+    def save_creds(
+        self, username: str, password: str, url: str, login_url: str
+    ) -> None:
+        """
+        Saves the provided credentials to both keyring and application settings.
+        Emits creds_changed signal when the credentials are updated and success signal
+        once the save operation is complete.
+
+        Args:
+            username (str): The username for login.
+            password (str): The password for login.
+            url (str): The main URL for the login service.
+            login_url (str): The URL endpoint for the login action.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.username = username or None
         self.password = password or None
         self.url = url or None
@@ -74,7 +124,12 @@ class LoginModel(QObjectBase, metaclass=QSingleton):
         self.creds_changed.emit(self.username, self.password, self.url, self.login_url)
         self.success.emit()
 
-    def init_creds(self):
+    def init_creds(self) -> None:
+        """
+        Initializes the credentials by loading them from application settings and keyring.
+        If a username is found in settings, attempts to retrieve the corresponding password
+        from keyring.
+        """
         self.settings.begin_group("login")
         self.url = self.settings.get_value("url", None)
         self.username = self.settings.get_value("username", None)

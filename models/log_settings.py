@@ -1,3 +1,5 @@
+from typing import Tuple
+
 from PySide6.QtCore import QObject, Signal, Slot
 
 from base import QSingleton
@@ -5,10 +7,33 @@ from services.settings import AppSettings
 
 
 class LogSettingsModel(QObject, metaclass=QSingleton):
+    """
+    Manages the log settings for the application, handling initialization, saving,
+    and emitting changes when log settings are updated.
+
+    Attributes:
+        log_file_path (str): The file path for storing logs.
+        log_file_name (str): The name of the log file.
+        log_file_max_mbs (int): Maximum size of a log file in megabytes.
+        log_backup_count (int): Number of backup log files to retain.
+        log_keep_files_days (int): Number of days to keep log files.
+        log_turn_off_print (bool): Whether to disable printing logs to the console.
+        settings (AppSettings): An instance of AppSettings to persist and retrieve log settings.
+
+    Signals:
+        log_setting_changed (Signal): Emitted when log settings are successfully updated.
+        success (Signal): Emitted after log settings are saved successfully.
+    """
+
     log_setting_changed = Signal(str, str, int, int, int, bool)
     success = Signal()
 
     def __init__(self):
+        """
+        Initializes the LogSettingsModel with default values and loads saved settings.
+        Loads log configuration from persistent storage if available; otherwise,
+        uses the default values.
+        """
         super().__init__()
         self.log_file_path = "./logs/"
         self.log_file_name = "file.log"
@@ -20,7 +45,14 @@ class LogSettingsModel(QObject, metaclass=QSingleton):
         self.settings = AppSettings()
         self.init_logs_settings()
 
-    def get_log_settings(self):
+    def get_log_settings(self) -> Tuple[str, str, int, int, int, bool]:
+        """
+        Retrieves the current log settings as a tuple.
+
+        Returns:
+            Tuple: Contains log_file_path, log_file_name, log_file_max_mbs,
+                   log_backup_count, log_keep_files_days, and log_turn_off_print.
+        """
         return (
             self.log_file_path,
             self.log_file_name,
@@ -33,13 +65,29 @@ class LogSettingsModel(QObject, metaclass=QSingleton):
     @Slot(str, str, int, int, int, bool)
     def save_log_settings(
         self,
-        log_file_path,
-        log_file_name,
-        log_file_max_mbs,
-        log_backup_count,
-        log_keep_files_days,
-        log_turn_off_print,
+        log_file_path: str,
+        log_file_name: str,
+        log_file_max_mbs: int,
+        log_backup_count: int,
+        log_keep_files_days: int,
+        log_turn_off_print: bool,
     ):
+        """
+        Saves the provided log settings to persistent storage and updates the model's state.
+        Emits log_setting_changed signal when settings are modified and success signal
+        once the save operation is complete.
+
+        Args:
+            log_file_path (str): The file path for storing logs.
+            log_file_name (str): The name of the log file.
+            log_file_max_mbs (int): Maximum size of a log file in megabytes.
+            log_backup_count (int): Number of backup log files to retain.
+            log_keep_files_days (int): Number of days to keep log files.
+            log_turn_off_print (bool): Whether to disable printing logs to the console.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.log_file_path = log_file_path
         self.log_file_name = log_file_name
         self.log_file_max_mbs = log_file_max_mbs
@@ -66,7 +114,12 @@ class LogSettingsModel(QObject, metaclass=QSingleton):
         )
         self.success.emit()
 
-    def init_logs_settings(self):
+    def init_logs_settings(self) -> None:
+        """
+        Initializes log settings by retrieving values from persistent storage.
+        If no settings are found, defaults are used. This method ensures that
+        the log settings are loaded at startup.
+        """
         self.settings.begin_group("logs_settings")
         self.log_file_path = self.settings.get_value("log_file_path", "./logs/")
         self.log_file_name = self.settings.get_value("log_file_name", "file.log")
