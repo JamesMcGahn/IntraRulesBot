@@ -11,27 +11,45 @@ from components.helpers import StyleHelper, WidgetFactory
 
 
 class IconTextNavBarView(QWidget):
-    """Expanded Side Navigation Bar - Icons and Text Buttons - UI Components"""
+    """
+    Expanded side navigation bar with both icons and text buttons.
+
+    Attributes:
+        keys_btn_ict (QPushButton): Button for login credentials section.
+        rules_btn_ict (QPushButton): Button for rules section.
+        logs_btn_ict (QPushButton): Button for logs section.
+        settings_btn_ict (QPushButton): Button for settings section.
+        signout_btn_ict (QPushButton): Button for exit/sign-out section.
+    """
 
     def __init__(self):
+        """
+        Initializes the IconTextNavBarView UI, setting up the buttons and applying styles.
+        """
         super().__init__()
         self.init_ui()
         self.setObjectName("icon_text_widget_ui")
 
     def init_ui(self):
-        """Add UI Components"""
+        """
+        Creates and adds the UI components, including buttons with icons and text.
+        Adds shadow effects to the buttons and ensures proper layout structure.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.setMaximumSize(QSize(250, 16777215))
 
         StyleHelper.drop_shadow(self)
 
         self.setAttribute(Qt.WA_StyledBackground, True)
-
+        # Layout for the navigation bar
         self.icon_text_nav_vlayout = QVBoxLayout(self)
         self.icon_text_nav_vlayout.setObjectName("icon_text_nav_vlayout")
-
+        # Layout for the buttons
         self.icon_btn_layout = QVBoxLayout()
         self.icon_btn_layout.setObjectName("icon_btn_layout_ict")
-
+        # Create the buttons with text and icons
         self.keys_btn_ict = QPushButton(" Login Creds")
         self.keys_btn_ict.setObjectName("keys_btn_ict")
         self.icon_btn_layout.addWidget(self.keys_btn_ict)
@@ -45,12 +63,13 @@ class IconTextNavBarView(QWidget):
         self.icon_btn_layout.addWidget(self.logs_btn_ict)
 
         self.icon_text_nav_vlayout.addLayout(self.icon_btn_layout)
+        # Spacer to push settings and signout buttons to the bottom
         self.verticalSpacer_3 = QSpacerItem(
             20, 589, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
         )
 
         self.icon_text_nav_vlayout.addItem(self.verticalSpacer_3)
-
+        # Settings and sign-out buttons
         self.settings_btn_ict = QPushButton("Settings")
         self.settings_btn_ict.setObjectName("settings_btn_ict")
         self.icon_text_nav_vlayout.addWidget(self.settings_btn_ict)
@@ -74,7 +93,7 @@ class IconTextNavBarView(QWidget):
                 ":/images/signout_on.png",
             ),
         ]
-
+        # Apply icons and styles to each button
         for icon in icons:
             parent, image_loc_1, image_loc_2 = icon
             WidgetFactory.create_icon(

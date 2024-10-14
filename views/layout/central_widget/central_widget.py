@@ -1,14 +1,14 @@
-from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QLinearGradient, QPainter
-from PySide6.QtWidgets import QGridLayout, QWidget
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QLinearGradient, QPainter, QPaintEvent
+from PySide6.QtWidgets import QGridLayout
+
+from base import QWidgetBase
 
 from ..main_screen import MainScreen
 from ..navbars import HeaderNavBar, IconOnlyNavBar, IconTextNavBar
 
 
-class CentralWidget(QWidget):
-    appshutdown = Signal()
-    send_logs = Signal(str, str, bool)
+class CentralWidget(QWidgetBase):
 
     def __init__(self):
         super().__init__()
@@ -52,7 +52,13 @@ class CentralWidget(QWidget):
             self.main_screen_widget.change_page
         )
 
-    def paintEvent(self, event):
+    def paintEvent(self, event: QPaintEvent) -> None:
+        """
+        Custom paint event to draw a linear gradient background on the central widget.
+
+        Args:
+            event (QPaintEvent): The paint event.
+        """
         painter = QPainter(self)
         gradient = QLinearGradient(self.width() / 2, 0, self.width() / 2, self.height())
         gradient.setColorAt(0.05, "#228752")  #
@@ -60,11 +66,3 @@ class CentralWidget(QWidget):
         gradient.setColorAt(1, "#014637")
         painter.setBrush(gradient)
         painter.drawRect(self.rect())
-
-    @Slot(str, str, bool)
-    def logging(self, msg, level="INFO", print_msg=True):
-        self.send_logs.emit(msg, level, print_msg)
-
-    @Slot()
-    def notified_app_shutting(self):
-        self.appshutdown.emit()

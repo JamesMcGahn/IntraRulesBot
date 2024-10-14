@@ -1,14 +1,26 @@
-from PySide6.QtCore import Signal, Slot
-from PySide6.QtWidgets import QPushButton, QWidget
+from PySide6.QtCore import Slot
+from PySide6.QtWidgets import QPushButton
+
+from base import QWidgetBase
 
 from .main_screen_ui import MainScreenView
 
 
-class MainScreen(QWidget):
-    appshutdown = Signal()
-    send_logs = Signal(str, str, bool)
+class MainScreen(QWidgetBase):
+    """
+    MainScreen serves as the controller for the MainScreenView. It manages
+    interactions between different parts of the view, such as changing pages and
+    handling application shutdown.
+
+    Attributes:
+        ui (MainScreenView): The main screen view containing the stacked widget and its pages.
+        layout (QLayout): The layout of the main screen.
+    """
 
     def __init__(self):
+        """
+        Initializes the MainScreen, sets up the UI, and connects signals for handling page changes and app shutdown.
+        """
         super().__init__()
         self.ui = MainScreenView()
         self.layout = self.ui.layout()
@@ -19,7 +31,16 @@ class MainScreen(QWidget):
         self.appshutdown.connect(self.ui.rules_page.notified_app_shutting)
 
     @Slot(QPushButton)
-    def change_page(self, btn):
+    def change_page(self, btn: QPushButton) -> None:
+        """
+        Changes the page displayed in the stacked widget based on the button clicked.
+
+        Args:
+            btn (QPushButton): The button that was clicked to trigger the page change.
+
+        Returns:
+            None: This function does not return a value.
+        """
         btn_name = btn.objectName()
 
         if btn_name.startswith("keys_btn_"):
@@ -30,11 +51,3 @@ class MainScreen(QWidget):
             self.ui.stackedWidget.setCurrentIndex(2)
         elif btn_name.startswith("settings_btn_"):
             self.ui.stackedWidget.setCurrentIndex(3)
-
-    @Slot(str, str, bool)
-    def logging(self, msg, level="INFO", print_msg=True):
-        self.send_logs.emit(msg, level, print_msg)
-
-    @Slot()
-    def notified_app_shutting(self):
-        self.appshutdown.emit()
