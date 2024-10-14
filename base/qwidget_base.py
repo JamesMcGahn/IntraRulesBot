@@ -13,7 +13,7 @@ class QWidgetBase(QWidget):
     This class can be subclassed by QWidgets to inherit common signals such as `send_logs`,
     `appshutdown`, and provides methods to log messages, display toasts, and notify application shutdown.
 
-    Attributes:
+    Signals:
         send_logs (Signal): Signal to emit log messages (message, log level, whether to print the message).
         appshutdown (Signal): Signal emitted when application is shutting down.
     """

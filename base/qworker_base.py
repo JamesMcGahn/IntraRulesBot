@@ -10,7 +10,7 @@ class QWorkerBase(QObject):
     This class can be subclassed by workers to inherit common signals such as `send_logs`,
     `finished`, and `error`, and provides methods to log messages and track thread execution.
 
-    Attributes:
+    Signals:
         send_logs (Signal): Signal to emit log messages (message, log level, whether to print the message).
         finished (Signal): Signal emitted when the worker finishes execution.
         error (Signal): Signal emitted when an error occurs in the worker.

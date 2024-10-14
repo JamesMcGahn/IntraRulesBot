@@ -1,4 +1,7 @@
+from typing import Any, Dict, List, Optional
+
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -17,8 +20,19 @@ from .error_dialog_css import STYLES
 
 
 class ErrorDialog(GradientDialog):
+    """
+    A custom dialog that displays errors related to rules.
+    It organizes errors by rule and allows the user to close the dialog after reviewing the issues.
 
-    def __init__(self, errors, parent=None):
+    Args:
+        errors (List[Dict[Rules]]): A list of Rule dictionaries with errors
+        parent (QWidget, optional): The parent widget of the dialog. Defaults to None.
+
+    """
+
+    def __init__(self, errors: List[Dict[str, Any]], parent: Optional[QWidget] = None):
+        """Initialize the ErrorDialog with a list of errors and optional parent widget."""
+
         gradient_colors = [(0.05, "#228752"), (0.75, "#014637"), (1, "#014637")]
         super().__init__(gradient_colors, parent)
 
@@ -110,11 +124,24 @@ class ErrorDialog(GradientDialog):
                     h3_layout.addLayout(h2_layout)
                     inner_layout.addRow(h3_layout)
 
-    def repaint_shadow(self):
-        """Repaint shadow of widget. Used for repainting shadow after the scroll bar moves"""
+    def repaint_shadow(self) -> None:
+        """Repaint shadow of widget. Used for repainting shadow after the scroll bar moves
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.update()
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """
+        Handle the close event by disconnecting scroll bar signals and calling the base class close event.
+
+        Args:
+            event (QCloseEvent): The close event object.
+
+        Returns:
+            None: This function does not return a value.
+        """
         try:
 
             self.scroll_area.verticalScrollBar().valueChanged.disconnect(

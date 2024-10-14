@@ -1,6 +1,8 @@
 import uuid
+from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -20,9 +22,23 @@ from .add_rule_wizard_css import STYLES
 
 
 class AddRuleWizard(GradientDialog):
+    """
+    A custom wizard dialog for adding new rules, including setting conditions and actions.
+
+    Signals:
+        submit_form (Signal): Emitted when the form is submitted with the rule data.
+
+    Args:
+        parent (Optional[QWidget]): The parent widget of the dialog. Defaults to None.
+    """
+
     submit_form = Signal(object)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None):
+        """
+        Initialize the AddRuleWizard dialog.
+        """
+
         gradient_colors = [(0.05, "#228752"), (0.75, "#014637"), (1, "#014637")]
         super().__init__(gradient_colors, parent)
         self.setStyleSheet(STYLES)
@@ -33,7 +49,7 @@ class AddRuleWizard(GradientDialog):
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         self.main_layout = QHBoxLayout(self)
         self.setContentsMargins(0, 5, 0, 5)
-        general_settings = WidgetFactory.create_form_box(
+        self.general_settings = WidgetFactory.create_form_box(
             "",
             self.main_layout,
             [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
@@ -42,16 +58,31 @@ class AddRuleWizard(GradientDialog):
             object_name="Main-Add-Group-Box",
             style_sheet="QGroupBox#Main-Add-Group-Box {padding: 5px;margin-top: 5px;} ",
         )
-        general_settings.setSpacing(5)
+        self.general_settings.setSpacing(5)
         rule_name_lbl = QLabel("Rule Name:")
         self.rule_name_input = QLineEdit()
-        general_settings.addRow(rule_name_lbl, self.rule_name_input)
+        self.general_settings.addRow(rule_name_lbl, self.rule_name_input)
         self.trigger = QComboBox()
         trigger_lbl = QLabel("Trigger:")
         self.trigger.addItem("Frequency")
         # self.trigger.addItem("Action")
-        general_settings.addRow(trigger_lbl, self.trigger)
+        self.general_settings.addRow(trigger_lbl, self.trigger)
 
+        self.setup_conditions_section()
+        self.setup_actions_section()
+
+        submit_button = QPushButton("Submit")
+        StyleHelper.drop_shadow(submit_button)
+
+        self.general_settings.addRow(submit_button)
+        submit_button.clicked.connect(self.on_submit)
+
+    def setup_conditions_section(self) -> None:
+        """Set up the conditions section with buttons and a layout for adding conditions.
+
+        Returns:
+            None: This function does not return a value.
+        """
         add_conditions_lbl = QLabel("Add Condition:")
         add_conditions_btn = QPushButton("Add")
         StyleHelper.drop_shadow(add_conditions_btn)
@@ -61,7 +92,7 @@ class AddRuleWizard(GradientDialog):
         conditions_h_layout.addWidget(add_conditions_btn)
         conditions_h_layout.addWidget(reset_conditions)
 
-        general_settings.addRow(add_conditions_lbl, conditions_h_layout)
+        self.general_settings.addRow(add_conditions_lbl, conditions_h_layout)
         add_conditions_btn.clicked.connect(self.add_condition)
 
         self.conditions_box = QWidget()
@@ -80,8 +111,14 @@ class AddRuleWizard(GradientDialog):
             lambda event: self.on_reset_btn_clicked(event, self.conditions_layout)
         )
 
-        general_settings.addRow(self.conditions_box)
+        self.general_settings.addRow(self.conditions_box)
 
+    def setup_actions_section(self) -> None:
+        """Set up the actions section with buttons and a layout for adding actions.
+
+        Returns:
+            None: This function does not return a value.
+        """
         add_actions_lbl = QLabel("Add actions:")
         add_actions_btn = QPushButton("Add")
         StyleHelper.drop_shadow(add_actions_btn)
@@ -91,7 +128,7 @@ class AddRuleWizard(GradientDialog):
         actions_h_layout.addWidget(add_actions_btn)
         actions_h_layout.addWidget(reset_actions)
 
-        general_settings.addRow(add_actions_lbl, actions_h_layout)
+        self.general_settings.addRow(add_actions_lbl, actions_h_layout)
         add_actions_btn.clicked.connect(self.add_action)
 
         self.actions_box = QWidget()
@@ -104,29 +141,55 @@ class AddRuleWizard(GradientDialog):
             lambda event: self.on_reset_btn_clicked(event, self.actions_layout)
         )
 
-        general_settings.addRow(self.actions_box)
-        submit_button = QPushButton("Submit")
-        StyleHelper.drop_shadow(submit_button)
+        self.general_settings.addRow(self.actions_box)
 
-        general_settings.addRow(submit_button)
-        submit_button.clicked.connect(self.on_submit)
+    def add_condition(self) -> None:
+        """Add a condition to the conditions layout.
 
-    def add_condition(self):
+        Returns:
+            None: This function does not return a value.
+        """
+
         condition_type_lbl = QLabel("Condition Type:")
         condition_type = QComboBox()
         condition_type.addItem("stats")
 
         self.conditions_layout.addRow(condition_type_lbl, condition_type)
 
-    def add_action(self):
+    def add_action(self) -> None:
+        """Add an action to the actions layout
+
+        Returns:
+            None: This function does not return a value.
+        """
         action_type_lbl = QLabel("Action Type:")
         action_type = QComboBox()
         action_type.addItem("email")
 
         self.actions_layout.addRow(action_type_lbl, action_type)
 
-    def remove_layout_items(self, layout):
-        # Iterate over all items in the form layout and remove them
+    def on_reset_btn_clicked(self, event: QMouseEvent, layout: QFormLayout) -> None:
+        """
+        Reset the specified layout by removing all items.
+
+        Args:
+            layout (QFormLayout): The layout to be cleared.
+
+        Returns:
+            None: This function does not return a value.
+        """
+        self.remove_layout_items(layout)
+
+    def remove_layout_items(self, layout: QFormLayout) -> None:
+        """
+        Recursively remove all items from the layout.
+
+        Args:
+            layout (QFormLayout): The layout to be cleared.
+
+        Returns:
+            None: This function does not return a value.
+        """
 
         while layout.count():
             item = layout.takeAt(0)
@@ -136,11 +199,19 @@ class AddRuleWizard(GradientDialog):
             elif item.layout() is not None:
                 self.remove_layout_items(item.layout())
 
-    def on_reset_btn_clicked(self, event, layout):
-        self.remove_layout_items(layout)
+    def get_all_rows(
+        self, layout: QFormLayout, parent_type: str
+    ) -> List[Dict[str, Any]]:
+        """
+        Retrieve all rows from a given QFormLayout.
 
-    def get_all_rows(self, layout, parent_type):
-        # Iterate over all rows in the QFormLayout
+        Args:
+            layout (QFormLayout): The form layout containing rows to retrieve.
+            parent_type (str): The key value of condition or action (e.g. action_type, condition_type) to include in details in the returned data.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries representing the form data.
+        """
 
         fields = []
 

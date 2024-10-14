@@ -1,7 +1,14 @@
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 from PySide6.QtCore import QRect, Qt
-from PySide6.QtGui import QColor, QFontMetrics, QLinearGradient, QPainter, QPen
+from PySide6.QtGui import (
+    QColor,
+    QFontMetrics,
+    QLinearGradient,
+    QMouseEvent,
+    QPainter,
+    QPen,
+)
 from PySide6.QtWidgets import QPushButton, QSizePolicy
 
 from ...helpers import StyleHelper
@@ -9,12 +16,27 @@ from .gradient_button_css import STYLES
 
 
 class GradientButton(QPushButton):
+    """
+    A QPushButton subclass that renders a button with a gradient background, border, and optional drop shadow.
+    It can also handle icons and text rendering in various configurations.
+
+    Args:
+        text (str): The button label text.
+        text_color (Union[str, QColor, None]): Color of the text.
+        gradient_colors (List[Union[Tuple[float, str], Tuple[float, QColor]]]): List of gradient stops and colors.
+        border_color (Union[str, QColor, None], optional): Color of the button border. Defaults to None.
+        border_width (int, optional): Width of the button border. Defaults to 3.
+        corner_radius (int, optional): Radius of the button corners. Defaults to 3.
+        drop_shadow_effect (Union[Tuple[float, float, float, Union[str, QColor]], bool], optional):
+            Drop shadow effect as a tuple (radius, xoffset, yoffset, color) or a boolean. Defaults to True.
+    """
+
     def __init__(
         self,
         text: str,
         text_color: Union[str, QColor, None],
         gradient_colors: List[Union[Tuple[float, str], Tuple[float, QColor]]],
-        border_color: Union[str, QColor, None] = None,
+        border_color: Optional[Union[str, QColor]] = None,
         border_width: int = 3,
         corner_radius: int = 3,
         drop_shadow_effect: Union[
@@ -50,7 +72,16 @@ class GradientButton(QPushButton):
             radius, xoffset, yoffset, color = self.drop_shadow_effect
             StyleHelper.drop_shadow(self, radius, xoffset, yoffset, color)
 
-    def paintEvent(self, event):
+    def paintEvent(self, event: QPainter) -> None:
+        """
+        Override paintEvent to custom paint the button with gradient and border.
+
+        Args:
+            event: The paint event triggered by Qt.
+
+        Returns:
+            None: This function does not return a value.
+        """
 
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
@@ -117,7 +148,16 @@ class GradientButton(QPushButton):
 
         self.drawTitle(painter)
 
-    def drawTitle(self, painter):
+    def drawTitle(self, painter: QPainter) -> None:
+        """
+        Draw the text and icon (if present) in the button.
+
+        Args:
+            painter (QPainter): The QPainter object used to draw.
+
+        Returns:
+            None: This function does not return a value.
+        """
         if not self.text_color:
             self.text_color = "black"
         painter.setPen(QColor(self.text_color))
@@ -160,16 +200,44 @@ class GradientButton(QPushButton):
         else:
             painter.drawText(text_rect, Qt.AlignCenter, self.text())
 
-    def on_toggled(self, checked):
+    def on_toggled(self, checked: bool) -> None:
+        """
+        Slot triggered when the button's checked state changes.
+
+        Args:
+            checked (bool): True if the button is checked, False otherwise.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.update()
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent):
+        """
+        Handle the mouse press event and set the button's pressed state.
+
+        Args:
+            event: The mouse press event.
+
+        Returns:
+            None: This function does not return a value.
+        """
+
         if event.button() == Qt.LeftButton:
             self.pressed = True
             self.update()
         super().mousePressEvent(event)
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        """
+        Handle the mouse release event and reset the button's pressed state.
+
+        Args:
+            event: The mouse release event.
+
+        Returns:
+            None: This function does not return a value.
+        """
         if event.button() == Qt.LeftButton:
             self.pressed = False
             self.update()
@@ -178,6 +246,18 @@ class GradientButton(QPushButton):
     def set_gradient_start_stop(
         self, xStart: float, yStart: float, xStop: float, yStop: float
     ) -> None:
+        """
+        Set the gradient start and stop positions.
+
+        Args:
+            xStart (float): The X coordinate for the gradient start.
+            yStart (float): The Y coordinate for the gradient start.
+            xStop (float): The X coordinate for the gradient stop.
+            yStop (float): The Y coordinate for the gradient stop.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.xStart = xStart
         self.yStart = yStart
         self.xStop = xStop

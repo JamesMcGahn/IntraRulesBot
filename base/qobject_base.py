@@ -8,7 +8,7 @@ class QObjectBase(QObject):
     This class can be subclassed by QObject to inherit common signals such as `send_logs`
     and provides methods to log messages.
 
-    Attributes:
+    Signals:
         send_logs (Signal): Signal to emit log messages (message, log level, whether to print the message).
 
     """

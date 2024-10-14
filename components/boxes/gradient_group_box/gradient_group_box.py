@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QLinearGradient, QPainter, QPen
@@ -9,12 +9,28 @@ from .gradient_group_box_styles import styles
 
 
 class GradientGroupBox(QGroupBox):
+    """
+    A custom QGroupBox widget that displays a gradient background, with optional border and drop shadow effects.
+
+    This class allows you to customize the title color, background gradient, border color, and drop shadow.
+
+    Args:
+        title (str): The title of the group box.
+        title_color (str): The color of the title text.
+        gradient_colors (List[Tuple[float, str]]): A list of tuples representing the position and color of the gradient.
+        border_color (Optional[str], optional): The color of the border. Defaults to None.
+        border_width (int, optional): The width of the border in pixels. Defaults to 2.
+        corner_radius (int, optional): The radius of the corners in pixels. Defaults to 3.
+        drop_shadow_effect (Union[Tuple[float, float, float, Union[str, QColor]], bool], optional): A tuple representing
+        drop shadow properties (radius, x offset, y offset, color) or a boolean to enable a default shadow. Defaults to True.
+    """
+
     def __init__(
         self,
         title: str,
         title_color: str,
         gradient_colors: List[Tuple[float, str]],
-        border_color: str = None,
+        border_color: Optional[str] = None,
         border_width: int = 2,
         corner_radius: int = 3,
         drop_shadow_effect: Union[
@@ -47,7 +63,15 @@ class GradientGroupBox(QGroupBox):
             radius, xoffset, yoffset, color = self.drop_shadow_effect
             StyleHelper.drop_shadow(self, radius, xoffset, yoffset, color)
 
-    def paintEvent(self, event):
+    def paintEvent(self, event: QPainter) -> None:
+        """
+        Paints the widget using a gradient background and optional border.
+
+        This method is responsible for rendering the gradient and the border on the widget.
+
+        Returns:
+            None: This function does not return a value.
+        """
 
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
@@ -91,14 +115,34 @@ class GradientGroupBox(QGroupBox):
 
         self.drawTitle(painter)
 
-    def drawTitle(self, painter):
-        # Set the title text color
+    def drawTitle(self, painter: QPainter):
+        """
+        Draws the title text in the specified title color.
+
+        Args:
+            painter (QPainter): The QPainter object used for rendering.
+
+        Returns:
+            None: This function does not return a value.
+        """
         painter.setPen(self.title_color)
         painter.drawText(10, 20, self.title())
 
     def set_gradient_start_stop(
         self, xStart: float, yStart: float, xStop: float, yStop: float
     ) -> None:
+        """
+        Set the start and stop points for the gradient.
+
+        Args:
+            xStart (float): The x-coordinate for the start of the gradient.
+            yStart (float): The y-coordinate for the start of the gradient.
+            xStop (float): The x-coordinate for the end of the gradient.
+            yStop (float): The y-coordinate for the end of the gradient.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.xStart = xStart
         self.yStart = yStart
         self.xStop = xStop

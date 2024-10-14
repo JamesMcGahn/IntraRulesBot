@@ -1,5 +1,7 @@
+from typing import Optional
+
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QPushButton, QSizePolicy, QTextEdit, QVBoxLayout
+from PySide6.QtWidgets import QPushButton, QSizePolicy, QTextEdit, QVBoxLayout, QWidget
 
 from ...helpers import WidgetFactory
 from ..gradient_dialog import GradientDialog
@@ -7,8 +9,16 @@ from .message_dialog_css import STYLES
 
 
 class MessageDialog(GradientDialog):
+    """
+    A custom dialog for displaying a message with a gradient background.
 
-    def __init__(self, title, message, parent=None):
+    Args:
+        title (str): The title of the dialog window.
+        message (str): The message to display in the dialog.
+        parent (Optional[QWidget]): The parent widget of the dialog, defaults to None.
+    """
+
+    def __init__(self, title: str, message: str, parent: Optional[QWidget] = None):
         gradient_colors = [(0.05, "#228752"), (0.75, "#014637"), (1, "#014637")]
         super().__init__(gradient_colors, parent)
         self.title = title
