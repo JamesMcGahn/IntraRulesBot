@@ -49,21 +49,44 @@ class RuleFormManager:
 
     @property
     def rule_guid(self) -> Optional[str]:
-        """Returns the GUID of the rule."""
+        """
+        Returns the GUID of the rule.
+
+        Returns:
+            Optional[str]: The GUID of the rule.
+        """
         return self._rule_guid
 
     @property
     def rule_inputs(self) -> Optional[str]:
-        """Returns the dictionary of rule input fields."""
+        """
+        Returns the dictionary of rule input fields.
+
+        Returns:
+            Optional[dict]: A dictionary mapping input fields to their corresponding form fields.
+        """
         return self._rule_inputs
 
     @property
     def rule_form(self) -> Optional[str]:
-        """Returns the generated form layout for the rule."""
+        """
+        Returns the generated form layout for the rule.
+
+        Returns:
+            Optional[QFormLayout]: The generated form layout for the rule.
+        """
         return self._rule_form
 
     def create_rule_form(self, rule: dict) -> None:
-        """Create the form layout for the given rule."""
+        """
+        Creates the form layout for the given rule.
+
+        Args:
+            rule (dict): The rule data used to generate the form layout.
+
+        Returns:
+            None: This function does not return a value.
+        """
         rule_inputs = {}
         rules_name = rule["rule_name"]
         rule_guid = rule["guid"]
@@ -99,8 +122,19 @@ class RuleFormManager:
         rule_input: Optional[dict] = None,
         rule_input_path: Optional[str] = None,
     ) -> QLineEdit:
-        """Creates a text input row in the form and optionally updates the rule input dictionary."""
+        """
+        Creates a text input row in the form and optionally updates the rule input dictionary.
 
+        Args:
+            line_edit_value (str): The initial value for the QLineEdit field.
+            label_text (str): The label text for the input field.
+            parent_layout (QFormLayout): The parent layout to which the row will be added.
+            rule_input (Optional[dict]): The rule input dictionary to update.
+            rule_input_path (Optional[str]): The path in the rule input dictionary to store the field.
+
+        Returns:
+            QLineEdit: The created QLineEdit field.
+        """
         el = WidgetFactory.create_form_input_row(
             line_edit_value,
             label_text,
@@ -116,7 +150,17 @@ class RuleFormManager:
     def rf_add_general_settings(
         self, rule: dict, rule_input: dict, rule_layout: QFormLayout
     ) -> None:
-        """Adds general settings fields to the form layout."""
+        """
+        Adds general settings fields to the form layout.
+
+        Args:
+            rule (dict): The rule data containing general settings.
+            rule_input (dict): The input fields for the rule.
+            rule_layout (QFormLayout): The layout for the form.
+
+        Returns:
+            None: This function does not return a value.
+        """
         general_settings_layout = WidgetFactory.create_form_box(
             "General Settings",
             rule_layout,
@@ -145,7 +189,17 @@ class RuleFormManager:
     def rf_add_trigger_settings(
         self, rule: dict, rule_input: dict, rule_layout: QFormLayout
     ) -> None:
-        """Adds trigger settings fields to the form layout."""
+        """
+        Adds trigger settings fields to the form layout.
+
+        Args:
+            rule (dict): The rule data containing trigger settings.
+            rule_input (dict): The input fields for the rule.
+            rule_layout (QFormLayout): The layout for the form.
+
+        Returns:
+            None: This function does not return a value.
+        """
         if "frequency_based" in rule:
             frequency_settings_layout = WidgetFactory.create_form_box(
                 "Frequency Settings",
@@ -172,7 +226,17 @@ class RuleFormManager:
     def rf_add_conditions_settings(
         self, rule: dict, rule_input: dict, rule_layout: QFormLayout
     ) -> None:
-        """Adds condition settings fields to the form layout."""
+        """
+        Adds condition settings fields to the form layout.
+
+        Args:
+            rule (dict): The rule data containing condition settings.
+            rule_input (dict): The input fields for the rule.
+            rule_layout (QFormLayout): The layout for the form.
+
+        Returns:
+            None: This function does not return a value.
+        """
         rule_input["conditions"] = []
         for i, condition in enumerate(rule["conditions"]):
             title = condition["details"]["condition_type"].title()
@@ -192,7 +256,17 @@ class RuleFormManager:
     def rf_add_actions_settings(
         self, rule: dict, rule_input: dict, rule_layout: QFormLayout
     ) -> None:
-        """Adds action settings fields to the form layout."""
+        """
+        Adds action settings fields to the form layout.
+
+        Args:
+            rule (dict): The rule data containing action settings.
+            rule_input (dict): The input fields for the rule.
+            rule_layout (QFormLayout): The layout for the form.
+
+        Returns:
+            None: This function does not return a value.
+        """
         rule_input["actions"] = []
         for i, action in enumerate(rule["actions"]):
             title = action["details"]["action_type"].title()
@@ -211,7 +285,13 @@ class RuleFormManager:
             rule_input["actions"].append(inputs)
 
     def validate_form(self) -> Tuple[int, List[ValidationError], dict]:
-        """Validates the form based on the provided JSON schema."""
+        """
+        Validates the form based on the provided JSON schema.
+
+        Returns:
+            Tuple[int, List[ValidationError], dict]: A tuple containing the total number of errors,
+                                                     a list of validation errors, and the form data.
+        """
         val = SchemaValidator(self.schema_path)
         total_errors = 0
         self.form_errors = []
@@ -226,7 +306,15 @@ class RuleFormManager:
         return (total_errors, self.form_errors, data_rule)
 
     def highlight_errors(self, rule: dict) -> None:
-        """Highlights form fields that have validation errors."""
+        """
+        Highlights form fields that have validation errors.
+
+        Args:
+            rule (dict): The rule input fields that will be highlighted.
+
+        Returns:
+            None: This function does not return a value.
+        """
 
         def set_sheet(el, status=False):
             if status:
@@ -271,7 +359,16 @@ class RuleFormManager:
     def create_condition_fields(
         self, parent_layout: QFormLayout, condition: dict
     ) -> dict:
-        """Creates form fields for the given condition."""
+        """
+        Creates form fields for the given condition.
+
+        Args:
+            parent_layout (QFormLayout): The parent layout for the condition fields.
+            condition (dict): The condition data used to generate the form fields.
+
+        Returns:
+            dict: A dictionary of form fields for the condition.
+        """
         # Common fields
         condition_data = {}
 
@@ -362,7 +459,16 @@ class RuleFormManager:
         return condition_data
 
     def create_action_fields(self, parent_layout: QFormLayout, action: dict) -> dict:
-        """Creates form fields for the given action."""
+        """
+        Creates form fields for the given action.
+
+        Args:
+            parent_layout (QFormLayout): The parent layout for the action fields.
+            action (dict): The action data used to generate the form fields.
+
+        Returns:
+            dict: A dictionary of form fields for the action.
+        """
         action_data = {}
         action_general_settings_layout = WidgetFactory.create_form_box(
             "Action Provider Settings",
@@ -428,7 +534,15 @@ class RuleFormManager:
     def create_input_dict(
         self, int_keys: Tuple[str] = ("time_interval", "equality_threshold")
     ) -> dict:
-        """Creates a dictionary from the form inputs, converting fields to the appropriate types (e.g. string,int)."""
+        """
+        Creates a dictionary from the form inputs, converting fields to the appropriate types (e.g. string, int).
+
+        Args:
+            int_keys (Tuple[str]): Keys that should be converted to integers from input fields.
+
+        Returns:
+            dict: A dictionary representing the form input data.
+        """
 
         def make_rule_dict(field_refs, int_keys):
             x = {}

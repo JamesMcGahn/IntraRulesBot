@@ -1,6 +1,7 @@
 from time import sleep
 
 from PySide6.QtCore import Signal
+from selenium import webdriver
 from selenium.common.exceptions import (
     NoSuchFrameException,
     TimeoutException,
@@ -20,10 +21,34 @@ from .utils import WaitConditions, WebElementInteractions
 
 
 class RuleWorker(QWorkerBase):
+    """
+    Worker class responsible for creating rules in a web application using Selenium WebDriver.
+    It handles setting up the rule name, triggers, conditions, and actions, and submitting the rule form.
+    Handles exceptions such as duplicate rule names and WebDriver issues.
+
+    Attributes:
+        driver (webdriver.Chrome): The Selenium WebDriver instance used to interact with the browser.
+        rule (dict): The rule data that contains trigger, condition, and action information.
+        wELI (WebElementInteractions): Instance for interacting with web elements in the browser.
+        rule_rename_attempts (int): Tracks the number of rename attempts in case of duplicate rule names.
+        rule_name (str): The name of the rule being processed.
+
+    Signals:
+        finished (Signal[str]): Emitted when the rule is successfully created.
+        error (Signal[bool]): Emitted when an error occurs during rule creation.
+    """
+
     finished = Signal(str)
     error = Signal(bool)
 
-    def __init__(self, driver, rule):
+    def __init__(self, driver: webdriver.Chrome, rule: dict):
+        """
+        Initializes the RuleWorker with the provided WebDriver instance and rule data.
+
+        Args:
+            driver (webdriver.Chrome): The Selenium WebDriver instance.
+            rule (dict): The rule data that contains trigger, condition, and action information.
+        """
         super().__init__()
         self.driver = driver
         self.rule = rule
@@ -32,7 +57,14 @@ class RuleWorker(QWorkerBase):
         self.rule_rename_attempts = 0
         self.rule_name = rule["rule_name"]
 
-    def do_work(self):
+    def do_work(self) -> None:
+        """
+        Executes the rule creation process by navigating through the form pages, setting up triggers, conditions,
+        and actions, and submitting the rule. Handles duplicate rule names and retries.
+
+        Returns:
+            None: This function does not return a value.
+        """
         try:
             self.log_thread()
             addRuleBtn = self.wELI.wait_for_element(
@@ -80,20 +112,38 @@ class RuleWorker(QWorkerBase):
             self.logging(f"Something went wrong in RuleWorker: {e}", "ERROR")
             self.error.emit(True)
 
-    def start_trigger_page(self):
+    def start_trigger_page(self) -> None:
+        """
+        Starts processing the triggers for the rule by initializing the TriggerWorker.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.trigger = TriggerWorker(self.driver, self.rule)
         self.trigger.send_logs.connect(self.logging)
         self.trigger.finished.connect(self.trigger.deleteLater)
         self.trigger.do_work()
 
-    def start_conditions_page(self):
+    def start_conditions_page(self) -> None:
+        """
+        Starts processing the conditions for the rule by initializing the ConditionsWorker.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.conditions = ConditionsWorker(self.driver, self.rule)
         if "conditions" in self.rule and self.rule["conditions"]:
             self.conditions.send_logs.connect(self.logging)
             self.conditions.finished.connect(self.conditions.deleteLater)
             self.conditions.do_work()
 
-    def start_actions_page(self):
+    def start_actions_page(self) -> None:
+        """
+        Starts processing the actions for the rule by initializing the ActionsWorker.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.actions = ActionsWorker(self.driver, self.rule)
         if "actions" in self.rule and self.rule["actions"]:
             self.actions.rule_condition_queues_source = (
@@ -103,11 +153,26 @@ class RuleWorker(QWorkerBase):
             self.actions.finished.connect(self.actions.deleteLater)
             self.actions.do_work()
 
-    def switch_to_rule_module(self):
+    def switch_to_rule_module(self) -> None:
+        """
+        Switches the WebDriver to the rule modal frame to interact with rule elements.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.logging("Switching to the Rule Modal...", "INFO")
         self.wELI.switch_to_frame(20, By.NAME, "RadWindowAddEditRule")
 
-    def set_rule_name(self, rule_name):
+    def set_rule_name(self, rule_name: str) -> None:
+        """
+        Sets the rule name in the rule creation form.
+
+        Args:
+            rule_name (str): The name of the rule to be set.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.logging("Setting the Rule Name...", "INFO")
         rule_name_input = self.wELI.wait_for_element(
             15,
@@ -118,7 +183,13 @@ class RuleWorker(QWorkerBase):
         rule_name_input.clear()
         rule_name_input.send_keys(rule_name)
 
-    def next_page(self):
+    def next_page(self) -> None:
+        """
+        Navigates to the next page in the rule creation form.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.logging("Navigating to the Next Page...", "INFO")
         continue_btn = self.wELI.wait_for_element(
             15,
@@ -129,7 +200,13 @@ class RuleWorker(QWorkerBase):
         sleep(1)
         continue_btn.click()
 
-    def is_tutorial_page_present(self):
+    def is_tutorial_page_present(self) -> bool:
+        """
+        Checks if the tutorial page is present and can be skipped.
+
+        Returns:
+            bool: True if the tutorial page is present, False otherwise.
+        """
         return self.wELI.wait_for_element(
             15,
             By.XPATH,
@@ -138,7 +215,13 @@ class RuleWorker(QWorkerBase):
             raise_exception=True,
         )
 
-    def submit_rule(self):
+    def submit_rule(self) -> None:
+        """
+        Submits the rule form, handling duplicate rule alerts by renaming the rule and retrying.
+
+        Returns:
+            None: This function does not return a value.
+        """
 
         self.logging(f"Submitting Rule - {self.rule_name }...", "INFO")
         submit_btn = self.wELI.wait_for_element(
@@ -178,7 +261,13 @@ class RuleWorker(QWorkerBase):
         self.driver.switch_to.default_content()
         self.success_message()
 
-    def rename_rule(self):
+    def rename_rule(self) -> None:
+        """
+        Renames the rule in case of a duplicate name error.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.rule_rename_attempts += 1
         old_rule_name = self.rule["rule_name"]
         self.rule_name = f"{old_rule_name}-{self.rule_rename_attempts}"
@@ -188,7 +277,13 @@ class RuleWorker(QWorkerBase):
         )
         self.set_rule_name(self.rule_name)
 
-    def success_message(self):
+    def success_message(self) -> None:
+        """
+        Logs a success message after the rule has been successfully created.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.wELI.wait_for_element(
             20,
             By.ID,
@@ -199,7 +294,13 @@ class RuleWorker(QWorkerBase):
 
         self.logging(f"Rule: {self.rule_name} has been created.", "INFO")
 
-    def set_rule_category(self):
+    def set_rule_category(self) -> None:
+        """
+        Sets the rule category in the rule creation form.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.logging("Setting the rule category", "INFO")
         rule_settings_hamburger = self.wELI.wait_for_element(
             15,
@@ -232,7 +333,16 @@ class RuleWorker(QWorkerBase):
         self.logging("Switching the main frame", "INFO")
         self.driver.switch_to.default_content()
 
-    def wait_for_dup_rule_alert(self, wait_time):
+    def wait_for_dup_rule_alert(self, wait_time: int) -> bool:
+        """
+        Waits for a duplicate rule alert and handles it by accepting the alert.
+
+        Args:
+            wait_time (int): The time (in seconds) to wait for the alert.
+
+        Returns:
+            bool: True if the alert is found and accepted, False otherwise.
+        """
 
         try:
             WebDriverWait(self.driver, wait_time).until(EC.alert_is_present())

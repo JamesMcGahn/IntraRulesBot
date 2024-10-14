@@ -8,6 +8,7 @@ from selenium.common.exceptions import (
     TimeoutException,
 )
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -15,6 +16,20 @@ from .wait_conditions import WaitConditions
 
 
 class WebElementInteractions(QObject):
+    """
+    Class responsible for interacting with web elements using Selenium WebDriver.
+    Provides methods for waiting for elements, selecting items from lists, and switching frames.
+
+    Attributes:
+        driver (webdriver.Chrome): The Selenium WebDriver instance used to interact with the browser.
+
+    Signals:
+        send_msg (Signal): Signal used to send logging messages.
+
+    Args:
+        driver (webdriver.Chrome): The Selenium WebDriver instance.
+    """
+
     send_msg = Signal(str, str, bool)
 
     def __init__(self, driver):
@@ -31,7 +46,7 @@ class WebElementInteractions(QObject):
         failure_message: tuple[str, str] = ("WARN", "default"),
         retries: int = 3,
         raise_exception: bool = False,
-    ):
+    ) -> Optional[WebElement]:
         """
         Args:
             timeout (int): The maximum time (in seconds) the driver should wait for the condition to be met.
@@ -42,7 +57,7 @@ class WebElementInteractions(QObject):
             failure_message (Tuple[str, str], optional): A tuple containing a logging warning type and a default message.
             retries (int, optional): Number of retries in case of time out to find element.
         Returns:
-            Union[None, WebElement]: Returns None if the operation fails or no element is found; returns a WebElement if the operation succeeds.
+            Optional[WebElement]: Returns None if the operation fails or no element is found; returns a WebElement if the operation succeeds.
         """
         for i in range(retries):
             try:
@@ -116,7 +131,7 @@ class WebElementInteractions(QObject):
         text_to_select: str,
         retries: int = 3,
         raise_exception: bool = False,
-    ):
+    ) -> bool:
         """
         Selects an item from a list of elements, retries in case of stale element reference.
 
@@ -182,7 +197,7 @@ class WebElementInteractions(QObject):
         retries: int = 3,
         item_name: Optional[str] = None,
         raise_exception: bool = False,
-    ):
+    ) -> bool:
         """
         Selects an item from a list of elements, retries in case of stale element reference.
 
@@ -228,7 +243,7 @@ class WebElementInteractions(QObject):
         locator_type: By,
         locator_value: str,
         raise_exception: bool = False,
-    ):
+    ) -> bool:
         """
         Selects an item from a list of elements, retries in case of stale element reference.
 
