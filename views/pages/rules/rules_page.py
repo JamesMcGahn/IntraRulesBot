@@ -33,7 +33,7 @@ class RulesPage(QWidgetBase):
         Initialize the RulesPage, set up models, connect signals/slots, and load the saved rules.
         """
         super().__init__()
-
+        self.event_filter = EventFilter()
         self.setStyleSheet(STYLES)
 
         self.ui = RulesPageView()
@@ -65,7 +65,7 @@ class RulesPage(QWidgetBase):
 
         self.val = SchemaValidator("/schemas/main")
         self.check_for_saved_rules()
-        self.event_filter = EventFilter()
+        
         self.event_filter.event_changed.connect(self.focus_changed)
         self.apply_event_filter()
         self.focus_object_name = None
