@@ -208,11 +208,12 @@ class RuleWorker(QWorkerBase):
             bool: True if the tutorial page is present, False otherwise.
         """
         return self.wELI.wait_for_element(
-            15,
+            5,
             By.XPATH,
             '//*[contains(@id, "overlayButtonsLeft_cbDontAskLead")]',
             WaitConditions.CLICKABLE,
-            raise_exception=True,
+            raise_exception=False,
+            retries=1
         )
 
     def submit_rule(self) -> None:

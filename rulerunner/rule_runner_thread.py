@@ -234,6 +234,8 @@ class RuleRunnerThread(QThread):
         Returns:
             None: This function does not return a value.
         """
+        if self.shut_down:
+            return
         rules_length = len(self.rules)
         self.progress.emit(self.rules_total_count - rules_length, self.rules_total_count)
         if rules_length > 0:
@@ -361,7 +363,10 @@ class RuleRunnerThread(QThread):
             )
             self.shut_down = True
             self.close_down_driver()
+            if self.is_thread_pool_running():
+                self.executor.shutdown(wait=False,cancel_futures=True)
+            
             self.finished.emit()
-            self.quit()
             self.wait()
+            self.quit()
             self.deleteLater()
