@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Optional
-
+import re
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
@@ -37,7 +37,7 @@ class ErrorDialog(GradientDialog):
         super().__init__(gradient_colors, parent)
 
         self.setMinimumHeight(450)
-        self.setFixedWidth(450)
+        self.setMinimumWidth(450)
         self.setWindowTitle("Rule Errors")
 
         self.setStyleSheet(STYLES)
@@ -100,14 +100,20 @@ class ErrorDialog(GradientDialog):
                         "#f58220",
                     )
                     wid = QWidget()
+                    wid.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
                     wid.setMinimumWidth(350)
                     h_layout = QFormLayout(wid)
 
                     field_des_label = QLabel("Field:")
                     field_des_label.setAlignment(Qt.AlignRight)
                     field_des_label.setObjectName("field-des-label")
-                    field_name_label = QLabel(f"{field}")
+                    field_name = field
+                    if field == "$" and message:
+                        match = re.search(r"'(.*?)'",message)
+                        if match:
+                            field_name = match.group(1)
 
+                    field_name_label = QLabel(field_name)
                     h_layout.addRow(field_des_label,field_name_label)
 
                     failure_des_label = QLabel("Failure Reason:")

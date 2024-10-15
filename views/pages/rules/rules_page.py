@@ -1,7 +1,7 @@
 import json
 from typing import Optional, Tuple
 
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import Signal, Slot, Qt
 from PySide6.QtWidgets import QFileDialog, QLineEdit, QTextEdit
 
 from base import QWidgetBase
@@ -66,6 +66,7 @@ class RulesPage(QWidgetBase):
         self.check_for_saved_rules()
         self.event_filter = EventFilter()
         for child in self.findChildren(QLineEdit):
+            child.setFocusPolicy(Qt.StrongFocus)
             child.installEventFilter(self.event_filter)
         self.event_filter.event_changed.connect(self.focus_changed)
 
@@ -84,6 +85,7 @@ class RulesPage(QWidgetBase):
 
         Returns:
             None: This function does not return a value.
+
         """
         field_name = obj_name.split("**")[0]
         self.focus_object_name = field_name
@@ -171,15 +173,29 @@ class RulesPage(QWidgetBase):
         Returns:
             None: This function does not return a value.
         """
-        if self.ui.get_forms():
-            if self.validate_rules() is not None:
-                data, _ = self.validate_rules()
-                if data and None not in (
+        if self.ui.get_forms():     
+
+            if None in (
                     self.username,
                     self.password,
                     self.url,
                     self.login_url,
                 ):
+                self.log_with_toast(
+                "Missing Login Information",
+                "Please enter the login information in the Login Information Page.",
+                "WARN",
+                "WARN",
+                True,
+                self,
+            )
+
+                return;
+
+            data, _ = self.validate_rules()
+
+
+            if data:
                     self.rule_runner_thread = RuleRunnerThread(
                         self.username,
                         self.password,

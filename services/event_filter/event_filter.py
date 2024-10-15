@@ -22,6 +22,7 @@ class EventFilter(QObject):
         super().__init__()
         self.current_object_name = None
         self.current_object_text = None
+        print('heree')
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         """
@@ -35,11 +36,21 @@ class EventFilter(QObject):
         Returns:
             bool: True if the event is handled, False otherwise.
         """
+        print(obj, event)
         if event.type() == QEvent.FocusIn:
-            if isinstance(obj, (QLineEdit, QTextEdit)):
+            
+            if isinstance(obj, QLineEdit):
                 self.current_object_name = obj.objectName()
                 self.current_object_text = obj.text()
                 self.event_changed.emit(
                     self.current_object_name, self.current_object_text
                 )
+                return True
+            elif isinstance(obj, QTextEdit):
+                self.current_object_name = obj.objectName()
+                self.current_object_text = obj.toPlainText()
+                self.event_changed.emit(
+                    self.current_object_name, self.current_object_text
+                )
+                return True
         return super().eventFilter(obj, event)

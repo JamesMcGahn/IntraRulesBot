@@ -478,7 +478,6 @@ class RulesPageView(QWidget):
             None: This function does not return a value.
         """
         actions_buttons = [
-            self.save,
             self.download,
             self.validate,
             self.clone,
@@ -523,14 +522,14 @@ class RulesPageView(QWidget):
             None: This function does not return a value.
         """
         self.no_rules_widget = QWidget()
+        self.no_rules_widget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
         nr_widget_layout = QHBoxLayout(self.no_rules_widget)
         self.no_rules_label = QLabel(
             "Open a File or Add a Rule to Get Started with Creating Rules."
         )
         nr_widget_layout.addWidget(self.no_rules_label, Qt.AlignmentFlag.AlignTop)
-        self.no_rules_label.setStyleSheet("background: #DEDEDE; padding-left: 1.5em;")
-        self.no_rules_label.setMaximumHeight(60)
-        self.no_rules_label.setMaximumWidth(400)
+        self.no_rules_label.setStyleSheet("background: transparent; padding-left: 1.5em; color: white")
+        self.no_rules_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         self.stacked_widget.add_widget("No-Rules-Widget", self.no_rules_widget)
         self.repaint_shadow()
 

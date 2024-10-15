@@ -119,7 +119,7 @@ class AddRuleWizard(GradientDialog):
         Returns:
             None: This function does not return a value.
         """
-        add_actions_lbl = QLabel("Add actions:")
+        add_actions_lbl = QLabel("Add Actions:")
         add_actions_btn = QPushButton("Add")
         StyleHelper.drop_shadow(add_actions_btn)
         reset_actions = QPushButton("Reset")

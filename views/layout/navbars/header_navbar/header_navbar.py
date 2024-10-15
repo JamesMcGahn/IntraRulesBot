@@ -80,13 +80,11 @@ class HeaderNavBar(QWidgetBase):
         Returns:
             None: This function does not return a value.
         """
-        options = QFileDialog.Options()
         file_name, _ = QFileDialog.getOpenFileName(
             self,
             "Open JSON File",
             "",
             "JSON Files (*.json);;All Files (*)",
-            options=options,
         )
 
         if file_name:

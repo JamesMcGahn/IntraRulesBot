@@ -63,10 +63,10 @@ class LoginPageView(QWidget):
             self.url.setText(self.url.text() + "/")
 
         return (
-            self.username.text(),
-            self.password.text(),
-            self.url.text(),
-            self.login_url.text(),
+            self.username.text() if  self.username.text() else None,
+            self.password.text() if self.password.text() else None,
+            self.url.text() if self.url.text() else None,
+            self.login_url.text() if self.login_url.text() else None,
         )
 
     def init_ui(self) -> None:
