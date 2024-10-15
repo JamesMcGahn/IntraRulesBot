@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QLinearGradient, QPainter, QPaintEvent
 from PySide6.QtWidgets import QGridLayout
 
@@ -9,6 +9,7 @@ from ..navbars import HeaderNavBar, IconOnlyNavBar, IconTextNavBar
 
 
 class CentralWidget(QWidgetBase):
+    close_main_window = Signal()
 
     def __init__(self):
         super().__init__()
@@ -51,6 +52,7 @@ class CentralWidget(QWidgetBase):
         self.icon_text_widget.btn_clicked_page.connect(
             self.main_screen_widget.change_page
         )
+        self.main_screen_widget.close_main_window.connect(self.close_icon_clicked)
 
     def paintEvent(self, event: QPaintEvent) -> None:
         """
@@ -58,6 +60,10 @@ class CentralWidget(QWidgetBase):
 
         Args:
             event (QPaintEvent): The paint event.
+
+        Returns:
+            None: This function does not return a value.
+
         """
         painter = QPainter(self)
         gradient = QLinearGradient(self.width() / 2, 0, self.width() / 2, self.height())
@@ -66,3 +72,13 @@ class CentralWidget(QWidgetBase):
         gradient.setColorAt(1, "#014637")
         painter.setBrush(gradient)
         painter.drawRect(self.rect())
+
+    @Slot()
+    def close_icon_clicked(self) -> None:
+        """
+        Slot emits signal close_main_window to close main window
+
+        Returns:
+            None: This function does not return a value.
+        """
+        self.close_main_window.emit()

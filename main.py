@@ -3,7 +3,7 @@ import sys
 
 from PySide6.QtWidgets import QApplication
 
-from main_window import MainWindow
+from views import MainWindow
 
 # faulthandler.enable(file=sys.stderr)
 # faulthandler.enable()

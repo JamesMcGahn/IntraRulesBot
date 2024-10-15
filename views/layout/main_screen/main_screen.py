@@ -1,4 +1,4 @@
-from PySide6.QtCore import Slot
+from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QPushButton
 
 from base import QWidgetBase
@@ -15,7 +15,12 @@ class MainScreen(QWidgetBase):
     Attributes:
         ui (MainScreenView): The main screen view containing the stacked widget and its pages.
         layout (QLayout): The layout of the main screen.
+
+    Signals:
+        close_main_window (Signal): emits a notification to close the main window
     """
+
+    close_main_window = Signal()
 
     def __init__(self):
         """
@@ -51,3 +56,5 @@ class MainScreen(QWidgetBase):
             self.ui.stackedWidget.setCurrentIndex(2)
         elif btn_name.startswith("settings_btn_"):
             self.ui.stackedWidget.setCurrentIndex(3)
+        elif btn_name.startswith("signout_btn"):
+            self.close_main_window.emit()
