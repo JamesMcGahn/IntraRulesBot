@@ -80,6 +80,7 @@ class ConfirmationDialog(GradientDialog):
         self.cancel_btn = QPushButton("Cancel")
         self.cancel_btn.setObjectName("cancel-btn")
         btn_box = QHBoxLayout()
+        btn_box.setSpacing(8)
         btn_box.addWidget(self.cancel_btn)
         btn_box.addWidget(self.close_btn)
 
