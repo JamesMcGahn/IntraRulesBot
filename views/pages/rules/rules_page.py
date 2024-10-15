@@ -1,7 +1,7 @@
 import json
 from typing import Optional, Tuple
 
-from PySide6.QtCore import Signal, Slot, Qt
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import QFileDialog, QLineEdit, QTextEdit
 
 from base import QWidgetBase
@@ -61,17 +61,21 @@ class RulesPage(QWidgetBase):
         self.ui.validate_open_dialog.clicked.connect(self.display_errors_dialog)
         self.ui.copy_field.clicked.connect(self.on_copy_fields)
         self.ui.start.clicked.connect(self.start_rule_runner)
+        self.ui.rules_form_updated.connect(self.apply_event_filter)
 
         self.val = SchemaValidator("/schemas/main")
         self.check_for_saved_rules()
         self.event_filter = EventFilter()
+        self.event_filter.event_changed.connect(self.focus_changed)
+        self.apply_event_filter()
+        self.focus_object_name = None
+        self.focus_object_text = None
+
+    @Slot()
+    def apply_event_filter(self):
         for child in self.findChildren(QLineEdit):
             child.setFocusPolicy(Qt.StrongFocus)
             child.installEventFilter(self.event_filter)
-        self.event_filter.event_changed.connect(self.focus_changed)
-
-        self.focus_object_name = None
-        self.focus_object_text = None
 
     @Slot(str, str)
     def focus_changed(self, obj_name: str, object_text: str) -> None:
@@ -173,41 +177,40 @@ class RulesPage(QWidgetBase):
         Returns:
             None: This function does not return a value.
         """
-        if self.ui.get_forms():     
+        if self.ui.get_forms():
 
             if None in (
-                    self.username,
-                    self.password,
-                    self.url,
-                    self.login_url,
-                ):
+                self.username,
+                self.password,
+                self.url,
+                self.login_url,
+            ):
                 self.log_with_toast(
-                "Missing Login Information",
-                "Please enter the login information in the Login Information Page.",
-                "WARN",
-                "WARN",
-                True,
-                self,
-            )
+                    "Missing Login Information",
+                    "Please enter the login information in the Login Information Page.",
+                    "WARN",
+                    "WARN",
+                    True,
+                    self,
+                )
 
-                return;
+                return
 
             data, _ = self.validate_rules()
 
-
             if data:
-                    self.rule_runner_thread = RuleRunnerThread(
-                        self.username,
-                        self.password,
-                        self.login_url,
-                        self.url,
-                        data["rules"],
-                    )
-                    self.rule_runner_thread.send_insert_logs.connect(self.logging)
-                    self.appshutdown.connect(self.rule_runner_thread.close)
-                    self.ui.stop.clicked.connect(self.rule_runner_thread.stop)
-                    self.rule_runner_thread.progress.connect(self.ui.set_progress_bar)
-                    self.rule_runner_thread.start()
+                self.rule_runner_thread = RuleRunnerThread(
+                    self.username,
+                    self.password,
+                    self.login_url,
+                    self.url,
+                    data["rules"],
+                )
+                self.rule_runner_thread.send_insert_logs.connect(self.logging)
+                self.appshutdown.connect(self.rule_runner_thread.close)
+                self.ui.stop.clicked.connect(self.rule_runner_thread.stop)
+                self.rule_runner_thread.progress.connect(self.ui.set_progress_bar)
+                self.rule_runner_thread.start()
 
     def validate_rules(self) -> Tuple[Optional[dict], Optional[list]]:
         """

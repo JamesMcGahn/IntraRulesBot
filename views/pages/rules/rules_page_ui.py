@@ -30,9 +30,11 @@ class RulesPageView(QWidget):
 
     Signals:
         delete_rule: Signal emitted when the delete rule action is triggered.
+        rules_form_updated: Signal emitted when a rule is added
     """
 
     delete_rule = Signal()
+    rules_form_updated = Signal()
 
     def __init__(self):
         """
@@ -429,6 +431,7 @@ class RulesPageView(QWidget):
             None: This function does not return a value.
         """
         self.set_up_rules(rules)
+        self.rules_form_updated.emit()
 
     def set_hidden_errors_dialog_btn(self, state: bool) -> None:
         """
@@ -528,7 +531,9 @@ class RulesPageView(QWidget):
             "Open a File or Add a Rule to Get Started with Creating Rules."
         )
         nr_widget_layout.addWidget(self.no_rules_label, Qt.AlignmentFlag.AlignTop)
-        self.no_rules_label.setStyleSheet("background: transparent; padding-left: 1.5em; color: white")
+        self.no_rules_label.setStyleSheet(
+            "background: transparent; padding-left: 1.5em; color: white"
+        )
         self.no_rules_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         self.stacked_widget.add_widget("No-Rules-Widget", self.no_rules_widget)
         self.repaint_shadow()
