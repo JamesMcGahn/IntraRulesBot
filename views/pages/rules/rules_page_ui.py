@@ -328,6 +328,7 @@ class RulesPageView(QWidget):
             False,
         )
         self.stop.setFixedWidth(30)
+        # self.stop.setHidden(True)
         self.start.setChecked(True)
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setHidden(True)
@@ -545,13 +546,13 @@ class RulesPageView(QWidget):
             None: This function does not return a value.
         """
         self.prev_button.setDisabled(self.current_rule_index == 0)
-
+        self.current_rule_index = self.stacked_widget.currentIndex()
         self.next_button.setDisabled(
             self.current_rule_index >= self.stacked_widget.count() - 1
         )
         if self.stacked_widget.count() > 0:
             self.nav_label.setText(
-                f"Rule: {self.current_rule_index+1} / {self.stacked_widget.count()}"
+                f"Rule: {self.stacked_widget.currentIndex() +1} / {self.stacked_widget.count()}"
             )
         else:
             self.nav_label.setText("")

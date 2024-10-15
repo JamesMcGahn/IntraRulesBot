@@ -121,7 +121,10 @@ class LogSettingsModel(QObject, metaclass=QSingleton):
         the log settings are loaded at startup.
         """
         self.settings.begin_group("logs_settings")
-        self.log_file_path = self.settings.get_value("log_file_path", "./logs/")
+        log_file_path = self.settings.get_value("log_file_path", "./logs/")
+        if log_file_path == '/':
+            log_file_path = "./logs/"
+        self.log_file_path = log_file_path
         self.log_file_name = self.settings.get_value("log_file_name", "file.log")
         self.log_backup_count = self.settings.get_value("log_backup_count", 5)
         self.log_file_max_mbs = self.settings.get_value("log_file_max_mbs", 5)

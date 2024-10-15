@@ -210,7 +210,17 @@ class RulesPage(QWidgetBase):
                 self.appshutdown.connect(self.rule_runner_thread.close)
                 self.ui.stop.clicked.connect(self.rule_runner_thread.stop)
                 self.rule_runner_thread.progress.connect(self.ui.set_progress_bar)
+                self.rule_runner_thread.finished.connect(self.rule_runner_finished)
+                self.ui.start.setDisabled(True)
                 self.rule_runner_thread.start()
+    @Slot()
+    def rule_runner_finished(self):
+        """Reset Start Button to disabled False and hide the Progress Bar
+            Returns:
+                None: This function does not return a value.
+        """
+        self.ui.progress_bar.setHidden(True)
+        self.ui.start.setDisabled(False)
 
     def validate_rules(self) -> Tuple[Optional[dict], Optional[list]]:
         """

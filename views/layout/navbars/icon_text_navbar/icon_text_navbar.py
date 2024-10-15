@@ -46,6 +46,9 @@ class IconTextNavBar(QWidget):
         self.ui.logs_btn_ict.toggled.connect(self.btn_checked)
         self.ui.logs_btn_ict.clicked.connect(self.btn_clicked)
 
+        self.ui.settings_btn_ict.toggled.connect(self.btn_checked)
+        self.ui.settings_btn_ict.clicked.connect(self.btn_clicked)
+
         self.ui.signout_btn_ict.toggled.connect(self.btn_checked)
         self.ui.signout_btn_ict.clicked.connect(self.btn_clicked)
 
