@@ -1,6 +1,6 @@
 from PySide6.QtCore import QSize, Signal, Slot
-from PySide6.QtGui import QCloseEvent, QFontDatabase, QIcon
-from PySide6.QtWidgets import QMainWindow, QSystemTrayIcon
+from PySide6.QtGui import QAction, QCloseEvent, QFontDatabase, QIcon
+from PySide6.QtWidgets import QMainWindow, QMenu, QSystemTrayIcon
 
 from components.dialogs import ConfirmationDialog
 from components.helpers import StyleHelper
@@ -44,7 +44,20 @@ class MainWindow(QMainWindow):
 
         # Set system tray icon
         tray_icon = QSystemTrayIcon(app_icon, self.app)
+        tray_menu = QMenu()
+        maximize_action = QAction("Maximize", self)
+        minimize_action = QAction("Minimize", self)
+        quit_action = QAction("Quit", self)
+        maximize_action.triggered.connect(self.showNormal)
+        minimize_action.triggered.connect(self.showMinimized)
+        quit_action.triggered.connect(self.close_main_window)
+        tray_menu.addAction(maximize_action)
+        tray_menu.addAction(minimize_action)
+        tray_menu.addAction(quit_action)
+        tray_icon.setContextMenu(tray_menu)
         tray_icon.show()
+
+        tray_icon.activated.connect(self.on_tray_icon_click)
 
         # Set the central widget and logger
         self.setCentralWidget(self.centralWidget)
@@ -54,6 +67,22 @@ class MainWindow(QMainWindow):
         self.centralWidget.close_main_window.connect(self.close_main_window)
         self.appshutdown.connect(self.logger.close)
         self.appshutdown.connect(self.centralWidget.notified_app_shutting)
+
+    def on_tray_icon_click(self, reason: QSystemTrayIcon.ActivationReason) -> None:
+        """Handle tray icon click events. If minimized, show window as normal and bring to the font.
+        If the window is already displayed, minimize the window.
+        Args:
+            reason (QSystemTrayIcon.ActivationReason): ActivationReason event when user clicks on the tray icon
+        Returns:
+            None: This function does not return a value.
+        """
+        if reason == QSystemTrayIcon.Trigger:
+            # If the window is minimized, show it
+            if self.isMinimized():
+                self.showNormal()
+                self.activateWindow()  # Bring the window to the front
+            else:
+                self.showMinimized()
 
     @Slot()
     def close_main_window(self) -> None:
