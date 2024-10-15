@@ -1,7 +1,6 @@
 from PySide6.QtCore import Signal, Slot
 
 from base import QWidgetBase
-from components.toasts import QToast
 from models import LogSettingsModel
 
 from .settings_page_css import STYLES
@@ -34,35 +33,48 @@ class SettingsPage(QWidgetBase):
             log_keep_files_days,
             log_turn_off_print,
         ) = self.settings.get_log_settings()
-
-        # TODO: Use a method on UI to set values
-        self.ui.log_file_path.setText(log_file_path)
-        self.ui.log_file_name.setText(log_file_name)
-        self.ui.log_file_max_mbs.setText(str(log_file_max_mbs))
-        self.ui.log_backup_count.setText(str(log_backup_count))
-        self.ui.log_keep_files_days.setText(str(log_keep_files_days))
-        self.ui.log_turn_off_print.setChecked(log_turn_off_print)
+        self.ui.set_log_settings(
+            log_file_path,
+            log_file_name,
+            log_file_max_mbs,
+            log_backup_count,
+            log_keep_files_days,
+            log_turn_off_print,
+        )
 
     def save_log_settings(self):
-
-        folder_path = self.ui.log_file_path.text()
-        if not folder_path.endswith("/"):
-            folder_path += "/"
-
-        # TODO: Use a method on UI to set values
-        self.ui.log_file_path.setText(folder_path)
-
-        self.send_settings.emit(
-            folder_path,
-            self.ui.log_file_name.text(),
-            int(self.ui.log_file_max_mbs.text()),
-            int(self.ui.log_backup_count.text()),
-            int(self.ui.log_keep_files_days.text()),
-            self.ui.log_turn_off_print.isChecked(),
-        )
+        (
+            log_file_path,
+            log_file_name,
+            log_file_max_mbs,
+            log_backup_count,
+            log_keep_files_days,
+            log_turn_off_print,
+        ) = self.ui.get_log_settings()
         self.logging("Saving Logging Settings", "INFO")
+        self.send_settings.emit(
+            log_file_path,
+            log_file_name,
+            log_file_max_mbs,
+            log_backup_count,
+            log_keep_files_days,
+            log_turn_off_print,
+        )
 
     @Slot()
     def success_save(self):
-        QToast(self, "SUCCESS", "Saved Successful", "Log Settings Saved.")
-        self.logging("Logger Settings Saved Successful", "INFO")
+        """
+        Slot that gets called when the credentials are successfully saved.
+        Displays a log message with a success toast notification.
+
+        Returns:
+            None: This function does not return a value.
+        """
+        self.log_with_toast(
+            "Log Settings Saved.",
+            "Logger Settings Saved Successful",
+            "INFO",
+            "SUCCESS",
+            True,
+            self,
+        )

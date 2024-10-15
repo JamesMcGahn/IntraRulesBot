@@ -1,4 +1,5 @@
 import uuid
+from typing import List
 
 from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtGui import QIcon
@@ -22,15 +23,31 @@ from translators import GenerateRuleObject
 
 
 class RulesPageView(QWidget):
+    """
+    A view class that provides the UI for managing rules in the application.
+    This view includes buttons for navigating, adding, cloning, deleting, and saving rules,
+    along with a validation feedback button and a progress bar for operations.
+
+    Signals:
+        delete_rule: Signal emitted when the delete rule action is triggered.
+    """
+
     delete_rule = Signal()
 
     def __init__(self):
+        """
+        Initializes the UI components for the RulesPageView.
+        """
         super().__init__()
         self.current_rule_index = 0
 
         self.init_ui()
 
-    def init_ui(self):
+    def init_ui(self) -> None:
+        """
+        Sets up the UI layout and widgets for the rules page, including editor buttons,
+        navigation buttons, and rule actions.
+        """
         self.current_rule_index = 0
 
         self.rules_layout = QVBoxLayout(self)
@@ -130,9 +147,56 @@ class RulesPageView(QWidget):
             "border: 1px solid #f58220; border-radius: 3px;"
         )
 
-        form_actions_btn_inner_layout = QVBoxLayout(actions_btn_widget_inner)
-        form_actions_btn_inner_layout.setSpacing(0)
-        form_actions_btn_inner_layout.setContentsMargins(0, 0, 0, 0)
+        self.form_actions_btn_inner_layout = QVBoxLayout(actions_btn_widget_inner)
+        self.setup_actions_buttons()
+
+        form_actions_btn_layout.addWidget(actions_btn_widget_inner)
+        v_spacer = QSpacerItem(20, 40, QSizePolicy.Fixed, QSizePolicy.Expanding)
+        form_actions_btn_layout.addItem(v_spacer)
+
+        # Editor - Rules
+        self.stacked_widget = StackedFormWidget()
+        self.stacked_widget.setObjectName("Rules-Stacked-Widget")
+        self.stacked_widget.setContentsMargins(0, 0, 15, 10)
+
+        self.scroll_area = ScrollArea(self)
+        self.scroll_area.setWidget(self.stacked_widget)
+
+        hlayout.addWidget(self.scroll_area)
+        self.editor_layout.addLayout(hlayout)
+
+        # self.editor_layout.addWidget(self.scroll_area)
+
+        self.main_layout.addWidget(self.editor_widget)
+        self.outter_layout.addRow(self.main_layout)
+
+        self.init_thread_controls()
+
+        self.add_rule = AddRuleWizard()
+        self.add_rule.submit_form.connect(self.add_rule_form_submit)
+
+        # Signal / Slot Connections
+        self.scroll_area.verticalScrollBar().valueChanged.connect(self.repaint_shadow)
+        self.scroll_area.horizontalScrollBar().valueChanged.connect(self.repaint_shadow)
+        self.trash.clicked.connect(self.on_delete_rule)
+        self.prev_button.clicked.connect(self.show_previous_rule)
+        self.next_button.clicked.connect(self.show_next_rule)
+        self.delete_all.clicked.connect(self.delete_all_forms)
+        self.add.clicked.connect(self.show_add_rule_dialog)
+        self.clone.clicked.connect(self.clone_rule)
+        # Setup
+        self.update_navigation_buttons()
+
+    def setup_actions_buttons(self) -> None:
+        """
+        Sets up action buttons for rule management (e.g., add, save, delete).
+
+        Returns:
+            None: This function does not return a value.
+        """
+
+        self.form_actions_btn_inner_layout.setSpacing(0)
+        self.form_actions_btn_inner_layout.setContentsMargins(0, 0, 0, 0)
         self.add = EditorActionButton("")
         self.save = EditorActionButton("")
         self.download = EditorActionButton("")
@@ -220,28 +284,15 @@ class RulesPageView(QWidget):
                 + "} QToolTip"
                 + "{ background: #DEDEDE; color: black; border: 1px solid #f58220; border-radius: 0px; padding: 5px; }"
             )
-            form_actions_btn_inner_layout.addWidget(btn_ref)
+            self.form_actions_btn_inner_layout.addWidget(btn_ref)
 
-        form_actions_btn_layout.addWidget(actions_btn_widget_inner)
-        v_spacer = QSpacerItem(20, 40, QSizePolicy.Fixed, QSizePolicy.Expanding)
-        form_actions_btn_layout.addItem(v_spacer)
+    def init_thread_controls(self) -> None:
+        """
+        Initializes controls such as the start/stop buttons and the progress bar.
 
-        # Editor - Rules
-        self.stacked_widget = StackedFormWidget()
-        self.stacked_widget.setObjectName("Rules-Stacked-Widget")
-        self.stacked_widget.setContentsMargins(0, 0, 15, 10)
-
-        self.scroll_area = ScrollArea(self)
-        self.scroll_area.setWidget(self.stacked_widget)
-
-        hlayout.addWidget(self.scroll_area)
-        self.editor_layout.addLayout(hlayout)
-
-        # self.editor_layout.addWidget(self.scroll_area)
-
-        self.main_layout.addWidget(self.editor_widget)
-        self.outter_layout.addRow(self.main_layout)
-
+        Returns:
+            None: This function does not return a value.
+        """
         self.start = GradientButton(
             "",
             "black",
@@ -294,23 +345,17 @@ class RulesPageView(QWidget):
         bottom_h_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.addLayout(bottom_h_layout)
 
-        self.add_rule = AddRuleWizard()
-        self.add_rule.submit_form.connect(self.add_rule_form_submit)
-
-        # Signal / Slot Connections
-        self.scroll_area.verticalScrollBar().valueChanged.connect(self.repaint_shadow)
-        self.scroll_area.horizontalScrollBar().valueChanged.connect(self.repaint_shadow)
-        self.trash.clicked.connect(self.on_delete_rule)
-        self.prev_button.clicked.connect(self.show_previous_rule)
-        self.next_button.clicked.connect(self.show_next_rule)
-        self.delete_all.clicked.connect(self.delete_all_forms)
-        self.add.clicked.connect(self.show_add_rule_dialog)
-        self.clone.clicked.connect(self.clone_rule)
-        # Setup
-        self.update_navigation_buttons()
-
     @Slot(int, int)
-    def set_progress_bar(self, current, total):
+    def set_progress_bar(self, current: int, total: int) -> None:
+        """
+        Updates the rules progress bar.
+        Args:
+            current (int): The current progress.
+            total (int): The total value for the progress bar.
+
+        Returns:
+            None: This function does not return a value.
+        """
         if current < total:
             self.progress_bar.setHidden(False)
         else:
@@ -318,7 +363,12 @@ class RulesPageView(QWidget):
         self.progress_bar.setRange(0, total)
         self.progress_bar.setValue(current)
 
-    def clone_rule(self):
+    def clone_rule(self) -> None:
+        """Clones the currently selected rule and adds it to the rule list.
+
+        Returns:
+            None: This function does not return a value.
+        """
         form = self.stacked_widget.get_form_by_index(self.stacked_widget.currentIndex())
         data = form.create_input_dict()
         data["guid"] = str(uuid.uuid4())
@@ -327,11 +377,25 @@ class RulesPageView(QWidget):
         self.stacked_widget.setCurrentIndex(self.current_rule_index)
         self.update_navigation_buttons()
 
-    def show_add_rule_dialog(self):
+    def show_add_rule_dialog(self) -> None:
+        """Displays the dialog to add a new rule.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.add_rule.show()
 
     @Slot(object)
-    def add_rule_form_submit(self, form):
+    def add_rule_form_submit(self, form: object) -> None:
+        """
+        Handles the submission of a new rule form.
+
+        Args:
+            form (object): The form object containing rule data.
+
+        Returns:
+            None: This function does not return a value.
+        """
         add = GenerateRuleObject(form)
         current_count = self.stacked_widget.count()
         new_rule = add.generate_dynamic_object()
@@ -342,34 +406,77 @@ class RulesPageView(QWidget):
             self.stacked_widget.setCurrentIndex(current_count)
             self.update_navigation_buttons()
 
-    def delete_all_forms(self):
+    def delete_all_forms(self) -> None:
+        """Deletes all rule forms from the UI.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.stacked_widget.remove_all()
         self.current_rule_index = 0
         self.set_up_rules([])
         self.update_navigation_buttons()
 
     @Slot(list)
-    def rules_changed(self, rules):
+    def rules_changed(self, rules: List[dict]) -> None:
+        """
+        Updates the UI when the rules are changed.
+
+        Args:
+            rules (List[dict]): A list of rule dictionaries.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.set_up_rules(rules)
 
-    def set_hidden_errors_dialog_btn(self, state):
+    def set_hidden_errors_dialog_btn(self, state: bool) -> None:
+        """
+        Sets the visibility of the error dialog button.
+
+        Args:
+            state (bool): If True, hides the button; otherwise, shows the button.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.validate_open_dialog.setHidden(state)
 
-    def get_forms(self):
+    def get_forms(self) -> List[object]:
+        """
+        Retrieves the list of form objects currently displayed in the UI.
+
+        Returns:
+            List[object]: The list of form objects.
+        """
         return self.stacked_widget.get_form_factories()
 
-    def repaint_shadow(self):
-        """Repaint shadow of widget. Used for repainting shadow after the scroll bar moves"""
+    def repaint_shadow(self) -> None:
+        """Repaint shadow of widget. Used for repainting shadow after the scroll bar moves
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.editor_widget.update()
 
-    def on_delete_rule(self):
+    def on_delete_rule(self) -> None:
+        """Handles the deletion of a rule from the UI.
+
+        Returns:
+            None: This function does not return a value.
+        """
         if self.stacked_widget.get_form_factories():
             self.stacked_widget.remove_form_by_index(self.stacked_widget.currentIndex())
             self.update_navigation_buttons()
             if self.stacked_widget.count() == 0:
                 self.setup_no_rules_widget()
 
-    def set_disable_action_btns(self):
+    def set_disable_action_btns(self) -> None:
+        """Enables or disables the action buttons based on the presence of rules.
+
+        Returns:
+            None: This function does not return a value.
+        """
         actions_buttons = [
             self.save,
             self.download,
@@ -386,7 +493,16 @@ class RulesPageView(QWidget):
             else:
                 btn.setDisabled(True)
 
-    def set_up_rules(self, rules):
+    def set_up_rules(self, rules: List[dict]) -> None:
+        """
+        Sets up the UI with the provided rules.
+
+        Args:
+            rules (List[dict]): A list of rule dictionaries.
+
+        Returns:
+            None: This function does not return a value.
+        """
         if rules:
             self.stacked_widget.remove_by_name("No-Rules-Widget")
             for rule in rules:
@@ -400,7 +516,12 @@ class RulesPageView(QWidget):
             self.setup_no_rules_widget()
         self.set_disable_action_btns()
 
-    def setup_no_rules_widget(self):
+    def setup_no_rules_widget(self) -> None:
+        """Displays a widget when no rules are available.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.no_rules_widget = QWidget()
         nr_widget_layout = QHBoxLayout(self.no_rules_widget)
         self.no_rules_label = QLabel(
@@ -413,7 +534,12 @@ class RulesPageView(QWidget):
         self.stacked_widget.add_widget("No-Rules-Widget", self.no_rules_widget)
         self.repaint_shadow()
 
-    def update_navigation_buttons(self):
+    def update_navigation_buttons(self) -> None:
+        """Updates the state of the navigation buttons (previous/next).
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.prev_button.setDisabled(self.current_rule_index == 0)
 
         self.next_button.setDisabled(
@@ -426,14 +552,24 @@ class RulesPageView(QWidget):
         else:
             self.nav_label.setText("")
 
-    def show_previous_rule(self):
+    def show_previous_rule(self) -> None:
+        """Navigates to the previous rule in the UI.
+
+        Returns:
+            None: This function does not return a value.
+        """
         if self.current_rule_index > 0:
             self.current_rule_index -= 1
             self.stacked_widget.setCurrentIndex(self.current_rule_index)
 
         self.update_navigation_buttons()
 
-    def show_next_rule(self):
+    def show_next_rule(self) -> None:
+        """Navigates to the next rule in the UI.
+
+        Returns:
+            None: This function does not return a value.
+        """
         if self.current_rule_index < self.stacked_widget.count() - 1:
             self.current_rule_index += 1
             self.stacked_widget.setCurrentIndex(self.current_rule_index)

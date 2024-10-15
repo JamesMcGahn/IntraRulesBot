@@ -4,15 +4,11 @@
 
 - [ ] :#TODO : switch page to rules page after open file validation
 - [ ] :#TODO : rf GUI files to views and controllers
-- [ ] :#TODO : standarize Qtoast/log function for qwidget base, implement on Pages
 
 #### TO-DO LATER
 
 - [ ] :#TODO : Setting to turn off Toasts
 - [ ] :#TODO : Document Functions throughout app
-- [ ] :#TODO : Settings Page: Use a method on UI to set values
-- [ ] :#TODO : Login Page: Use a method on UI to set values
-- [ ] :#TODO : Login Page: Use a method on UI to get values
 
 ### COMPLETED
 
@@ -39,3 +35,7 @@
 - [x] : Stop for rulerunner
 - [x] : Clone Rule
 - [x] : Update Field on Form across all rules
+- [x] : Settings Page: Use a method on UI to set values
+- [x] : Login Page: Use a method on UI to set values
+- [x] : Login Page: Use a method on UI to get values
+- [x] : standarize Qtoast/log function for qwidget base, implement on Pages

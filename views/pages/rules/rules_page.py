@@ -1,4 +1,5 @@
 import json
+from typing import Optional, Tuple
 
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QFileDialog, QLineEdit, QTextEdit
@@ -16,9 +17,21 @@ from .rules_page_ui import RulesPageView
 
 
 class RulesPage(QWidgetBase):
+    """
+    RulesPage is responsible for managing the rules displayed in the UI. It handles
+    loading, validating, saving, and copying rule fields. The UI interactions are handled
+    through the connected view and model components.
+
+    Signals:
+        send_rules (list): Emits the list of rules to the view.
+    """
+
     send_rules = Signal(list)
 
     def __init__(self):
+        """
+        Initialize the RulesPage, set up models, connect signals/slots, and load the saved rules.
+        """
         super().__init__()
 
         self.setStyleSheet(STYLES)
@@ -60,13 +73,29 @@ class RulesPage(QWidgetBase):
         self.focus_object_text = None
 
     @Slot(str, str)
-    def focus_changed(self, obj_name, object_text):
-        print("ham", obj_name, object_text)
+    def focus_changed(self, obj_name: str, object_text: str) -> None:
+        """
+        Slot to handle when focus changes between form fields. Updates the current focused
+        object's name and text.
+
+        Args:
+            obj_name (str): The name of the focused object.
+            object_text (str): The text value of the focused object.
+
+        Returns:
+            None: This function does not return a value.
+        """
         field_name = obj_name.split("**")[0]
         self.focus_object_name = field_name
         self.focus_object_text = object_text
 
-    def on_copy_fields(self):
+    def on_copy_fields(self) -> None:
+        """
+        Copy the value from the currently focused field across all rules in the form.
+
+        Returns:
+            None: This function does not return a value.
+        """
         if self.focus_object_name is not None and self.focus_object_text is not None:
             rules = self.ui.get_forms()
 
@@ -74,7 +103,17 @@ class RulesPage(QWidgetBase):
             for rule in rule_inputs:
                 self.find_field_set_field(rule)
 
-    def find_field_set_field(self, rule):
+    def find_field_set_field(self, rule: dict) -> None:
+        """
+        Traverse through the rule structure to find the field corresponding to the currently
+        focused field, and set its value accordingly.
+
+        Args:
+            rule (dict): A dictionary representing the rule structure with form fields.
+
+        Returns:
+            None: This function does not return a value.
+        """
         for key, value in rule.items():
             if key == self.focus_object_name:
                 if isinstance(value, QLineEdit) or isinstance(value, QTextEdit):
@@ -85,21 +124,53 @@ class RulesPage(QWidgetBase):
                 [self.find_field_set_field(item) for item in value]
 
     @Slot(str, str, str, str)
-    def update_credentials(self, username, password, url, login_url):
+    def update_credentials(
+        self, username: str, password: str, url: str, login_url: str
+    ) -> None:
+        """
+        Slot to receive the user credentials used for rule processing and validation.
+
+        Args:
+            username (str): The username for login.
+            password (str): The password for login.
+            url (str): The base URL.
+            login_url (str): The URL used for login.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.username = username
         self.password = password
         self.url = url
         self.login_url = login_url
 
-    def display_errors_dialog(self):
+    def display_errors_dialog(self) -> None:
+        """
+        Display the error dialog if validation errors are found in the form fields.
+
+        Returns:
+            None: This function does not return a value.
+        """
         add = ErrorDialog(self.forms_errors)
         self.ui.set_hidden_errors_dialog_btn(False)
         add.show()
 
-    def check_for_saved_rules(self):
+    def check_for_saved_rules(self) -> None:
+        """
+        Check if there are any saved rules and emit them to the view.
+
+        Returns:
+            None: This function does not return a value.
+        """
         self.send_rules.emit(self.rulesModel.rules)
 
-    def start_rule_runner(self):
+    def start_rule_runner(self) -> None:
+        """
+        Start the rule processing thread if the forms are valid and all credentials are provided.
+
+        Returns:
+            None: This function does not return a value.
+        """
         if self.ui.get_forms():
             if self.validate_rules() is not None:
                 data, _ = self.validate_rules()
@@ -122,7 +193,17 @@ class RulesPage(QWidgetBase):
                     self.rule_runner_thread.progress.connect(self.ui.set_progress_bar)
                     self.rule_runner_thread.start()
 
-    def validate_rules(self):
+    def validate_rules(self) -> Tuple[Optional[dict], Optional[list]]:
+        """
+        Validate all the rules in the form, returning a tuple with the valid rule data and
+        the list of rules with GUIDs.
+
+        Returns:
+            tuple: (data, rules_with_guid)
+                   - data (dict): The valid rules data.
+                   - rules_with_guid (list): The list of rules with GUIDs.
+                   Returns (None, None) if there are validation errors.
+        """
 
         rules = []
         rules_with_guid = []
@@ -132,7 +213,7 @@ class RulesPage(QWidgetBase):
         self.forms_errors = []
         if len(rules_inputs) == 0:
             return (None, None)
-
+        self.logging("Starting Rules Validation", "INFO", True)
         for index, rule in enumerate(rules_inputs):
 
             error_count, form_errors, data = rule.validate_form()
@@ -155,11 +236,27 @@ class RulesPage(QWidgetBase):
 
         if self.total_errors > 0:
             self.ui.validate_feedback.setText(f"Total Errors : {self.total_errors}")
+            self.log_with_toast(
+                "Validation Failed",
+                f"Total Errors : {self.total_errors}",
+                "WARN",
+                "WARN",
+                True,
+                self,
+            )
             self.ui.validate_feedback.setIcon(self.ui.error_icon)
 
             self.display_errors_dialog()
             return (None, None)
         else:
+            self.log_with_toast(
+                "Validation Succeeded",
+                "Validation Successful. Total Errors : 0",
+                "INFO",
+                "SUCCESS",
+                True,
+                self,
+            )
             self.total_errors = 0
             self.forms_errors = []
             self.ui.set_hidden_errors_dialog_btn(True)
@@ -169,7 +266,14 @@ class RulesPage(QWidgetBase):
             data = {"rules": rules}
             return (data, rules_with_guid)
 
-    def save_rules_to_file(self):
+    def save_rules_to_file(self) -> None:
+        """
+        Save the validated rules to a JSON file selected by the user. It ensures the file has
+        a `.json` extension.
+
+        Returns:
+            None: This function does not return a value.
+        """
         if self.ui.get_forms():
             data, _ = self.validate_rules()
             if data:
@@ -195,7 +299,13 @@ class RulesPage(QWidgetBase):
                         self,
                     )
 
-    def save_rules_to_system(self):
+    def save_rules_to_system(self) -> None:
+        """
+        Save the validated rules to the internal system storage.
+
+        Returns:
+            None: This function does not return a value.
+        """
         if self.ui.get_forms():
             _, data = self.validate_rules()
             if data:
