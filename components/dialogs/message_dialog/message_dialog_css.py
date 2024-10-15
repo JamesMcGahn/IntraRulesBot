@@ -27,4 +27,8 @@ QPushButton#close-btn {
   margin-bottom: 5px;
   border-radius: 3px;
 }
+
+QTextEdit:focus {
+  border: none;
+}
 """

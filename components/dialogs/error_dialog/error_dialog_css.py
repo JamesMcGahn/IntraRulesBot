@@ -16,7 +16,7 @@ QWidget#Error-Container {
 
 QScrollArea {
   background: transparent;
-  margin-top: 25px;
+  margin-top: 35px;
 }
 
 QLabel#field-des-label,

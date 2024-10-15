@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QTextEdit, QVBoxLayout, QWidget
 
 from components.helpers import WidgetFactory
 from components.layouts import ScrollArea
-
+from .logs_page_css import SCROLL_AREA_STYLES
 
 class LogsPageView(QWidget):
     """
@@ -55,7 +55,7 @@ class LogsPageView(QWidget):
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(self.log_display)
         scroll_area.setMinimumWidth(500)
-
+        scroll_area.setStyleSheet(SCROLL_AREA_STYLES)
         inner_layout.addRow(scroll_area)
 
     def update_log_display(self, log: str) -> None:

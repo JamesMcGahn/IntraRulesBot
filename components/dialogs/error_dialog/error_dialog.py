@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
-    QHBoxLayout,
+    QFormLayout,
     QLabel,
     QPushButton,
     QSizePolicy,
@@ -36,7 +36,7 @@ class ErrorDialog(GradientDialog):
         gradient_colors = [(0.05, "#228752"), (0.75, "#014637"), (1, "#014637")]
         super().__init__(gradient_colors, parent)
 
-        self.setFixedHeight(450)
+        self.setMinimumHeight(450)
         self.setFixedWidth(450)
         self.setWindowTitle("Rule Errors")
 
@@ -99,30 +99,24 @@ class ErrorDialog(GradientDialog):
                         [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
                         "#f58220",
                     )
-
-                    h_layout = QHBoxLayout()
+                    wid = QWidget()
+                    wid.setMinimumWidth(350)
+                    h_layout = QFormLayout(wid)
 
                     field_des_label = QLabel("Field:")
-                    field_des_label.setMaximumWidth(37)
+                    field_des_label.setAlignment(Qt.AlignRight)
                     field_des_label.setObjectName("field-des-label")
                     field_name_label = QLabel(f"{field}")
 
-                    h_layout.addWidget(field_des_label)
-                    h_layout.addWidget(field_name_label)
+                    h_layout.addRow(field_des_label,field_name_label)
 
-                    h2_layout = QHBoxLayout()
                     failure_des_label = QLabel("Failure Reason:")
-                    failure_des_label.setMaximumWidth(100)
+                    failure_des_label.setAlignment(Qt.AlignRight)
                     failure_des_label.setObjectName("fail-des-label")
                     failure_msg_label = QLabel(f"{message}")
+                    h_layout.addRow(failure_des_label,failure_msg_label)
+                    inner_layout.addWidget(wid)
 
-                    h2_layout.addWidget(failure_des_label)
-                    h2_layout.addWidget(failure_msg_label)
-
-                    h3_layout = QVBoxLayout()
-                    h3_layout.addLayout(h_layout)
-                    h3_layout.addLayout(h2_layout)
-                    inner_layout.addRow(h3_layout)
 
     def repaint_shadow(self) -> None:
         """Repaint shadow of widget. Used for repainting shadow after the scroll bar moves
