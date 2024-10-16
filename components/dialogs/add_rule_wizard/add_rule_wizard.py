@@ -72,6 +72,7 @@ class AddRuleWizard(GradientDialog):
         self.setup_actions_section()
 
         submit_button = QPushButton("Submit")
+        submit_button.setCursor(Qt.PointingHandCursor)
         StyleHelper.drop_shadow(submit_button)
 
         self.general_settings.addRow(submit_button)
@@ -85,8 +86,10 @@ class AddRuleWizard(GradientDialog):
         """
         add_conditions_lbl = QLabel("Add Condition:")
         add_conditions_btn = QPushButton("Add")
+        add_conditions_btn.setCursor(Qt.PointingHandCursor)
         StyleHelper.drop_shadow(add_conditions_btn)
         reset_conditions = QPushButton("Reset")
+        reset_conditions.setCursor(Qt.PointingHandCursor)
         StyleHelper.drop_shadow(reset_conditions)
         conditions_h_layout = QHBoxLayout()
         conditions_h_layout.addWidget(add_conditions_btn)
@@ -121,8 +124,10 @@ class AddRuleWizard(GradientDialog):
         """
         add_actions_lbl = QLabel("Add Actions:")
         add_actions_btn = QPushButton("Add")
+        add_actions_btn.setCursor(Qt.PointingHandCursor)
         StyleHelper.drop_shadow(add_actions_btn)
         reset_actions = QPushButton("Reset")
+        reset_actions.setCursor(Qt.PointingHandCursor)
         StyleHelper.drop_shadow(reset_actions)
         actions_h_layout = QHBoxLayout()
         actions_h_layout.addWidget(add_actions_btn)
