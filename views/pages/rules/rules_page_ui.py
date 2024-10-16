@@ -545,8 +545,9 @@ class RulesPageView(QWidget):
         Returns:
             None: This function does not return a value.
         """
-        self.prev_button.setDisabled(self.current_rule_index == 0)
+        
         self.current_rule_index = self.stacked_widget.currentIndex()
+        self.prev_button.setDisabled(self.current_rule_index == 0)
         self.next_button.setDisabled(
             self.current_rule_index >= self.stacked_widget.count() - 1
         )

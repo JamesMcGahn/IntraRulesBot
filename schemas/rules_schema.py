@@ -16,7 +16,7 @@ RULES_SCHEMA = {
             "items": {
                 "type": "object",
                 "properties": {
-                    "provider_category": {"type": "string", "minLength": 3},
+                    "provider_category": {"type": "string", "enum": ["ACD"]},
                     "provider_instance": {"type": "string", "minLength": 3},
                     "provider_condition": {"type": "string", "minLength": 3},
                     "details": {
@@ -26,7 +26,7 @@ RULES_SCHEMA = {
                                 "type": "string",
                                 "enum": ["stats", "state"],
                             },
-                            "equality_operator": {"type": "string", "minLength": 3},
+                            "equality_operator": {"type": "string","enum": ["Equal To","Greater Than","Greater Than or Equal To","Less Than","Less Than or Equal To","Not Equal To"]},
                             "equality_threshold": {"type": "number", "minimum": 1},
                             "queues_source": {
                                 "type": "string",
@@ -63,7 +63,7 @@ RULES_SCHEMA = {
             "items": {
                 "type": "object",
                 "properties": {
-                    "provider_category": {"type": "string", "minLength": 3},
+                    "provider_category": {"type": "string", "enum": ["Communications"]},
                     "provider_instance": {"type": "string", "minLength": 3},
                     "provider_condition": {"type": "string", "minLength": 3},
                     "details": {

@@ -37,7 +37,9 @@ class ErrorDialog(GradientDialog):
         super().__init__(gradient_colors, parent)
 
         self.setMinimumHeight(450)
-        self.setMinimumWidth(450)
+        self.setFixedWidth(600)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+                    
         self.setWindowTitle("Rule Errors")
 
         self.setStyleSheet(STYLES)
@@ -62,6 +64,9 @@ class ErrorDialog(GradientDialog):
 
         self.scroll_area = ScrollArea(self)
         self.scroll_area.setWidget(error_container)
+        
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.scroll_area.verticalScrollBar().valueChanged.connect(self.repaint_shadow)
         self.scroll_area.horizontalScrollBar().valueChanged.connect(self.repaint_shadow)
 
@@ -101,7 +106,7 @@ class ErrorDialog(GradientDialog):
                     )
                     wid = QWidget()
                     wid.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-                    wid.setMinimumWidth(350)
+                    
                     h_layout = QFormLayout(wid)
 
                     field_des_label = QLabel("Field:")
@@ -120,6 +125,7 @@ class ErrorDialog(GradientDialog):
                     failure_des_label.setAlignment(Qt.AlignRight)
                     failure_des_label.setObjectName("fail-des-label")
                     failure_msg_label = QLabel(f"{message}")
+                    failure_msg_label.setWordWrap(True)
                     h_layout.addRow(failure_des_label,failure_msg_label)
                     inner_layout.addWidget(wid)
 
