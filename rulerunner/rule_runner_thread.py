@@ -137,6 +137,8 @@ class RuleRunnerThread(QThread):
         Returns:
             None: This function does not return a value.
         """
+        if self.shut_down:
+            return
         try:
             self.driver.get(self.login_url)
             self.receiver_thread_logs(f"Loaded in the browser: {self.url} ","INFO"
@@ -155,7 +157,8 @@ class RuleRunnerThread(QThread):
                 self.driver.get(self.login_url)
         except Exception as e:
             self.receiver_thread_logs(f"Error loading URL.: {str(e)}","ERROR")
-            self.close()
+            if not self.shut_down:
+                self.close()
 
     def start_login(self)->None:
         """
@@ -164,6 +167,8 @@ class RuleRunnerThread(QThread):
         Returns:
             None: This function does not return a value.
         """
+        if self.shut_down:
+            return
         self.login_worker = LoginManagerWorker(
             self.driver,
             self.username,
@@ -214,7 +219,7 @@ class RuleRunnerThread(QThread):
                 self.receiver_thread_logs(
                     "Login Failed due to an error. Shutting down thread", "ERROR"
                 )
-            self.close()
+                self.close()
 
     @Slot()
     def login_success(self)->None:
@@ -296,6 +301,8 @@ class RuleRunnerThread(QThread):
             self.get_login_url()
             self.start_login()
         else:
+            if self.shut_down:
+                return
             msg = f"Skipping Rule due to {self.errors_in_a_row} errors in a row" if shouldRetry else "Skipping Rule - "
             if not self.shut_down:
 
@@ -364,7 +371,7 @@ class RuleRunnerThread(QThread):
             self.shut_down = True
             self.close_down_driver()
             if self.is_thread_pool_running():
-                self.executor.shutdown(wait=False,cancel_futures=True)
+                self.executor.shutdown(wait=True,cancel_futures=False)
             
             self.finished.emit()
             self.wait()
