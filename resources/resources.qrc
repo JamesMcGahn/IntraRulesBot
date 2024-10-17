@@ -52,6 +52,8 @@
     <file>images/orange_check.png</file>
     <file>images/stop.png</file>
     <file>images/play.png</file>
+    <file>images/bookmark_off.png</file>
+    <file>images/bookmark_on.png</file>
     <file>system_icons/logo16_16.ico</file>
     <file>system_icons/logo24_24.ico</file>
     <file>system_icons/logo32_32.ico</file>

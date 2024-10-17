@@ -46,6 +46,9 @@ class IconTextNavBar(QWidget):
         self.ui.logs_btn_ict.toggled.connect(self.btn_checked)
         self.ui.logs_btn_ict.clicked.connect(self.btn_clicked)
 
+        self.ui.bookmarks_btn_ict.toggled.connect(self.btn_checked)
+        self.ui.bookmarks_btn_ict.clicked.connect(self.btn_clicked)
+
         self.ui.settings_btn_ict.toggled.connect(self.btn_checked)
         self.ui.settings_btn_ict.clicked.connect(self.btn_clicked)
 
@@ -102,6 +105,8 @@ class IconTextNavBar(QWidget):
                 self.ui.rules_btn_ict.setChecked(checked)
             case "logs_btn_ico":
                 self.ui.logs_btn_ict.setChecked(checked)
+            case "bookmarks_btn_ico":
+                self.ui.bookmarks_btn_ict.setChecked(checked)
             case "settings_btn_ico":
                 self.ui.settings_btn_ict.setChecked(checked)
             case "signout_btn_ico":
