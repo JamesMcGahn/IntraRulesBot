@@ -20,6 +20,7 @@ from components.helpers import WidgetFactory
 
 class SettingsPageView(QWidget):
     """
+    A UI component that represents the Settings Page.
     SettingsPageView manages the UI elements for displaying and editing application settings,
     particularly related to logging configuration. It allows users to input settings, choose
     a folder for log storage, and save the configuration.

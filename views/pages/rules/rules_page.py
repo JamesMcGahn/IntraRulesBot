@@ -18,7 +18,8 @@ from .rules_page_ui import RulesPageView
 
 class RulesPage(QWidgetBase):
     """
-    RulesPage is responsible for managing the rules displayed in the UI. It handles
+    A controller class for managing the Rules page.
+    Rules page is responsible for managing the rules displayed in the UI. It handles
     loading, validating, saving, and copying rule fields. The UI interactions are handled
     through the connected view and model components.
 
@@ -65,7 +66,7 @@ class RulesPage(QWidgetBase):
 
         self.val = SchemaValidator("/schemas/main")
         self.check_for_saved_rules()
-        
+
         self.event_filter.event_changed.connect(self.focus_changed)
         self.apply_event_filter()
         self.focus_object_name = None
@@ -213,11 +214,12 @@ class RulesPage(QWidgetBase):
                 self.rule_runner_thread.finished.connect(self.rule_runner_finished)
                 self.ui.start.setDisabled(True)
                 self.rule_runner_thread.start()
+
     @Slot()
     def rule_runner_finished(self):
         """Reset Start Button to disabled False and hide the Progress Bar
-            Returns:
-                None: This function does not return a value.
+        Returns:
+            None: This function does not return a value.
         """
         self.ui.progress_bar.setHidden(True)
         self.ui.start.setDisabled(False)
