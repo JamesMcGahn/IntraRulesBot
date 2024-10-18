@@ -1,4 +1,5 @@
 from base import QWidgetBase
+from models import RuleSetsModel
 
 from .bookmarks_page_css import STYLES
 from .bookmarks_page_ui import BookMarksPageView
@@ -20,3 +21,6 @@ class BookMarksPage(QWidgetBase):
         self.ui = BookMarksPageView()
         self.layout = self.ui.layout()
         self.setLayout(self.layout)
+
+        self.rule_sets = RuleSetsModel()
+        self.ui.init_rule_set(self.rule_sets.rule_sets)
