@@ -90,8 +90,8 @@ class BookMarksPageView(QWidget):
         self.list_widget.itemSelectionChanged.connect(self.on_selection_changed)
 
     def init_rule_set(self, rule_sets: list) -> None:
-        self.rule_sets = rule_sets
-        for rule_set in self.rule_sets:
+
+        for rule_set in rule_sets:
             self.add_rule_set(rule_set)
 
     def on_selection_changed(self):
@@ -110,9 +110,11 @@ class BookMarksPageView(QWidget):
 
     @Slot(object)
     def add_rule_set(self, rule_set: object) -> None:
+        print("sss", rule_set)
         list_item = QListWidgetItem(rule_set["name"])
         list_item.setData(Qt.UserRole, rule_set["id"])
         self.list_widget.addItem(list_item)
+        self.rule_sets.append(rule_set)
 
     def remove_item(self):
         selected_item = self.list_widget.currentItem()

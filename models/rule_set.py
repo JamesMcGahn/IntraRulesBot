@@ -20,10 +20,12 @@ class RuleSetsModel(QObject, metaclass=QSingleton):
     Signals:
         data_changed (Signal): Emitted when user rule sets are added.
         success (Signal): Emitted after a successful operation, such as saving rule set.
+        rule_set_added (Signal): Emits new rule set when rule set is added
     """
 
     data_changed = Signal(list)
     success = Signal()
+    rule_set_added = Signal(object)
 
     def __init__(self):
         """
@@ -59,8 +61,9 @@ class RuleSetsModel(QObject, metaclass=QSingleton):
             None: This function does not return a value.
         """
         self._user_rule_sets.append(rule_set)
+        print("rrr", rule_set)
         self.save_rule_sets()
-        self.data_changed.emit(rule_set)
+        self.rule_set_added.emit(rule_set)
 
     @Slot(str)
     def delete_rule_set(self, id: str) -> None:

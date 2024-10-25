@@ -23,4 +23,5 @@ class BookMarksPage(QWidgetBase):
         self.setLayout(self.layout)
 
         self.rule_sets = RuleSetsModel()
+        self.rule_sets.rule_set_added.connect(self.ui.add_rule_set)
         self.ui.init_rule_set(self.rule_sets.rule_sets)
