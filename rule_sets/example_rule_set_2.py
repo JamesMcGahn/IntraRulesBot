@@ -1,5 +1,5 @@
 example_02 = {
-    "id": "default",
+    "guid": "default",
     "name": "Rule Set Name 2",
     "description": "Rule Set for Rules 2 \n Notes: \n notes for rule set ",
     "rules": [

@@ -205,7 +205,7 @@ class BookMarksPageView(QWidgetBase):
     @Slot(object)
     def add_rule_set(self, rule_set: object) -> None:
         list_item = QListWidgetItem(rule_set["name"])
-        list_item.setData(Qt.UserRole, rule_set["id"])
+        list_item.setData(Qt.UserRole, rule_set["guid"])
         self.list_widget.addItem(list_item)
         self.rule_sets.append(rule_set)
 

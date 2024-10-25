@@ -61,24 +61,25 @@ class RuleSetsModel(QObject, metaclass=QSingleton):
             None: This function does not return a value.
         """
         self._user_rule_sets.append(rule_set)
-        print("rrr", rule_set)
         self.save_rule_sets()
         self.rule_set_added.emit(rule_set)
 
     @Slot(str)
-    def delete_rule_set(self, id: str) -> None:
+    def delete_rule_set(self, guid: str) -> None:
         """
         Delete the rule set from user rule sets
 
         Args:
-            id (str): The id of the rule set
+            guid (str): The guid of the rule set
 
         Returns:
             None: This function does not return a value.
         """
-        if id:
+        if guid:
             rule_sets = [
-                rule_set for rule_set in self._user_rule_sets if rule_set["id"] != id
+                rule_set
+                for rule_set in self._user_rule_sets
+                if rule_set["guid"] != guid
             ]
             self._user_rule_sets = rule_sets
             self.save_rule_sets()

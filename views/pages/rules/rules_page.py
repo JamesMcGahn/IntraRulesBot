@@ -371,7 +371,7 @@ class RulesPage(QWidgetBase):
     @Slot(str, str)
     def save_rule_set(self, rule_set_name, rule_set_desc):
         rule_set = {
-            "id": str(uuid.uuid4()),
+            "guid": str(uuid.uuid4()),
             "name": rule_set_name,
             "description": rule_set_desc,
             "rules": self.rule_set_data,
@@ -380,7 +380,7 @@ class RulesPage(QWidgetBase):
         self.rule_set_data = None
         self.log_with_toast(
             "Rules Set Saved",
-            "Rules Set Saved Successfully.",
+            f"Rules Set: {rule_set_name} Saved Successfully.",
             "INFO",
             "SUCCESS",
             True,
