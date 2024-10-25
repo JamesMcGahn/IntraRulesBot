@@ -78,7 +78,7 @@ class RuleSetsModel(QObject, metaclass=QSingleton):
         """
         if id:
             rule_sets = [
-                rule_set for rule_set in self._user_rule_sets if rule_set.id != id
+                rule_set for rule_set in self._user_rule_sets if rule_set["id"] != id
             ]
             self._user_rule_sets = rule_sets
             self.save_rule_sets()
