@@ -207,6 +207,7 @@ class RulesPageView(QWidget):
         self.copy_field = EditorActionButton("")
         self.trash = EditorActionButton("")
         self.delete_all = EditorActionButton("")
+        self.bookmark = EditorActionButton("")
 
         actionBtns = [
             (
@@ -256,6 +257,12 @@ class RulesPageView(QWidget):
                 "Delete All Rules",
                 ":/images/delete_all_off_b.png",
                 ":/images/delete_all_on.png",
+            ),
+            (
+                self.bookmark,
+                "Save Rules to Rule Sets",
+                ":/images/bookmark_off_b.png",
+                ":/images/bookmark_on.png",
             ),
         ]
 
