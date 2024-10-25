@@ -1,7 +1,7 @@
 STYLES = """
 QWidget {
   background: transparent;
-  color: red;
+  color: black;
   border-radius: 3px;
   border: none;
 }

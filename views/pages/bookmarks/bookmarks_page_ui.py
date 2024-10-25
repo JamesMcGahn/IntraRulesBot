@@ -1,6 +1,10 @@
+import uuid
+
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import (
+    QFormLayout,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
@@ -11,11 +15,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from base import QWidgetBase
 from components.buttons import EditorActionButton
 from components.helpers import WidgetFactory
 
 
-class BookMarksPageView(QWidget):
+class BookMarksPageView(QWidgetBase):
     """
     A UI component that represents the Bookmarks display page.
 
@@ -26,6 +31,7 @@ class BookMarksPageView(QWidget):
     """
 
     delete_rule_set = Signal(str)
+    load_rules = Signal(list)
 
     def __init__(self):
         super().__init__()
@@ -57,7 +63,7 @@ class BookMarksPageView(QWidget):
             inner_h_layout,
             [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
             "#f58220",
-            max_width=400,
+            max_width=500,
         )
 
         inner_h_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -73,10 +79,12 @@ class BookMarksPageView(QWidget):
 
         self.arrow_up = EditorActionButton("")
         self.arrow_down = EditorActionButton("")
+        self.arrow_down.setCursor(Qt.PointingHandCursor)
+        self.arrow_up.setCursor(Qt.PointingHandCursor)
         WidgetFactory.create_icon(
             self.arrow_up,
             ":/images/up_arrow_off_b.png",
-            25,
+            49,
             20,
             True,
             ":/images/up_arrow_on.png",
@@ -85,7 +93,7 @@ class BookMarksPageView(QWidget):
         WidgetFactory.create_icon(
             self.arrow_down,
             ":/images/down_arrow_off_b.png",
-            25,
+            49,
             20,
             True,
             ":/images/down_arrow_on.png",
@@ -103,29 +111,48 @@ class BookMarksPageView(QWidget):
         self.list_widget = QListWidget()
 
         # Rule Set Details
-        rule_set_details = QVBoxLayout()
+        details_layout = QFormLayout()
+        details_layout.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
+        )
         self.rule_set_name = QLineEdit()
         self.rule_set_description = QTextEdit()
-        rule_set_details.addWidget(self.rule_set_name)
-        rule_set_details.addWidget(self.rule_set_description)
+        self.rule_set_name_label = QLabel("Name:")
+        self.rule_set_name_label.setAlignment(Qt.AlignLeft)
+        self.rule_set_description_label = QLabel("Description:")
+        self.rule_set_description_label.setAlignment(Qt.AlignLeft)
 
-        rule_set_layout.addLayout(rule_set_details)
+        details_layout.addRow(self.rule_set_name_label, self.rule_set_name)
+        details_layout.addRow(
+            self.rule_set_description_label, self.rule_set_description
+        )
+
+        rule_set_layout.addLayout(details_layout)
 
         h_layout.addWidget(self.list_widget)
 
         # Action Buttons Bar
         action_btns_layout = QHBoxLayout()
         self.delete_button = QPushButton("Delete")
+        self.load_button = QPushButton("Load to Editor")
+
+        self.delete_button.setCursor(Qt.PointingHandCursor)
+        self.load_button.setCursor(Qt.PointingHandCursor)
+
+        action_btns_layout.addWidget(self.load_button)
         action_btns_layout.addWidget(self.delete_button)
 
         rule_set_layout.addLayout(action_btns_layout)
 
         inner_layout.addRow(rule_set_widget)
 
+        # SLOTS / SIGNALS
+
         self.delete_button.clicked.connect(self.remove_item)
         self.list_widget.itemSelectionChanged.connect(self.on_selection_changed)
         self.arrow_up.clicked.connect(self.navigate_up)
         self.arrow_down.clicked.connect(self.navigate_down)
+        self.load_button.clicked.connect(self.load_set_to_editor)
 
     def navigate_up(self):
         if self.list_widget.currentRow() > 0:
@@ -134,14 +161,27 @@ class BookMarksPageView(QWidget):
             self.list_widget.setCurrentRow(self.list_widget.count() - 1)
 
     def navigate_down(self):
-        print(self.list_widget.currentRow(), self.list_widget.count())
         if self.list_widget.currentRow() != self.list_widget.count() - 1:
             self.list_widget.setCurrentRow(self.list_widget.currentRow() + 1)
         else:
             self.list_widget.setCurrentRow(0)
 
-    def init_rule_set(self, rule_sets: list) -> None:
+    def load_set_to_editor(self):
+        if self.rule_sets:
+            index = self.list_widget.currentRow()
+            rules = self.rule_sets[index]["rules"]
+            rule_set_name = self.rule_sets[index]["name"]
+            for rule in rules:
+                rule["guid"] = str(uuid.uuid4())
+            self.load_rules.emit(rules)
+            self.log_with_toast(
+                "Rules Loaded to Editor",
+                f"Rule Set: {rule_set_name} has been loaded to the editor.",
+                "INFO",
+                "SUCCESS",
+            )
 
+    def init_rule_set(self, rule_sets: list) -> None:
         for rule_set in rule_sets:
             self.add_rule_set(rule_set)
 
@@ -149,7 +189,6 @@ class BookMarksPageView(QWidget):
             self.list_widget.setCurrentRow(0)
 
     def on_selection_changed(self):
-        print(self.list_widget.currentRow(), self.list_widget.count())
         list_item = self.list_widget.currentItem()
         list_item_id = list_item.data(Qt.UserRole)
         index = self.list_widget.currentRow()
@@ -175,9 +214,21 @@ class BookMarksPageView(QWidget):
         if selected_item:
             id_selected = selected_item.data(Qt.UserRole)
             if id_selected == "default":
-                print("cant delete default rule_sets")
+                self.log_with_toast(
+                    "Rules Set Cannot Be Removed",
+                    "Default Rule Sets cannot be removed.",
+                    "INFO",
+                    "WARN",
+                )
             else:
                 index = self.list_widget.currentRow()
                 self.delete_rule_set.emit(id_selected)
                 self.list_widget.takeItem(self.list_widget.row(selected_item))
+                rule_set_name = self.rule_sets[index]["name"]
+                self.log_with_toast(
+                    "Rules Set Removed",
+                    f"Rule Set: {rule_set_name} has been removed.",
+                    "INFO",
+                    "SUCCESS",
+                )
                 self.rule_sets.pop(index)

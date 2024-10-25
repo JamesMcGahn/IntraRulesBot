@@ -1,5 +1,5 @@
 from base import QWidgetBase
-from models import RuleSetsModel
+from models import RuleSetsModel, RulesModel
 
 from .bookmarks_page_css import STYLES
 from .bookmarks_page_ui import BookMarksPageView
@@ -23,6 +23,10 @@ class BookMarksPage(QWidgetBase):
         self.setLayout(self.layout)
 
         self.rule_sets = RuleSetsModel()
+        self.rules_model = RulesModel()
+
+        # Slots / Signals
         self.rule_sets.rule_set_added.connect(self.ui.add_rule_set)
+        self.ui.load_rules.connect(self.rules_model.add_rules)
         self.ui.delete_rule_set.connect(self.rule_sets.delete_rule_set)
         self.ui.init_rule_set(self.rule_sets.rule_sets)
