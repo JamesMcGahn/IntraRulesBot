@@ -1,13 +1,13 @@
 import json
+import uuid
 from typing import Optional, Tuple
 
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import QFileDialog, QLineEdit, QTextEdit
 
 from base import QWidgetBase
-from components.dialogs import ErrorDialog
-from models import RulesModel
-from models.login import LoginModel
+from components.dialogs import ErrorDialog, RuleSetDialog
+from models import LoginModel, RuleSetsModel, RulesModel
 from rulerunner import RuleRunnerThread
 from services.event_filter import EventFilter
 from services.validator import SchemaValidator
@@ -25,9 +25,11 @@ class RulesPage(QWidgetBase):
 
     Signals:
         send_rules (list): Emits the list of rules to the view.
+        send_rule_sets (object): Emits rule sets to rule set model
     """
 
     send_rules = Signal(list)
+    send_rule_sets = Signal(object)
 
     def __init__(self):
         """
@@ -42,8 +44,10 @@ class RulesPage(QWidgetBase):
         self.setLayout(self.layout)
         self.forms_errors = []
         self.total_errors = 0
+        self.rule_set_data = None
         self.setGraphicsEffect(None)
         self.rulesModel = RulesModel()
+        self.ruleSetModel = RuleSetsModel()
 
         self.loginModel = LoginModel()
         self.loginModel.creds_changed.connect(self.update_credentials)
@@ -54,6 +58,7 @@ class RulesPage(QWidgetBase):
         self.login_url = login_url
 
         # Signal / Slot Connections
+        self.send_rule_sets.connect(self.ruleSetModel.add_rule_set)
         self.rulesModel.data_changed.connect(self.ui.rules_changed)
         self.ui.download.clicked.connect(self.save_rules_to_file)
         self.ui.validate.clicked.connect(self.validate_rules)
@@ -63,7 +68,10 @@ class RulesPage(QWidgetBase):
         self.ui.copy_field.clicked.connect(self.on_copy_fields)
         self.ui.start.clicked.connect(self.start_rule_runner)
         self.ui.rules_form_updated.connect(self.apply_event_filter)
+        self.ui.bookmark.clicked.connect(self.on_bookmark_click)
 
+        self.dialog = RuleSetDialog()
+        self.dialog.send_form.connect(self.save_rule_set)
         self.val = SchemaValidator("/schemas/main")
         self.check_for_saved_rules()
 
@@ -351,3 +359,30 @@ class RulesPage(QWidgetBase):
                 )
         else:
             self.rulesModel.save_rules([])
+
+    def on_bookmark_click(self):
+        if self.ui.get_forms():
+            _, data = self.validate_rules()
+            if data:
+                self.rule_set_data = data
+                if not self.dialog.show():
+                    self.rule_set_data = None
+
+    @Slot(str, str)
+    def save_rule_set(self, rule_set_name, rule_set_desc):
+        rule_set = {
+            "id": str(uuid.uuid4()),
+            "name": rule_set_name,
+            "description": rule_set_desc,
+            "rules": self.rule_set_data,
+        }
+        self.send_rule_sets.emit(rule_set)
+        self.rule_set_data = None
+        self.log_with_toast(
+            "Rules Set Saved",
+            "Rules Set Saved Successfully.",
+            "INFO",
+            "SUCCESS",
+            True,
+            self,
+        )

@@ -3,6 +3,7 @@ from .confirmation_dialog import ConfirmationDialog
 from .error_dialog import ErrorDialog
 from .gradient_dialog import GradientDialog
 from .message_dialog import MessageDialog
+from .rule_set_dialog import RuleSetDialog
 
 __all__ = [
     "GradientDialog",
@@ -10,4 +11,5 @@ __all__ = [
     "MessageDialog",
     "AddRuleWizard",
     "ConfirmationDialog",
+    "RuleSetDialog",
 ]
