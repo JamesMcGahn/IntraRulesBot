@@ -1,7 +1,9 @@
+import json
 import uuid
 
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import (
+    QFileDialog,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -135,11 +137,14 @@ class BookMarksPageView(QWidgetBase):
         action_btns_layout = QHBoxLayout()
         self.delete_button = QPushButton("Delete")
         self.load_button = QPushButton("Load to Editor")
+        self.save_to_file_button = QPushButton("Save to File")
 
         self.delete_button.setCursor(Qt.PointingHandCursor)
+        self.save_to_file_button.setCursor(Qt.PointingHandCursor)
         self.load_button.setCursor(Qt.PointingHandCursor)
 
         action_btns_layout.addWidget(self.load_button)
+        action_btns_layout.addWidget(self.save_to_file_button)
         action_btns_layout.addWidget(self.delete_button)
 
         rule_set_layout.addLayout(action_btns_layout)
@@ -153,6 +158,7 @@ class BookMarksPageView(QWidgetBase):
         self.arrow_up.clicked.connect(self.navigate_up)
         self.arrow_down.clicked.connect(self.navigate_down)
         self.load_button.clicked.connect(self.load_set_to_editor)
+        self.save_to_file_button.clicked.connect(self.save_rule_sets_to_file)
 
     def navigate_up(self):
         if self.list_widget.currentRow() > 0:
@@ -232,3 +238,38 @@ class BookMarksPageView(QWidgetBase):
                     "SUCCESS",
                 )
                 self.rule_sets.pop(index)
+
+    def save_rule_sets_to_file(self) -> None:
+        """
+        Save the selected rule set to a JSON file selected by the user. It ensures the file has
+        a `.json` extension.
+
+        Returns:
+            None: This function does not return a value.
+        """
+
+        if self.rule_sets:
+            index = self.list_widget.currentRow()
+            data = self.rule_sets[index]["rules"]
+            name = self.rule_sets[index]["name"]
+            file_path, _ = QFileDialog.getSaveFileName(
+                self,
+                "Save JSON File",
+                f"{name}.json",
+                "JSON Files (*.json);;All Files (*)",
+            )
+            if file_path:
+                # Ensure the file has a .json extension
+                if not file_path.endswith(".json"):
+                    file_path += ".json"
+
+                with open(file_path, "w") as f:
+                    json.dump(data, f, indent=4)
+                    self.log_with_toast(
+                        "File Saved",
+                        "Rule Sets JSON File Saved Successfully.",
+                        "INFO",
+                        "SUCCESS",
+                        True,
+                        self,
+                    )
