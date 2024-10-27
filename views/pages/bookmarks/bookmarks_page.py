@@ -30,3 +30,4 @@ class BookMarksPage(QWidgetBase):
         self.ui.load_rules.connect(self.rules_model.add_rules)
         self.ui.delete_rule_set.connect(self.rule_sets.delete_rule_set)
         self.ui.init_rule_set(self.rule_sets.rule_sets)
+        self.ui.edit_rule_set.connect(self.rule_sets.update_rule_set)

@@ -84,6 +84,30 @@ class RuleSetsModel(QObject, metaclass=QSingleton):
             self._user_rule_sets = rule_sets
             self.save_rule_sets()
 
+    @Slot(str)
+    def update_rule_set(self, guid: str, rule_set: object) -> None:
+        """
+        Update the rule set in user rule sets
+
+        Args:
+            guid (str): The guid of the rule set
+            rule_set (object): The updated rule set
+
+        Returns:
+            None: This function does not return a value.
+        """
+        if guid:
+            rule_sets = []
+
+            for rl_set in self._user_rule_sets:
+                if rl_set["guid"] != guid:
+                    rule_sets.append(rl_set)
+                elif rl_set["guid"] == guid:
+                    rule_sets.append(rule_set)
+
+            self._user_rule_sets = rule_sets
+            self.save_rule_sets()
+
     @Slot()
     def reset_model(self) -> None:
         """

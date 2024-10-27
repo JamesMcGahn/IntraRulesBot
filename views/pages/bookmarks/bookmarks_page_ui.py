@@ -33,6 +33,7 @@ class BookMarksPageView(QWidgetBase):
     """
 
     delete_rule_set = Signal(str)
+    edit_rule_set = Signal(str, object)
     load_rules = Signal(list)
 
     def __init__(self):
@@ -138,13 +139,16 @@ class BookMarksPageView(QWidgetBase):
         self.delete_button = QPushButton("Delete")
         self.load_button = QPushButton("Load to Editor")
         self.save_to_file_button = QPushButton("Save to File")
+        self.edit_details_button = QPushButton("Update Details")
 
         self.delete_button.setCursor(Qt.PointingHandCursor)
         self.save_to_file_button.setCursor(Qt.PointingHandCursor)
         self.load_button.setCursor(Qt.PointingHandCursor)
+        self.edit_details_button.setCursor(Qt.PointingHandCursor)
 
         action_btns_layout.addWidget(self.load_button)
         action_btns_layout.addWidget(self.save_to_file_button)
+        action_btns_layout.addWidget(self.edit_details_button)
         action_btns_layout.addWidget(self.delete_button)
 
         rule_set_layout.addLayout(action_btns_layout)
@@ -159,6 +163,7 @@ class BookMarksPageView(QWidgetBase):
         self.arrow_down.clicked.connect(self.navigate_down)
         self.load_button.clicked.connect(self.load_set_to_editor)
         self.save_to_file_button.clicked.connect(self.save_rule_sets_to_file)
+        self.edit_details_button.clicked.connect(self.update_rule_set_detail)
 
     def navigate_up(self):
         if self.list_widget.currentRow() > 0:
@@ -238,6 +243,42 @@ class BookMarksPageView(QWidgetBase):
                     "SUCCESS",
                 )
                 self.rule_sets.pop(index)
+
+    def update_rule_set_detail(self) -> None:
+        """
+        Update the rule set details in the GUI.
+
+        Returns:
+            None: This function does not return a value.
+        """
+
+        selected_item = self.list_widget.currentItem()
+        if selected_item:
+            id_selected = selected_item.data(Qt.UserRole)
+            if id_selected == "default":
+                self.log_with_toast(
+                    "Rules Set Cannot Be Edited",
+                    "Default Rule Sets cannot be edited.",
+                    "INFO",
+                    "WARN",
+                )
+
+            else:
+                index = self.list_widget.currentRow()
+                self.rule_sets[index]["name"] = self.rule_set_name.text()
+                self.rule_sets[index][
+                    "description"
+                ] = self.rule_set_description.toPlainText()
+                self.edit_rule_set.emit(
+                    self.rule_sets[index]["guid"], self.rule_sets[index]
+                )
+                rule_set_name = self.rule_sets[index]["name"]
+                self.log_with_toast(
+                    "Rules Set Details Updated",
+                    f"Rule Set: {rule_set_name} has been updated.",
+                    "INFO",
+                    "SUCCESS",
+                )
 
     def save_rule_sets_to_file(self) -> None:
         """
