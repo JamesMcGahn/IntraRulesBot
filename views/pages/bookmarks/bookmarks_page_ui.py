@@ -10,7 +10,6 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QListWidgetItem,
-    QPushButton,
     QSizePolicy,
     QTextEdit,
     QVBoxLayout,
@@ -18,7 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from base import QWidgetBase
-from components.buttons import EditorActionButton
+from components.buttons import EditorActionButton, GradientButton
 from components.helpers import WidgetFactory
 
 
@@ -27,9 +26,10 @@ class BookMarksPageView(QWidgetBase):
     A UI component that represents the Bookmarks display page.
 
     Signals:
+        delete_rule_set (str): Emitted when a rule set is deleted, sending the rule set ID.
+        edit_rule_set (str, object): Emitted when a rule set is edited, sending the rule set ID and the edited rule set.
+        load_rules (list): Emitted when rules are to be loaded, sending a list of rule objects.
 
-
-    Attributes:
     """
 
     delete_rule_set = Signal(str)
@@ -136,15 +136,39 @@ class BookMarksPageView(QWidgetBase):
 
         # Action Buttons Bar
         action_btns_layout = QHBoxLayout()
-        self.delete_button = QPushButton("Delete")
-        self.load_button = QPushButton("Load to Editor")
-        self.save_to_file_button = QPushButton("Save to File")
-        self.edit_details_button = QPushButton("Update Details")
 
-        self.delete_button.setCursor(Qt.PointingHandCursor)
-        self.save_to_file_button.setCursor(Qt.PointingHandCursor)
-        self.load_button.setCursor(Qt.PointingHandCursor)
-        self.edit_details_button.setCursor(Qt.PointingHandCursor)
+        self.delete_button = GradientButton(
+            "Delete",
+            "black",
+            [(0.05, "#FEB220"), (0.50, "#f58220"), (1, "#f58220")],
+            "#f58220",
+            1,
+            3,
+        )
+        self.load_button = GradientButton(
+            "Load to Editor",
+            "black",
+            [(0.05, "#FEB220"), (0.50, "#f58220"), (1, "#f58220")],
+            "#f58220",
+            1,
+            3,
+        )
+        self.save_to_file_button = GradientButton(
+            "Save to File",
+            "black",
+            [(0.05, "#FEB220"), (0.50, "#f58220"), (1, "#f58220")],
+            "#f58220",
+            1,
+            3,
+        )
+        self.edit_details_button = GradientButton(
+            "Update Details",
+            "black",
+            [(0.05, "#FEB220"), (0.50, "#f58220"), (1, "#f58220")],
+            "#f58220",
+            1,
+            3,
+        )
 
         action_btns_layout.addWidget(self.load_button)
         action_btns_layout.addWidget(self.save_to_file_button)
@@ -166,18 +190,38 @@ class BookMarksPageView(QWidgetBase):
         self.edit_details_button.clicked.connect(self.update_rule_set_detail)
 
     def navigate_up(self):
+        """
+        Moves the selection up in the rule set list.
+        If at the top, it moves selection to the last item in the list
+
+        Returns:
+            None: This function does not return a value.
+        """
         if self.list_widget.currentRow() > 0:
             self.list_widget.setCurrentRow(self.list_widget.currentRow() - 1)
         else:
             self.list_widget.setCurrentRow(self.list_widget.count() - 1)
 
     def navigate_down(self):
+        """
+        Moves the selection down in the rule set list.
+        If at the bottom, it moves selection to the first item in the list
+
+        Returns:
+            None: This function does not return a value.
+        """
         if self.list_widget.currentRow() != self.list_widget.count() - 1:
             self.list_widget.setCurrentRow(self.list_widget.currentRow() + 1)
         else:
             self.list_widget.setCurrentRow(0)
 
     def load_set_to_editor(self):
+        """
+        Loads the selected rule set to the rule editor.
+
+        Returns:
+            None: This function does not return a value.
+        """
         if self.rule_sets:
             index = self.list_widget.currentRow()
             rules = self.rule_sets[index]["rules"]
@@ -193,13 +237,35 @@ class BookMarksPageView(QWidgetBase):
             )
 
     def init_rule_set(self, rule_sets: list) -> None:
+        """
+        Initializes the rule sets list and populates the list widget with the provided rule sets.
+
+        Args:
+            rule_sets (list): A list of rule sets to be displayed in the list widget.
+                Each rule set should be a dictionary with the following structure:
+                "guid": A unique identifier for the rule set,
+                "name": The name of the rule set,
+                "description": A brief description of the rule set,
+                "rules": A list of rules following the rules schema in the rule set.
+        Returns:
+            None: This function does not return a value.
+
+        """
         for rule_set in rule_sets:
             self.add_rule_set(rule_set)
 
         if self.list_widget.count() > 0:
             self.list_widget.setCurrentRow(0)
 
+    @Slot()
     def on_selection_changed(self):
+        """
+        Slot for handling the selection change in the rule set list.
+        Updates the rule set details UI elements based on the selected rule set.
+
+        Returns:
+            None: This function does not return a value.
+        """
         list_item = self.list_widget.currentItem()
         list_item_id = list_item.data(Qt.UserRole)
         index = self.list_widget.currentRow()
@@ -215,12 +281,33 @@ class BookMarksPageView(QWidgetBase):
 
     @Slot(object)
     def add_rule_set(self, rule_set: object) -> None:
+        """
+        Slot for adding a rule set to the list of rules
+        Args:
+            rule_set (object): A rule set to be added to the list.
+                The rule set should be a dictionary with the following structure:
+                "guid": A unique identifier for the rule set,
+                "name": The name of the rule set,
+                "description": A brief description of the rule set,
+                "rules": A list of rules following the rules schema in the rule set.
+        Returns:
+            None: This function does not return a value.
+
+        """
         list_item = QListWidgetItem(rule_set["name"])
         list_item.setData(Qt.UserRole, rule_set["guid"])
         self.list_widget.addItem(list_item)
         self.rule_sets.append(rule_set)
 
+    @Slot()
     def remove_item(self):
+        """
+        Slot for removing a rule set from the list of rule sets in the GUI and emits signal to remove from model
+        If rule set is a default rule set, rule set is not removed
+        Returns:
+            None: This function does not return a value.
+
+        """
         selected_item = self.list_widget.currentItem()
         if selected_item:
             id_selected = selected_item.data(Qt.UserRole)
@@ -246,7 +333,8 @@ class BookMarksPageView(QWidgetBase):
 
     def update_rule_set_detail(self) -> None:
         """
-        Update the rule set details in the GUI.
+        Update the rule set details in the GUI and emits signal to update rule set in the model.
+        If rule set is a default rule set, rule set details are not updated
 
         Returns:
             None: This function does not return a value.
