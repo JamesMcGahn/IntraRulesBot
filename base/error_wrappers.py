@@ -28,22 +28,33 @@ class ErrorWrappers:
             try:
                 return func(self, *args, **kwargs)
 
-            except NoSuchWindowException:
+            except NoSuchWindowException as e:
                 self.logging(
                     f"Something went wrong in {self.__class__.__name__}:Can't Find Window. The browser was closed.",
                     "ERROR",
                 )
-                raise NoSuchWindowException from NoSuchWindowException
-            except NoSuchFrameException:
+                if hasattr(self, "error_occurred"):
+                    self.error_occurred.emit(f"Browser closed: {str(e)}")
+                else:
+                    raise NoSuchWindowException from NoSuchWindowException
+            except NoSuchFrameException as e:
                 self.logging(
                     f"Something went wrong in {self.__class__.__name__}: Can't Find Frame. The Frame was closed.",
                     "ERROR",
                 )
-                raise NoSuchFrameException from NoSuchFrameException
+                if hasattr(self, "error_occurred"):
+                    self.error_occurred.emit(f"The Frame was closed.: {str(e)}")
+                else:
+                    raise NoSuchFrameException from NoSuchFrameException
             except Exception as e:
                 self.logging(
                     f"Something went wrong in {self.__class__.__name__}: {e}", "ERROR"
                 )
-                raise Exception(e) from Exception
+                if hasattr(self, "error_occurred"):
+                    self.error_occurred.emit(
+                        f"Something went wrong in {self.__class__.__name__}: {str(e)}"
+                    )
+                else:
+                    raise Exception(e) from Exception
 
         return wrapper
