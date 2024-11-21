@@ -1,3 +1,4 @@
+from PySide6.QtCore import Signal, Slot
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchWindowException, TimeoutException
 from selenium.webdriver.common.by import By
@@ -10,6 +11,8 @@ from ..utils import WaitConditions, WebElementInteractions
 
 
 class LoginManagerWorker(QWorkerBase):
+    start_work = Signal()
+
     """
     Worker class responsible for handling the login process.
     It interacts with the login page, enters credentials, handles session alerts,
@@ -49,7 +52,9 @@ class LoginManagerWorker(QWorkerBase):
         self.password = password
         self.wELI = WebElementInteractions(self.driver)
         self.wELI.send_msg.connect(self.logging)
+        self.start_work.connect(self.do_work)
 
+    @Slot()
     def do_work(self) -> None:
         """
         Executes the login process by entering login information, handling session alerts,

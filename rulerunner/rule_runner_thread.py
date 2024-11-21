@@ -175,11 +175,12 @@ class RuleRunnerThread(QThread):
             self.password,
             self.url,
         )
+        self.login_thread = QThread()
         self.login_worker.moveToThread(self)
         self.login_worker.send_logs.connect(self.receiver_thread_logs)
         self.login_worker.error.connect(self.login_error)
         self.login_worker.finished.connect(self.login_success)
-        self.login_worker.do_work()
+        self.login_worker.start_work.emit()
 
     @Slot(str, str, bool)
     def receiver_thread_logs(self, msg:str, level:str, print_msg:bool=True)->None:
