@@ -124,6 +124,7 @@ class RuleWorker(QWorkerBase):
         """
         self.trigger = TriggerWorker(self.driver, self.rule)
         self.trigger.moveToThread(self.thread())
+        self.trigger.error_occurred.connect(self.handle_child_error)
         self.trigger.send_logs.connect(self.logging)
         self.trigger.finished.connect(self.trigger.deleteLater)
         self.trigger.start_work.emit()
@@ -139,6 +140,7 @@ class RuleWorker(QWorkerBase):
         if "conditions" in self.rule and self.rule["conditions"]:
             self.conditions.moveToThread(self.thread())
             self.conditions.send_logs.connect(self.logging)
+            self.conditions.error_occurred.connect(self.handle_child_error)
             self.conditions.finished.connect(self.conditions.deleteLater)
             self.conditions.start_work.emit()
 
@@ -157,6 +159,7 @@ class RuleWorker(QWorkerBase):
             )
             self.actions.send_logs.connect(self.logging)
             self.actions.finished.connect(self.actions.deleteLater)
+            self.actions.error_occurred.connect(self.handle_child_error)
             self.actions.start_work.emit()
 
     def switch_to_rule_module(self) -> None:

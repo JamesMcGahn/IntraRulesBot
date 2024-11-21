@@ -183,6 +183,7 @@ class ActionsWorker(QWorkerBase):
             actions_worker = ActionsEmailWorker(self.driver, self, action, rule, i)
             actions_worker.moveToThread(self.thread())
             actions_worker.send_logs.connect(self.logging)
+            actions_worker.error_occurred.connect(self.handle_child_error)
             self.finished.connect(actions_worker.deleteLater)
             actions_worker.start_work.emit()
 

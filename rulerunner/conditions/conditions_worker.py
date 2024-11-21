@@ -189,6 +189,7 @@ class ConditionsWorker(QWorkerBase):
             )
             self.stats_worker.moveToThread(self.thread())
             self.stats_worker.send_logs.connect(self.logging)
+            self.stats_worker.error_occurred.connect(self.handle_child_error)
             self.finished.connect(self.stats_worker.deleteLater)
             self.stats_worker.start_work.emit()
 
