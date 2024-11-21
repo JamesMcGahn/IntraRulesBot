@@ -104,6 +104,7 @@ class RuleRunnerThread(QThread):
         self.init_driver()
         self.get_login_url()
         self.start_login()
+        self.exec_()
 
     def init_driver(self)->None:
         """
@@ -267,13 +268,16 @@ class RuleRunnerThread(QThread):
         if rules_length > 0:
             try:
                 self.current_rule = self.rules.popleft()
-                rule_worker = RuleWorker(self.driver, self.current_rule)
-                rule_worker.send_logs.connect(self.receiver_thread_logs)
-                rule_worker.error.connect(self.on_rule_error)
-                rule_worker.error.connect(rule_worker.deleteLater)
-                rule_worker.finished.connect(self.on_rule_finished)
-                rule_worker.finished.connect(rule_worker.deleteLater)
-                self.executor.submit(rule_worker.do_work)
+                self.rule_worker = RuleWorker(self.driver, self.current_rule)
+                self.rule_worker_thread = QThread()
+                self.rule_worker_thread.start()
+                self.rule_worker.moveToThread(self.rule_worker_thread)
+                self.rule_worker.send_logs.connect(self.receiver_thread_logs)
+                self.rule_worker.error.connect(self.on_rule_error)
+                self.rule_worker.error.connect(self.rule_worker.deleteLater)
+                self.rule_worker.finished.connect(self.on_rule_finished)
+                self.rule_worker.finished.connect(self.rule_worker.deleteLater)
+                self.rule_worker.start_work.emit()
             except Exception as e:
                 self.receiver_thread_logs(
                     f"Failure trying to process next rule: {e}",
@@ -349,6 +353,7 @@ class RuleRunnerThread(QThread):
         Returns:
             None: This function does not return a value.
         """
+        self.cleanup_thread(self.rule_worker_thread, "RuleWorker Thread")
         self.receiver_thread_logs("RuleWorker finished.", "INFO")
         self.success_rules.append(rule_name)
         self.rule_created.emit(rule_name)
@@ -364,6 +369,13 @@ class RuleRunnerThread(QThread):
         Returns:
             None: This function does not return a value.
         """
+
+        self.receiver_thread_logs("Stop Button Pressed","INFO")
+        self.receiver_thread_logs(
+                f"Shutting down RuleRunnerThread: {threading.get_ident()} - {self.thread()}",
+                "INFO",
+            )
+        self.shut_down = True
         self.close()
 
     def is_thread_pool_running(self)->bool:
@@ -384,17 +396,7 @@ class RuleRunnerThread(QThread):
         Returns:
             None: This function does not return a value.
         """
-        if self.isRunning() or self.is_thread_pool_running():
-            self.receiver_thread_logs(
-                f"Shutting down RuleRunnerThread: {threading.get_ident()} - {self.thread()}",
-                "INFO",
-            )
-            self.shut_down = True
-            self.close_down_driver()
-            if self.is_thread_pool_running():
-                self.executor.shutdown(wait=True,cancel_futures=False)
-            
-            self.finished.emit()
-            self.wait()
-            self.quit()
-            self.deleteLater()
+
+        self.close_down_driver()
+        self.finished.emit()
+        self.cleanup_thread(self,'RuleRunner Thread')
