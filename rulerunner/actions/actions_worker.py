@@ -1,5 +1,6 @@
 from time import sleep
 
+from PySide6.QtCore import Signal, Slot
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
@@ -26,6 +27,8 @@ class ActionsWorker(QWorkerBase):
         rule (dict): The rule data used to configure the actions.
     """
 
+    start_work = Signal()
+
     def __init__(self, driver: webdriver.Chrome, rule: dict):
         """
         Initializes the ActionsWorker with the provided driver and rule data.
@@ -41,6 +44,7 @@ class ActionsWorker(QWorkerBase):
         self.wELI = WebElementInteractions(self.driver)
         self._rule_condition_queues_source = "queues"
         self.wELI.send_msg.connect(self.logging)
+        self.start_work.connect(self.do_work)
 
     @property
     def rule_condition_queues_source(self) -> str:
@@ -66,6 +70,7 @@ class ActionsWorker(QWorkerBase):
         self._rule_condition_queues_source = source
 
     @ErrorWrappers.qworker_web_raise_error
+    @Slot()
     def do_work(self) -> None:
         """
         Executes the steps required to process each action within the rule, including setting
@@ -83,7 +88,7 @@ class ActionsWorker(QWorkerBase):
             self.set_provider_condition(action, i)
             self.set_email_action(action, self.rule, i)
             self.add_additional_action(i)
-            self.finished.emit()
+        self.finished.emit()
 
     def set_provider_category(self, action: dict, i: int) -> None:
         """
@@ -176,9 +181,10 @@ class ActionsWorker(QWorkerBase):
         """
         if action["details"]["action_type"] == "email":
             actions_worker = ActionsEmailWorker(self.driver, self, action, rule, i)
+            actions_worker.moveToThread(self.thread())
             actions_worker.send_logs.connect(self.logging)
             self.finished.connect(actions_worker.deleteLater)
-            actions_worker.do_work()
+            actions_worker.start_work.emit()
 
     def add_additional_action(self, index: int) -> None:
         """

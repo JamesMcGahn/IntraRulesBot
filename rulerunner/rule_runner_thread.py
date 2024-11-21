@@ -129,6 +129,23 @@ class RuleRunnerThread(QThread):
         self.driver_manager.close()
         self.driver_manager.deleteLater()
 
+    def cleanup_thread(self,thread: QThread, thread_name:str) -> None:
+        """
+        Cleans up a QThread by stopping its event loop and releasing resources.
+
+        Args:
+            thread (QThread): The thread to be cleaned up.
+
+        Returns:
+            None: This function does not return a value.
+        """
+        self.receiver_thread_logs(f"Shutting down {thread_name} - {thread}","INFO")
+        if thread.isRunning():
+            thread.quit()
+            thread.wait()
+        thread.deleteLater()
+
+
     def get_login_url(self)->None:
         """
         Loads the login URL in the browser. Handles exceptions such as browser closure
@@ -176,7 +193,8 @@ class RuleRunnerThread(QThread):
             self.url,
         )
         self.login_thread = QThread()
-        self.login_worker.moveToThread(self)
+        self.login_thread.start()
+        self.login_worker.moveToThread(self.login_thread)
         self.login_worker.send_logs.connect(self.receiver_thread_logs)
         self.login_worker.error.connect(self.login_error)
         self.login_worker.finished.connect(self.login_success)
@@ -221,6 +239,7 @@ class RuleRunnerThread(QThread):
                     "Login Failed due to an error. Shutting down thread", "ERROR"
                 )
                 self.close()
+        self.cleanup_thread(self.login_thread, "Login Thread")
 
     @Slot()
     def login_success(self)->None:
@@ -232,6 +251,7 @@ class RuleRunnerThread(QThread):
         """
         self.process_next_rule()
         self.login_worker.deleteLater()
+        self.cleanup_thread(self.login_thread, "Login Thread")
 
     def process_next_rule(self)->None:
         """
