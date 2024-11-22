@@ -49,4 +49,4 @@ class QWorkerBase(QObject):
         )
 
     def handle_child_error(self, msg):
-        self.error.emit(True)
+        self.error_occurred.emit(msg)
