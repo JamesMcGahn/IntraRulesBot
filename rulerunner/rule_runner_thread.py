@@ -141,9 +141,18 @@ class RuleRunnerThread(QThread):
             None: This function does not return a value.
         """
         self.receiver_thread_logs(f"Shutting down {thread_name} - {thread}","INFO")
-        if thread.isRunning():
-            thread.quit()
-            thread.wait()
+        if thread is None:
+            self.receiver_thread_logs(f"Thread {thread_name} is already None.", "INFO")
+            return
+
+        try:
+            if thread.isRunning():
+                thread.quit()
+                thread.wait()
+        except Exception as e:
+            self.receiver_thread_logs(f"Error shutting down {thread_name}: {e}", "ERROR")
+
+
         thread.deleteLater()
 
 
@@ -198,7 +207,8 @@ class RuleRunnerThread(QThread):
         self.login_worker.moveToThread(self.login_thread)
         self.login_worker.send_logs.connect(self.receiver_thread_logs)
         self.login_worker.error.connect(self.login_error)
-        self.login_worker.finished.connect(self.login_success)
+        self.login_worker.success.connect(self.login_success)
+        self.login_worker.finished.connect(self.login_worker.deleteLater)
         self.login_worker.start_work.emit()
 
     @Slot(str, str, bool)
@@ -225,22 +235,20 @@ class RuleRunnerThread(QThread):
         Returns:
             None: This function does not return a value.
         """
+        self.cleanup_thread(self.login_thread, "Login Thread")
         if not self.login_attempt and not self.shut_down:
             self.login_attempt = True
-            self.login_worker.deleteLater()
             self.receiver_thread_logs(
                 "Login Failed due to an error. Retrying again.", "INFO"
             )
             self.get_login_url()
             self.start_login()
         else:
-            self.login_worker.deleteLater()
             if not self.shut_down:
                 self.receiver_thread_logs(
                     "Login Failed due to an error. Shutting down thread", "ERROR"
                 )
                 self.close()
-        self.cleanup_thread(self.login_thread, "Login Thread")
 
     @Slot()
     def login_success(self)->None:
@@ -250,9 +258,9 @@ class RuleRunnerThread(QThread):
         Returns:
             None: This function does not return a value.
         """
-        self.process_next_rule()
-        self.login_worker.deleteLater()
         self.cleanup_thread(self.login_thread, "Login Thread")
+        self.process_next_rule()
+
 
     def process_next_rule(self)->None:
         """
@@ -396,7 +404,6 @@ class RuleRunnerThread(QThread):
         Returns:
             None: This function does not return a value.
         """
-
         self.close_down_driver()
         self.finished.emit()
         self.cleanup_thread(self,'RuleRunner Thread')
