@@ -1,5 +1,6 @@
 from time import sleep
 
+from PySide6.QtCore import Signal, Slot
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
@@ -26,6 +27,8 @@ class ConditionsWorker(QWorkerBase):
         rule (dict): The rule data used to configure the conditions.
     """
 
+    start_work = Signal()
+
     def __init__(self, driver: webdriver.Chrome, rule: dict):
         """
         Initializes the ConditionsWorker with the provided driver and rule data.
@@ -41,6 +44,7 @@ class ConditionsWorker(QWorkerBase):
         self.wELI = WebElementInteractions(self.driver)
         self._rule_condition_queues_source = "queues"
         self.wELI.send_msg.connect(self.logging)
+        self.start_work.connect(self.do_work)
 
     @property
     def rule_condition_queues_source(self) -> str:
@@ -66,6 +70,7 @@ class ConditionsWorker(QWorkerBase):
         self._rule_condition_queues_source = source
 
     @ErrorWrappers.qworker_web_raise_error
+    @Slot()
     def do_work(self) -> None:
         """
         Executes the steps required to process each condition within the rule, including setting
@@ -84,7 +89,7 @@ class ConditionsWorker(QWorkerBase):
             self.add_additional_condition(i)
 
             sleep(1)
-            self.finished.emit()
+        self.finished.emit()
 
     def set_provider_category(self, condition: dict, i: int) -> None:
         """
@@ -182,9 +187,11 @@ class ConditionsWorker(QWorkerBase):
             self.stats_worker = ConditionsStatsWorker(
                 self.driver, self, condition, index
             )
+            self.stats_worker.moveToThread(self.thread())
             self.stats_worker.send_logs.connect(self.logging)
+            self.stats_worker.error_occurred.connect(self.handle_child_error)
             self.finished.connect(self.stats_worker.deleteLater)
-            self.stats_worker.do_work()
+            self.stats_worker.start_work.emit()
 
     def add_additional_condition(self, index: int) -> None:
         """

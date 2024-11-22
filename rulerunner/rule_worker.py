@@ -1,6 +1,6 @@
 from time import sleep
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Slot
 from selenium import webdriver
 from selenium.common.exceptions import (
     NoSuchFrameException,
@@ -40,6 +40,7 @@ class RuleWorker(QWorkerBase):
 
     finished = Signal(str)
     error = Signal(bool)
+    start_work = Signal()
 
     def __init__(self, driver: webdriver.Chrome, rule: dict):
         """
@@ -56,7 +57,9 @@ class RuleWorker(QWorkerBase):
         self.wELI.send_msg.connect(self.logging)
         self.rule_rename_attempts = 0
         self.rule_name = rule["rule_name"]
+        self.start_work.connect(self.do_work)
 
+    @Slot()
     def do_work(self) -> None:
         """
         Executes the rule creation process by navigating through the form pages, setting up triggers, conditions,
@@ -120,9 +123,11 @@ class RuleWorker(QWorkerBase):
             None: This function does not return a value.
         """
         self.trigger = TriggerWorker(self.driver, self.rule)
+        self.trigger.moveToThread(self.thread())
+        self.trigger.error_occurred.connect(self.handle_child_error)
         self.trigger.send_logs.connect(self.logging)
         self.trigger.finished.connect(self.trigger.deleteLater)
-        self.trigger.do_work()
+        self.trigger.start_work.emit()
 
     def start_conditions_page(self) -> None:
         """
@@ -133,9 +138,11 @@ class RuleWorker(QWorkerBase):
         """
         self.conditions = ConditionsWorker(self.driver, self.rule)
         if "conditions" in self.rule and self.rule["conditions"]:
+            self.conditions.moveToThread(self.thread())
             self.conditions.send_logs.connect(self.logging)
+            self.conditions.error_occurred.connect(self.handle_child_error)
             self.conditions.finished.connect(self.conditions.deleteLater)
-            self.conditions.do_work()
+            self.conditions.start_work.emit()
 
     def start_actions_page(self) -> None:
         """
@@ -146,12 +153,14 @@ class RuleWorker(QWorkerBase):
         """
         self.actions = ActionsWorker(self.driver, self.rule)
         if "actions" in self.rule and self.rule["actions"]:
+            self.actions.moveToThread(self.thread())
             self.actions.rule_condition_queues_source = (
                 self.conditions.rule_condition_queues_source
             )
             self.actions.send_logs.connect(self.logging)
             self.actions.finished.connect(self.actions.deleteLater)
-            self.actions.do_work()
+            self.actions.error_occurred.connect(self.handle_child_error)
+            self.actions.start_work.emit()
 
     def switch_to_rule_module(self) -> None:
         """
@@ -213,7 +222,7 @@ class RuleWorker(QWorkerBase):
             '//*[contains(@id, "overlayButtonsLeft_cbDontAskLead")]',
             WaitConditions.CLICKABLE,
             raise_exception=False,
-            retries=1
+            retries=1,
         )
 
     def submit_rule(self) -> None:

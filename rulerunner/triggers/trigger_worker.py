@@ -1,5 +1,6 @@
 from time import sleep
 
+from PySide6.QtCore import Signal, Slot
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
@@ -23,6 +24,8 @@ class TriggerWorker(QWorkerBase):
         rule (dict): The rule data containing trigger information.
     """
 
+    start_work = Signal()
+
     def __init__(self, driver: webdriver.Chrome, rule: dict):
         """
         Initializes the TriggerWorker with the provided driver and rule data.
@@ -37,8 +40,10 @@ class TriggerWorker(QWorkerBase):
         self.rule = rule
         self.wELI = WebElementInteractions(self.driver)
         self.wELI.send_msg.connect(self.logging)
+        self.start_work.connect(self.do_work)
 
     @ErrorWrappers.qworker_web_raise_error
+    @Slot()
     def do_work(self) -> None:
         """
         Executes the trigger action by checking if the rule is frequency-based.

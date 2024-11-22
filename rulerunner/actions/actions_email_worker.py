@@ -1,5 +1,6 @@
 from time import sleep
 
+from PySide6.QtCore import Signal, Slot
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
@@ -30,6 +31,8 @@ class ActionsEmailWorker(QWorkerBase):
         index (int): The index of the action within the current rule's list of actions.
     """
 
+    start_work = Signal()
+
     def __init__(
         self,
         driver: webdriver.Chrome,
@@ -50,8 +53,10 @@ class ActionsEmailWorker(QWorkerBase):
         self.wELI = WebElementInteractions(self.driver)
         self._rule_condition_queues_source = actions_worker.rule_condition_queues_source
         self.wELI.send_msg.connect(self.logging)
+        self.start_work.connect(self.do_work)
 
     @ErrorWrappers.qworker_web_raise_error
+    @Slot()
     def do_work(self) -> None:
         """
         Executes the steps required to perform the email action, including navigating
