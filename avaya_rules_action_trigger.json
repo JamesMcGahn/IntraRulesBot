@@ -1,0 +1,49 @@
+{
+    "rules": [
+        {
+            "rule_name": "zzjmTest Rule 3",
+            "rule_category": "Other - Admin",
+            "action_based": {
+                "provider_category": "ACD",
+                "provider_instance": "Avaya Test ACD",
+                "provider_condition": "Agents in Other - By Queue",
+                "details": {
+                    "equality_operator": "Equal To",
+                    "user_list": "All Users",
+                    "state": [
+                        {
+                            "code": "Ready",
+                            "aux": ""
+                        }
+                    ]
+                }
+            },
+            "conditions": [
+                {
+                    "provider_category": "ACD",
+                    "provider_instance": "Avaya Test ACD",
+                    "provider_condition": "Agents in Other - By Queue",
+                    "details": {
+                        "condition_type": "stats",
+                        "equality_operator": "Greater Than",
+                        "equality_threshold": 1,
+                        "queues_source": "queues"
+                    }
+                }
+            ],
+            "actions": [
+                {
+                    "provider_category": "Communications",
+                    "provider_instance": "Email Provider Instance",
+                    "provider_condition": "Send Email",
+                    "details": {
+                        "action_type": "email",
+                        "email_subject": "Test Subject",
+                        "email_address": "test@example.com",
+                        "email_body": "Test body"
+                    }
+                }
+            ]
+        }
+    ]
+}
