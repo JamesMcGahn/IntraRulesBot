@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 from base import ErrorWrappers, QWorkerBase
 
 from ..utils import WaitConditions, WebElementInteractions
-from .action_based_trigger_worker import ActionBasedTriggerWorker
+from .trigger_action_based_worker import TriggerActionBasedWorker
 
 
 class TriggerWorker(QWorkerBase):
@@ -116,7 +116,7 @@ class TriggerWorker(QWorkerBase):
 
         set_action_based_btn.click()
 
-        self.stats_worker = ActionBasedTriggerWorker(self.driver, self.rule)
+        self.stats_worker = TriggerActionBasedWorker(self.driver, self.rule)
         self.stats_worker.moveToThread(self.thread())
         self.stats_worker.send_logs.connect(self.logging)
         self.stats_worker.error_occurred.connect(self.handle_child_error)

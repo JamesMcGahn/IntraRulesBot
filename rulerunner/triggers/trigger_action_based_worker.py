@@ -7,9 +7,10 @@ from selenium.webdriver.common.by import By
 from base import ErrorWrappers, QWorkerBase
 
 from ..utils import WebElementInteractions
+from .trigger_action_state_worker import TriggerActionStateWorker
 
 
-class ActionBasedTriggerWorker(QWorkerBase):
+class TriggerActionBasedWorker(QWorkerBase):
     """
     Worker class responsible for handling Action Based Triggers within rules.
     This worker interacts with the UI to set up Action Based Triggers's provider categories, instances,
@@ -61,6 +62,7 @@ class ActionBasedTriggerWorker(QWorkerBase):
         self.set_provider_category(action_based)
         self.set_provider_instance(action_based)
         self.set_provider_condition(action_based)
+        self.set_action_state(action_based)
 
     def set_provider_category(self, action_trigger: dict) -> None:
         """
@@ -76,7 +78,7 @@ class ActionBasedTriggerWorker(QWorkerBase):
         action_trigger_category_dropdown = self.wELI.select_item_from_list(
             20,
             By.XPATH,
-            '//*[contains(@id, "overlayContent_selectAction_radMenuCategory")]/ul/li',
+            '//*[contains(@id, "overlayContent_selectTrigger_radMenuCategory")]/ul/li',
             user_action_trigger_category_selection,
         )
         if not action_trigger_category_dropdown:
@@ -100,7 +102,7 @@ class ActionBasedTriggerWorker(QWorkerBase):
         provider_instance_selection = self.wELI.select_item_from_list(
             20,
             By.XPATH,
-            '//*[contains(@id, "overlayContent_selectCondition_radMenuProviderInstance")]/ul/li',
+            '//*[contains(@id, "overlayContent_selectTrigger_radMenuProviderInstance")]/ul/li',
             user_provider_instance,
         )
         if not provider_instance_selection:
@@ -125,7 +127,7 @@ class ActionBasedTriggerWorker(QWorkerBase):
         provider_condition_selection = self.wELI.select_item_from_list(
             20,
             By.XPATH,
-            '//*[contains(@id, "overlayContent_selectCondition_radMenuItem")]/ul/li',
+            '//*[contains(@id, "overlayContent_selectTrigger_radMenuItem")]/ul/li',
             user_provider_condition,
             5,
         )
@@ -135,3 +137,12 @@ class ActionBasedTriggerWorker(QWorkerBase):
             )
 
         sleep(1)
+
+    def set_action_state(self, action_trigger: dict):
+        if action_trigger["details"]["action_type"] == "state":
+            self.state_worker = TriggerActionStateWorker(self.driver, action_trigger)
+            self.state_worker.moveToThread(self.thread())
+            self.state_worker.send_logs.connect(self.logging)
+            self.state_worker.error_occurred.connect(self.handle_child_error)
+            self.finished.connect(self.state_worker.deleteLater)
+            self.state_worker.start_work.emit()
