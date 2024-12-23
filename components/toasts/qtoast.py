@@ -5,7 +5,7 @@ from .pyqttoast import Toast, ToastPosition, ToastPreset
 
 class QToast(Toast):
     def __init__(self, parent, status, title, message):
-        super().__init__()
+        super().__init__(parent)
         self.setDuration(5000)
         self.message = message
         self.title = title
