@@ -16,7 +16,7 @@ from services.settings.enums import FIELDSTATESTATUS, SETTINGSCATEGORIES
 from services.settings.events import FieldStateEvent
 from services.settings.models import LogSettings
 from components.toasts.qtoast.enums import QTOASTSTATUS
-from .tab_settings_ui import TabLogSettingsUI
+from .tab_settings_ui import TabSettingsBaseUI
 from .tab_ui_helper import SettingsUIHelper
 
 
@@ -38,7 +38,7 @@ class TabSettingsBase(QWidgetBase):
         self.field_registry = field_registry
 
         self.sui = SettingsUIHelper(settings_verify, field_registry)
-        self.view = TabLogSettingsUI(self.tab_id, settings, self.sui)
+        self.view = TabSettingsBaseUI(self.tab_id, settings, self.sui)
         self.layout.addWidget(self.view)
 
         # SIGNAL CONNECTIONS

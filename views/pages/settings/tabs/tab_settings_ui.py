@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from services.settings.models import LogSettings
 
-from dataclasses import asdict, fields
+from dataclasses import fields
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
@@ -15,11 +15,11 @@ from PySide6.QtWidgets import (
     QSpacerItem,
     QWidget,
 )
-
+from components.helpers import WidgetFactory
 from ....base.field_registry import FieldRegistry
 
 
-class TabLogSettingsUI(QWidget):
+class TabSettingsBaseUI(QWidget):
     folder_submit = Signal(str, str)
     secure_setting_change = Signal(str, str)
 
@@ -38,16 +38,24 @@ class TabLogSettingsUI(QWidget):
 
         self.hspacer = QSpacerItem(1, 1, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.hspacer1 = QSpacerItem(1, 1, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self.settings_page_layout.addItem(self.hspacer)
+        # self.settings_page_layout.addItem(self.hspacer)
 
         # self.settings_page_layout.addItem(hspacer)
         self.settings_grid_layout = QGridLayout()
-        self.settings_page_layout.addLayout(self.settings_grid_layout)
+        # self.settings_page_layout.addLayout(self.settings_grid_layout)
 
         self.columns = 4
 
-        self.settings_page_layout.addItem(self.hspacer1)
+        # self.settings_page_layout.addItem(self.hspacer1)
 
+        inner_layout = WidgetFactory.create_form_box(
+            "",
+            self.settings_page_layout,
+            [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
+            "#f58220",
+            max_width=800,
+        )
+        inner_layout.addRow(self.settings_grid_layout)
         # self.fields_to_map = settings_mapping[self.tab_id]
 
         for field in fields(self.settings):
@@ -64,4 +72,4 @@ class TabLogSettingsUI(QWidget):
             self.vspacer2, self.settings_grid_layout.count() // self.columns, 2
         )
 
-        self.settings_page_layout.addItem(self.vspacer3)
+        # self.settings_page_layout.addItem(self.vspacer3)

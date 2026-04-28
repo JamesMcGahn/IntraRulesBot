@@ -96,7 +96,7 @@ class SettingsUIHelper(QObject):
         label = QLabel(meta.label_text)
         label.setMinimumWidth(143)
         label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
-        label.setStyleSheet("color:white;")
+        label.setStyleSheet("color:black;")
 
         verify_icon_button = QPushButton()
         self.field_registery.register_field(
