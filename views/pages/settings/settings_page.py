@@ -8,7 +8,20 @@ from .settings_page_ui import SettingsPageView
 
 
 class SettingsPage(QWidgetBase):
-    send_settings = Signal(str, str, int, int, int, bool)
+    """
+    A controller class for managing the (Application) Settings page, which handles application settings and
+    interacts with the SettingsPageView.
+
+    Attributes:
+        ui (SettingsPageView): The view class responsible for displaying the settings.
+        layout (QVBoxLayout): The layout containing the UI components for the settings page.
+
+    Signals:
+        send_log_settings (Signal): sends the updated log settings  (file path, file name, file max mbs,
+                                    backup count, keep files days, turn off print)
+    """
+
+    send_log_settings = Signal(str, str, int, int, int, bool)
 
     def __init__(self):
         super().__init__()
@@ -23,7 +36,7 @@ class SettingsPage(QWidgetBase):
 
         self.settings = LogSettingsModel()
         self.settings.success.connect(self.success_save)
-        self.send_settings.connect(self.settings.save_log_settings)
+        self.send_log_settings.connect(self.settings.save_log_settings)
 
         (
             log_file_path,
@@ -52,7 +65,7 @@ class SettingsPage(QWidgetBase):
             log_turn_off_print,
         ) = self.ui.get_log_settings()
         self.logging("Saving Logging Settings", "INFO")
-        self.send_settings.emit(
+        self.send_log_settings.emit(
             log_file_path,
             log_file_name,
             log_file_max_mbs,

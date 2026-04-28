@@ -1,23 +1,19 @@
-from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QTextEdit, QVBoxLayout, QWidget
 
 from components.helpers import WidgetFactory
 from components.layouts import ScrollArea
+
 from .logs_page_css import SCROLL_AREA_STYLES
+
 
 class LogsPageView(QWidget):
     """
-    A UI component that represents the logs display page.
+    A UI component that represents the Logs Page.
 
-    Signals:
-        send_creds (Signal[str, str, str, str]): A placeholder signal that may be used
-            for future functionality to send credentials.
 
     Attributes:
         log_display (QTextEdit): A text edit widget used to display log entries.
     """
-
-    send_creds = Signal(str, str, str, str)
 
     def __init__(self):
         super().__init__()

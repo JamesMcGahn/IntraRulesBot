@@ -51,6 +51,9 @@ class IconOnlyNavBar(QWidget):
         self.ui.logs_btn_ico.toggled.connect(self.btn_checked)
         self.ui.logs_btn_ico.clicked.connect(self.btn_clicked)
 
+        self.ui.bookmarks_btn_ico.toggled.connect(self.btn_checked)
+        self.ui.bookmarks_btn_ico.clicked.connect(self.btn_clicked)
+
         self.ui.settings_btn_ico.toggled.connect(self.btn_checked)
         self.ui.settings_btn_ico.clicked.connect(self.btn_clicked)
 
@@ -112,6 +115,8 @@ class IconOnlyNavBar(QWidget):
                 self.ui.rules_btn_ico.setChecked(checked)
             case "logs_btn_ict":
                 self.ui.logs_btn_ico.setChecked(checked)
+            case "bookmarks_btn_ict":
+                self.ui.bookmarks_btn_ico.setChecked(checked)
             case "settings_btn_ict":
                 self.ui.settings_btn_ico.setChecked(checked)
             case "signout_btn_ict":

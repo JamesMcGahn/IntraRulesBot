@@ -54,7 +54,9 @@ class MainScreen(QWidgetBase):
             self.ui.stackedWidget.setCurrentIndex(1)
         elif btn_name.startswith("logs_btn_"):
             self.ui.stackedWidget.setCurrentIndex(2)
-        elif btn_name.startswith("settings_btn_"):
+        elif btn_name.startswith("bookmarks_btn_"):
             self.ui.stackedWidget.setCurrentIndex(3)
+        elif btn_name.startswith("settings_btn_"):
+            self.ui.stackedWidget.setCurrentIndex(4)
         elif btn_name.startswith("signout_btn"):
             self.close_main_window.emit()

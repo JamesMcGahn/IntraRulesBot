@@ -62,6 +62,10 @@ class IconTextNavBarView(QWidget):
         self.logs_btn_ict.setObjectName("logs_btn_ict")
         self.icon_btn_layout.addWidget(self.logs_btn_ict)
 
+        self.bookmarks_btn_ict = QPushButton(" Rule Sets")
+        self.bookmarks_btn_ict.setObjectName("bookmarks_btn_ict")
+        self.icon_btn_layout.addWidget(self.bookmarks_btn_ict)
+
         self.icon_text_nav_vlayout.addLayout(self.icon_btn_layout)
         # Spacer to push settings and signout buttons to the bottom
         self.verticalSpacer_3 = QSpacerItem(
@@ -82,6 +86,11 @@ class IconTextNavBarView(QWidget):
             (self.keys_btn_ict, ":/images/key_off.png", ":/images/key_on.png"),
             (self.rules_btn_ict, ":/images/edit_off.png", ":/images/edit_on.png"),
             (self.logs_btn_ict, ":/images/log_off.png", ":/images/log_on.png"),
+            (
+                self.bookmarks_btn_ict,
+                ":/images/bookmark_off.png",
+                ":/images/bookmark_on.png",
+            ),
             (
                 self.settings_btn_ict,
                 ":/images/settings_off.png",

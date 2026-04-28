@@ -24,7 +24,7 @@ from translators import GenerateRuleObject
 
 class RulesPageView(QWidget):
     """
-    A view class that provides the UI for managing rules in the application.
+    A UI component that represents the Rules Page.
     This view includes buttons for navigating, adding, cloning, deleting, and saving rules,
     along with a validation feedback button and a progress bar for operations.
 
@@ -207,6 +207,7 @@ class RulesPageView(QWidget):
         self.copy_field = EditorActionButton("")
         self.trash = EditorActionButton("")
         self.delete_all = EditorActionButton("")
+        self.bookmark = EditorActionButton("")
 
         actionBtns = [
             (
@@ -256,6 +257,12 @@ class RulesPageView(QWidget):
                 "Delete All Rules",
                 ":/images/delete_all_off_b.png",
                 ":/images/delete_all_on.png",
+            ),
+            (
+                self.bookmark,
+                "Save Rules to Rule Sets",
+                ":/images/bookmark_off_b.png",
+                ":/images/bookmark_on.png",
             ),
         ]
 
@@ -545,7 +552,7 @@ class RulesPageView(QWidget):
         Returns:
             None: This function does not return a value.
         """
-        
+
         self.current_rule_index = self.stacked_widget.currentIndex()
         self.prev_button.setDisabled(self.current_rule_index == 0)
         self.next_button.setDisabled(

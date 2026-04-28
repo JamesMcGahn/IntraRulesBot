@@ -63,6 +63,10 @@ class IconOnlyNavBarView(QWidget):
         self.logs_btn_ico.setObjectName("logs_btn_ico")
         self.icon_btn_layout.addWidget(self.logs_btn_ico)
 
+        self.bookmarks_btn_ico = QPushButton()
+        self.bookmarks_btn_ico.setObjectName("bookmarks_btn_ico")
+        self.icon_btn_layout.addWidget(self.bookmarks_btn_ico)
+
         self.settings_btn_ico = QPushButton()
         self.settings_btn_ico.setObjectName("settings_btn_ico")
 
@@ -73,6 +77,11 @@ class IconOnlyNavBarView(QWidget):
             (self.keys_btn_ico, ":/images/key_off.png", ":/images/key_on.png"),
             (self.rules_btn_ico, ":/images/edit_off.png", ":/images/edit_on.png"),
             (self.logs_btn_ico, ":/images/log_off.png", ":/images/log_on.png"),
+            (
+                self.bookmarks_btn_ico,
+                ":/images/bookmark_off.png",
+                ":/images/bookmark_on.png",
+            ),
             (
                 self.settings_btn_ico,
                 ":/images/settings_off.png",

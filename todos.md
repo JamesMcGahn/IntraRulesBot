@@ -2,6 +2,14 @@
 
 #### TO-DO NOW
 
+- [ ] :#FEATURE : Default Provider Rule Sets
+  - [ ] : #TODO : Ruleset Model
+  - [ ] : #TODO : Ruleset Page
+    - [ ] : #TODO : Display User Saved Rulesets
+    - [ ] : #TODO : Display Default Rulesets
+  - [ ] : #TODO : Allow User to Load Ruleset
+  - [ ] : #TODO : Allow User to Save Ruleset
+
 #### TO-DO LATER
 
 - [ ] :#TODO : Setting to turn off Toasts
