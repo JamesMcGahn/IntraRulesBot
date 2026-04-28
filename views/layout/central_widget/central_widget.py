@@ -7,7 +7,6 @@ if TYPE_CHECKING:
 
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QLinearGradient, QPainter, QPaintEvent
-from PySide6.QtWidgets import QGridLayout
 
 from base import QWidgetBase
 
@@ -26,11 +25,6 @@ class CentralWidget(QWidgetBase):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.addWidget(self.ui)
         # main_layout = QVBoxLayout(self)
-
-        self.gridLayout = QGridLayout(self)
-        self.gridLayout.setSpacing(0)
-        self.gridLayout.setObjectName("gridLayout")
-        self.gridLayout.setContentsMargins(0, 0, 0, 0)
 
         self.icon_only_widget = IconOnlyNavBar()
         self.icon_text_widget = IconTextNavBar()

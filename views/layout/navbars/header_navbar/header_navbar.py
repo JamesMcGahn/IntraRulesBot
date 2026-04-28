@@ -47,8 +47,7 @@ class HeaderNavBar(QWidgetBase):
         self.setStyleSheet(STYLES)
         # View setup
         self.ui = HeaderNavBarView()
-        self.layout = self.ui.layout()
-        self.setLayout(self.layout)
+        self.layout.addWidget(self.ui)
         # Connect signals
         self.ui.hamburger_icon_btn.toggled.connect(self.hamburger_icon_btn_toggled)
         self.ui.open_file_btn.clicked.connect(self.open_json_file)
