@@ -40,8 +40,8 @@ class RulesPage(QWidgetBase):
         self.setStyleSheet(STYLES)
 
         self.ui = RulesPageView()
-        self.layout = self.ui.layout()
-        self.setLayout(self.layout)
+        self.layout.addWidget(self.ui)
+
         self.forms_errors = []
         self.total_errors = 0
         self.rule_set_data = None

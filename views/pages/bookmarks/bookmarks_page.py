@@ -19,8 +19,7 @@ class BookMarksPage(QWidgetBase):
         self.setStyleSheet(STYLES)
         # Initialize the UI for the LogsPage
         self.ui = BookMarksPageView()
-        self.layout = self.ui.layout()
-        self.setLayout(self.layout)
+        self.layout.addWidget(self.ui)
 
         self.rule_sets = RuleSetsModel()
         self.rules_model = RulesModel()

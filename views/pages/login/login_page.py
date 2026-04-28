@@ -31,8 +31,7 @@ class LoginPage(QWidgetBase):
         self.setStyleSheet(STYLES)
         # Initialize the view
         self.ui = LoginPageView()
-        self.layout = self.ui.layout()
-        self.setLayout(self.layout)
+        self.layout.addWidget(self.ui)
 
         self.ui.save_btn.clicked.connect(self.save_creds)
         # Initialize the login model to handle credentials

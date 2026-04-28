@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from controllers import ControllerFactory
+
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QLinearGradient, QPainter, QPaintEvent
 from PySide6.QtWidgets import QGridLayout
@@ -6,15 +13,18 @@ from base import QWidgetBase
 
 from ..main_screen import MainScreen
 from ..navbars import HeaderNavBar, IconOnlyNavBar, IconTextNavBar
+from .central_widget_ui import CentralWidgetView
 
 
 class CentralWidget(QWidgetBase):
     close_main_window = Signal()
 
-    def __init__(self):
+    def __init__(self, controller_factory: ControllerFactory):
         super().__init__()
         self.setAttribute(Qt.WA_StyledBackground, True)
-
+        self.ui = CentralWidgetView()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.addWidget(self.ui)
         # main_layout = QVBoxLayout(self)
 
         self.gridLayout = QGridLayout(self)
@@ -26,12 +36,11 @@ class CentralWidget(QWidgetBase):
         self.icon_text_widget = IconTextNavBar()
 
         self.header_widget = HeaderNavBar()
-        self.main_screen_widget = MainScreen()
-        self.gridLayout.addWidget(self.main_screen_widget, 2, 3, 1, 1)
-        self.gridLayout.addWidget(self.icon_only_widget, 0, 1, 3, 1)
-        self.gridLayout.addWidget(self.icon_text_widget, 0, 2, 3, 1)
-        self.gridLayout.addWidget(self.header_widget, 0, 3, 1, 1)
-        self.setLayout(self.gridLayout)
+        self.main_screen_widget = MainScreen(controller_factory=controller_factory)
+        self.ui.add_widget_to_grid(self.main_screen_widget, 2, 3, 1, 1)
+        self.ui.add_widget_to_grid(self.icon_only_widget, 0, 1, 3, 1)
+        self.ui.add_widget_to_grid(self.icon_text_widget, 0, 2, 3, 1)
+        self.ui.add_widget_to_grid(self.header_widget, 0, 3, 1, 1)
 
         self.main_screen_widget.send_logs.connect(self.logging)
         self.appshutdown.connect(self.main_screen_widget.notified_app_shutting)

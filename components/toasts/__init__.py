@@ -1,3 +1,3 @@
-from .qtoast import QToast
+from .qtoast.qtoast import QToast
 
 __all__ = ["QToast"]
