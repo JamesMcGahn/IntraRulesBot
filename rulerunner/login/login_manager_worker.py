@@ -12,6 +12,7 @@ from ..utils import WaitConditions, WebElementInteractions
 
 class LoginManagerWorker(QWorkerBase):
     start_work = Signal()
+    success = Signal()
 
     """
     Worker class responsible for handling the login process.
@@ -66,6 +67,9 @@ class LoginManagerWorker(QWorkerBase):
         """
         try:
             self.log_thread()
+            WebDriverWait(self.driver, 20).until(
+                lambda d: d.execute_script("return document.readyState") == "complete"
+            )
             self.enter_login_info()
             self.wait_for_session_alert()
             self.wait_for_success()
@@ -156,8 +160,10 @@ class LoginManagerWorker(QWorkerBase):
             self.logging("Navigating to the Rules Page...", "INFO")
             self.driver.get(self.url + "/ManagerConsole/Delivery/Rules.aspx")
 
-            self.finished.emit()
+            self.success.emit()
         else:
             self.logging("Failed to load the Rules Page", "ERROR")
             self.error.emit()
+
         self.logging("Ending Login Worker Thread...", "INFO")
+        self.finished.emit()

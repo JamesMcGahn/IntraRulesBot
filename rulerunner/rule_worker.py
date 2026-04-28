@@ -58,6 +58,7 @@ class RuleWorker(QWorkerBase):
         self.rule_rename_attempts = 0
         self.rule_name = rule["rule_name"]
         self.start_work.connect(self.do_work)
+        self.stop_rule_worker = False
 
     @Slot()
     def do_work(self) -> None:
@@ -88,14 +89,33 @@ class RuleWorker(QWorkerBase):
 
                 self.set_rule_name(self.rule_name)
                 self.start_trigger_page()
+                if self.stop_rule_worker:
+                    return
+
                 self.next_page()
+
                 self.start_conditions_page()
+                if self.stop_rule_worker:
+                    return
+
                 self.next_page()
+
                 self.start_actions_page()
+                if self.stop_rule_worker:
+                    return
+
                 self.set_rule_category()
+                if self.stop_rule_worker:
+                    return
+
                 self.switch_to_rule_module()
                 self.next_page()
+                if self.stop_rule_worker:
+                    return
+
                 self.submit_rule()
+                if self.stop_rule_worker:
+                    return
 
                 if self.rule_rename_attempts == 0:
                     self.finished.emit(self.rule_name)
@@ -374,3 +394,7 @@ class RuleWorker(QWorkerBase):
         except TimeoutException:
             self.logging(f"Rule: {self.rule_name} has been submitted.", "INFO")
             return False
+
+    def handle_child_error(self, msg):
+        self.stop_rule_worker = True
+        self.error.emit(True)

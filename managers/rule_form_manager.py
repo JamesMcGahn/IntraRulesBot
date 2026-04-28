@@ -107,6 +107,7 @@ class RuleFormManager:
 
         self.rf_add_general_settings(rule, rule_inputs, rule_layout)
         self.rf_add_trigger_settings(rule, rule_inputs, rule_layout)
+        self.rf_add_action_based_settings(rule, rule_inputs, rule_layout)
         self.rf_add_conditions_settings(rule, rule_inputs, rule_layout)
         self.rf_add_actions_settings(rule, rule_inputs, rule_layout)
 
@@ -223,6 +224,36 @@ class RuleFormManager:
 
             rule_input["frequency_based"] = frequency_based_set
 
+    def rf_add_action_based_settings(
+        self, rule: dict, rule_input: dict, rule_layout: QFormLayout
+    ) -> None:
+        """
+        Adds condition settings fields to the form layout.
+
+        Args:
+            rule (dict): The rule data containing condition settings.
+            rule_input (dict): The input fields for the rule.
+            rule_layout (QFormLayout): The layout for the form.
+
+        Returns:
+            None: This function does not return a value.
+        """
+
+        if "action_based" in rule:
+            action_based_settings_layout = WidgetFactory.create_form_box(
+                "Action Trigger Settings",
+                rule_layout,
+                [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
+                "#f58220",
+                drop_shadow_effect=False,
+                title_font_size=13,
+                title_color="#fcfcfc",
+            )
+
+            rule_input["action_based"] = self.create_action_based_fields(
+                action_based_settings_layout, rule["action_based"]
+            )
+
     def rf_add_conditions_settings(
         self, rule: dict, rule_input: dict, rule_layout: QFormLayout
     ) -> None:
@@ -300,7 +331,7 @@ class RuleFormManager:
         for error in validate.iter_errors(data_rule):
             self.form_errors.append(error)
             total_errors = total_errors + 1
-
+        print(self._rule_inputs)
         self.highlight_errors(self._rule_inputs)
 
         return (total_errors, self.form_errors, data_rule)
@@ -317,6 +348,7 @@ class RuleFormManager:
         """
 
         def set_sheet(el, status=False):
+            print(el)
             if status:
                 color = "green"
             else:
@@ -327,7 +359,7 @@ class RuleFormManager:
         def turn_green(field_refs):
             if isinstance(field_refs, ValidationError):
                 return
-
+            # print(field_refs)
             for key, field in field_refs.items():
                 if key == "guid":
                     continue
@@ -351,10 +383,128 @@ class RuleFormManager:
             return current
 
         for error in self.form_errors:
+            print(error)
             path = error.path
             element = get_value_from_path(rule, path)
             if element is not None:
                 set_sheet(element)
+
+    def create_action_based_fields(
+        self, parent_layout: QFormLayout, condition: dict
+    ) -> dict:
+        """
+        Creates form fields for the given condition.
+
+        Args:
+            parent_layout (QFormLayout): The parent layout for the condition fields.
+            condition (dict): The condition data used to generate the form fields.
+
+        Returns:
+            dict: A dictionary of form fields for the condition.
+        """
+        # Common fields
+        action_based_data = {}
+
+        action_based_general_settings_layout = WidgetFactory.create_form_box(
+            "Action Trigger Provider Settings",
+            parent_layout,
+            False,
+            object_name="Action-Based-Provider",
+            drop_shadow_effect=False,
+            title_font_size=11,
+        )
+
+        action_based_fields = [
+            (
+                condition["provider_category"],
+                "Provider Category:",
+                "provider_category",
+            ),
+            (
+                condition["provider_instance"],
+                "Provider Instance:",
+                "provider_instance",
+            ),
+            (
+                condition["provider_condition"],
+                "Provider Condition:",
+                "provider_condition",
+            ),
+        ]
+
+        for initial_value, label_text, rule_input_path in action_based_fields:
+            self.create_text_input_row(
+                initial_value,
+                label_text,
+                action_based_general_settings_layout,
+                action_based_data,
+                rule_input_path,
+            )
+
+        details_data = {}
+
+        # Check details for condition type
+        details = condition["details"]
+        if details["action_type"] == "state":
+            title = condition["provider_condition"]
+            details_layout = WidgetFactory.create_form_box(
+                f"{title} Settings",
+                parent_layout,
+                False,
+                object_name="Action-Trigger-Details-State",
+                drop_shadow_effect=False,
+                title_font_size=11,
+            )
+            state_layout = WidgetFactory.create_form_box(
+                "State",
+                details_layout,
+                False,
+                object_name="Action-Trigger-State",
+                drop_shadow_effect=False,
+                title_font_size=11,
+            )
+
+            state_data = []
+            for state in details["state"]:
+                state_obj = {}
+                self.create_text_input_row(
+                    state["code"], "State", state_layout, state_obj, "code"
+                )
+                self.create_text_input_row(
+                    state["aux"], "Aux", state_layout, state_obj, "aux"
+                )
+                state_data.append(state_obj)
+
+            detail_fields = [
+                (
+                    details["action_type"],
+                    "Action Type:",
+                    "action_type",
+                ),
+                (
+                    details["equality_operator"],
+                    "Equality Operator:",
+                    "equality_operator",
+                ),
+                (
+                    details["user_list"],
+                    "User List:",
+                    "user_list",
+                ),
+            ]
+
+            for initial_value, label_text, rule_input_path in detail_fields:
+                self.create_text_input_row(
+                    initial_value,
+                    label_text,
+                    details_layout,
+                    details_data,
+                    rule_input_path,
+                )
+
+        action_based_data["details"] = details_data
+        action_based_data["details"]["state"] = state_data
+        return action_based_data
 
     def create_condition_fields(
         self, parent_layout: QFormLayout, condition: dict

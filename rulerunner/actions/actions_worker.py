@@ -112,7 +112,7 @@ class ActionsWorker(QWorkerBase):
         )
         if not action_category_dropdown:
             raise ValueError(
-                f"For Condition {i+1} - Unable to select provider category: {action_category_dropdown}"
+                f"For Condition {i+1} - Unable to select provider category: {user_action_category_selection}"
             )
         sleep(1)
 

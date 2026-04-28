@@ -11,6 +11,56 @@ RULES_SCHEMA = {
             },
             "required": ["time_interval"],
         },
+        "action_based": {
+            "type": "object",
+            "properties": {
+                "provider_category": {"type": "string", "enum": ["ACD"]},
+                "provider_instance": {"type": "string", "minLength": 3},
+                "provider_condition": {"type": "string", "minLength": 3},
+                "details": {
+                    "type": "object",
+                    "properties": {
+                        "action_type": {"type": "string", "enum": ["state"]},
+                        "state": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "code": {"type": "string", "minLength": 5},
+                                    "aux": {"type": "string"},
+                                },
+                                "required": ["code", "aux"],
+                            },
+                        },
+                        "equality_operator": {
+                            "type": "string",
+                            "enum": ["Equal To", "Not Equal To"],
+                        },
+                        "user_list": {
+                            "type": "string",
+                            "default": "All Users",
+                            "minLength": 3,
+                        },
+                    },
+                    "required": ["action_type"],
+                    "anyOf": [
+                        {
+                            "if": {"properties": {"action_type": {"const": "state"}}},
+                            "then": {
+                                "required": ["state", "equality_operator", "user_list"]
+                            },
+                        }
+                    ],
+                },
+            },
+            "required": [
+                "provider_category",
+                "provider_instance",
+                "provider_condition",
+                "details",
+            ],
+        },
         "conditions": {
             "type": "array",
             "items": {
@@ -26,7 +76,17 @@ RULES_SCHEMA = {
                                 "type": "string",
                                 "enum": ["stats", "state"],
                             },
-                            "equality_operator": {"type": "string","enum": ["Equal To","Greater Than","Greater Than or Equal To","Less Than","Less Than or Equal To","Not Equal To"]},
+                            "equality_operator": {
+                                "type": "string",
+                                "enum": [
+                                    "Equal To",
+                                    "Greater Than",
+                                    "Greater Than or Equal To",
+                                    "Less Than",
+                                    "Less Than or Equal To",
+                                    "Not Equal To",
+                                ],
+                            },
                             "equality_threshold": {"type": "number", "minimum": 1},
                             "queues_source": {
                                 "type": "string",

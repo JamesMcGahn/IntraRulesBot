@@ -7,6 +7,7 @@ from selenium.webdriver.common.by import By
 from base import ErrorWrappers, QWorkerBase
 
 from ..utils import WaitConditions, WebElementInteractions
+from .trigger_action_based_worker import TriggerActionBasedWorker
 
 
 class TriggerWorker(QWorkerBase):
@@ -52,9 +53,13 @@ class TriggerWorker(QWorkerBase):
         Returns:
             None: This function does not return a value.
         """
+        self.log_thread()
         if "frequency_based" in self.rule:
-            self.log_thread()
+
             self.set_frequency_based()
+
+        if "action_based" in self.rule:
+            self.set_action_based()
         self.finished.emit()
 
     def set_frequency_based(self) -> None:
@@ -92,3 +97,28 @@ class TriggerWorker(QWorkerBase):
             raise ValueError
 
         sleep(1)
+
+    def set_action_based(self) -> None:
+        """
+        Sets the action based trigger for the rule.
+
+        Returns:
+            None: This function does not return a value.
+        """
+        self.logging("Setting rule frequency time interval...", "INFO")
+        set_action_based_btn = self.wELI.wait_for_element(
+            20,
+            By.XPATH,
+            '//*[contains(@id, "overlayContent_lblAddEventSetFrequency")]',
+            WaitConditions.CLICKABLE,
+            raise_exception=True,
+        )
+
+        set_action_based_btn.click()
+
+        self.stats_worker = TriggerActionBasedWorker(self.driver, self.rule)
+        self.stats_worker.moveToThread(self.thread())
+        self.stats_worker.send_logs.connect(self.logging)
+        self.stats_worker.error_occurred.connect(self.handle_child_error)
+        self.finished.connect(self.stats_worker.deleteLater)
+        self.stats_worker.start_work.emit()
