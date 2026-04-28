@@ -9,6 +9,7 @@ from components.helpers import StyleHelper
 from resources import resources_rc
 from services.logger import Logger
 from views.layout import CentralWidget
+from context import AppContext
 
 
 class MainWindow(QMainWindow):
@@ -24,6 +25,8 @@ class MainWindow(QMainWindow):
         self.resize(873, 800)
         self.setMaximumSize(QSize(873, 800))
         self.setMinimumSize(QSize(873, 800))
+
+        self.context = AppContext()
         # Load and set fonts
         font_id_reg = QFontDatabase.addApplicationFont(":/fonts/OpenSans-Regular.ttf")
         QFontDatabase.addApplicationFont(":/fonts/OpenSans-Bold.ttf")
