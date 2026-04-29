@@ -9,25 +9,24 @@ project_dir = .
 
 # project_dir = ./
 # source file path
-input_file = C:\Users\james.mcgahn\Documents\IntraRulesBot\main.py
+input_file = /Users/jamesmcgahn/Desktop/Code Projects/IntraRulesBot/main.py
 
 # directory where exec is stored
-exec_directory = C:\Users\james.mcgahn\Documents\IntraRulesBot\build
+exec_directory = /Users/jamesmcgahn/Desktop/Code Projects/IntraRulesBot/build
 
 # path to .pyproject project file
 project_file = 
 
 # application icon
-icon = C:\Users\james.mcgahn\Documents\IntraRulesBot\resources\system_icons\logo48_48.ico
+icon = /Users/jamesmcgahn/Desktop/Code Projects/IntraRulesBot/.venv/lib/python3.12/site-packages/PySide6/scripts/deploy_lib/pyside_icon.icns
 
 [python]
 
 # python path
-python_path = C:\Users\james.mcgahn\Documents\IntraRulesBot\.venv\Scripts\python.exe
+python_path = /Users/jamesmcgahn/Desktop/Code Projects/IntraRulesBot/.venv/bin/python
 
-#python_path = /Users/jamesmcgahn/Documents/GitHub/IntraRulesBot/.venv/bin/python
 # python packages to install
-packages = Nuitka==2.4.8,pywin32==307
+packages = Nuitka==2.4.8
 
 # buildozer = for deploying Android application
 android_packages = buildozer==1.5.0,cython==0.29.33
@@ -42,7 +41,7 @@ qml_files =
 excluded_qml_plugins = 
 
 # qt modules used. comma separated
-modules = Gui,Core,Widgets
+modules = Widgets,Gui,Core,DBus
 
 # qt plugins used by the application
 plugins = accessiblebridge,styles,egldeviceintegrations,xcbglintegrations,iconengines,platforminputcontexts,platforms/darwin,platforms,generic,imageformats,platformthemes
