@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..base.models import JobRequest
     from .models import ValidationRequest, SettingsValidatePayload
 
-    from .base_validator import BaseValidator
     from settings.models import SettingsFieldMeta
     from .settings_meta_provider import SettingsMetaProvider
 
@@ -40,7 +39,7 @@ class SettingsValidationService(QObjectBase):
         )
 
         if not field_meta:
-            # Send fail task
+            # TODO: # Send fail task
             return
 
         result = field_meta.verify(payload.field, payload.value)
