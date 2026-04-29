@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from context import AppContext
 
-from .models import SettingsPageControllers
+from .models import SettingsPageControllers, TopNavControllers
 
 
 class ControllerFactory:
@@ -14,3 +14,6 @@ class ControllerFactory:
 
     def create_settings_page(self) -> SettingsPageControllers:
         return SettingsPageControllers(settings=self.ctx.settings_controller)
+
+    def create_top_nav_bar(self) -> TopNavControllers:
+        return TopNavControllers(rules=self.ctx.rules_controller)

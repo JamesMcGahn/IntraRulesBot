@@ -18,7 +18,9 @@ from services.settings import (
 )
 from services.settings.enums import SETTINGSCATEGORIES
 from services.validation import ValidationService
-from controllers import SettingsController
+from controllers import SettingsController, RulesController
+
+from schemas.registry import SchemaRegistry
 
 
 class AppContext(QObjectBase, metaclass=QSingleton):
@@ -32,8 +34,12 @@ class AppContext(QObjectBase, metaclass=QSingleton):
         self.secure_settings = SecureCredentials()
         self.settings_repo = SettingsRepository(self.settings, self.secure_settings)
         self.settings_manager = SettingsService(repo=self.settings_repo)
+
+        self.schema_registry = SchemaRegistry()
+
         self.validation_service = ValidationService(
-            settings_meta_provider=self.settings_manager
+            settings_meta_provider=self.settings_manager,
+            schema_meta_provider=self.schema_registry,
         )
 
         log_settings = self.settings_manager.get_category(SETTINGSCATEGORIES.LOG)
@@ -44,6 +50,9 @@ class AppContext(QObjectBase, metaclass=QSingleton):
         self.settings_controller = SettingsController(
             settings_service=self.settings_manager,
             validation_service=self.validation_service,
+        )
+        self.rules_controller = RulesController(
+            validation_service=self.validation_service
         )
 
         folder = PathManager.create_folder_in_app_data("playwright")

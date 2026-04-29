@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 from uuid import uuid4
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Slot
 
 from base import QObjectBase
 from base.enums import UIEVENTTYPE
@@ -77,9 +77,11 @@ class SettingsController(QObjectBase):
         self._active_jobs[job_id] = payload
         self.validation_service.validate(job)
 
+    @Slot(object)
     def on_validation_complete(
         self, job_res: JobResponse[ValidationResponse[SettingsValidateResponse]]
     ):
+        print("received")
         job_id = job_res.job_ref.id
         if job_id not in self._active_jobs:
             return
