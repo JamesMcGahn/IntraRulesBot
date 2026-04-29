@@ -29,7 +29,7 @@ class CentralWidget(QWidgetBase):
         self.icon_only_widget = IconOnlyNavBar()
         self.icon_text_widget = IconTextNavBar()
 
-        self.header_widget = HeaderNavBar()
+        self.header_widget = HeaderNavBar(controller_factory=controller_factory)
         self.main_screen_widget = MainScreen(controller_factory=controller_factory)
         self.ui.add_widget_to_grid(self.main_screen_widget, 2, 3, 1, 1)
         self.ui.add_widget_to_grid(self.icon_only_widget, 0, 1, 3, 1)
