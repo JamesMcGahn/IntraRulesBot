@@ -1,3 +1,3 @@
-from .error_dialog import ErrorDialog
+from .schema_error_dialog import SchemaErrorDialog
 
-__all__ = ['ErrorDialog']
+__all__ = ["SchemaErrorDialog"]

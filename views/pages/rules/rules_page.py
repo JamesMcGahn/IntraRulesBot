@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import QFileDialog, QLineEdit, QTextEdit
 
 from base import QWidgetBase
-from components.dialogs import ErrorDialog, RuleSetDialog
+from components.dialogs import SchemaErrorDialog, RuleSetDialog
 from models import LoginModel, RuleSetsModel, RulesModel
 from rulerunner import RuleRunnerThread
 from services.event_filter import EventFilter
@@ -166,7 +166,7 @@ class RulesPage(QWidgetBase):
         Returns:
             None: This function does not return a value.
         """
-        add = ErrorDialog(self.forms_errors)
+        add = SchemaErrorDialog(self.forms_errors)
         self.ui.set_hidden_errors_dialog_btn(False)
         add.show()
 
