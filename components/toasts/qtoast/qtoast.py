@@ -22,7 +22,7 @@ class QToast(Toast):
         font = QFont([".AppleSystemUIFont"], 12, QFont.Weight.Bold)
         self.setTitleFont(font)
         self.setTextFont(font)
-
+        self.applyPreset(self.status)
         self.setTextColor(QColor("#ffffff"))
         self.setTitleColor(QColor("#FFFFFF"))
         self.setBackgroundColor(QColor("#014637"))

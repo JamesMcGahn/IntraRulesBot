@@ -21,7 +21,7 @@ class IconUtils:
         elif enum_icon == ToastIcon.INFORMATION:
             return QPixmap(":/images/toast/information.png")
         elif enum_icon == ToastIcon.CLOSE:
-            return QPixmap(":/images/toast/toast/close.png")
+            return QPixmap(":/images/toast/close.png")
 
     @staticmethod
     def recolor_image(image: QImage, color: QColor | None):
