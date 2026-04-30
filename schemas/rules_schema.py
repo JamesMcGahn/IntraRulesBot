@@ -3,6 +3,7 @@ RULES_SCHEMA = {
     "type": "object",
     "properties": {
         "rule_name": {"type": "string", "minLength": 5},
+        "guid": {"type": "string"},
         "rule_category": {"type": "string", "minLength": 5, "default": "Admin - Other"},
         "frequency_based": {
             "type": "object",
@@ -74,7 +75,7 @@ RULES_SCHEMA = {
                         "properties": {
                             "condition_type": {
                                 "type": "string",
-                                "enum": ["stats", "state"],
+                                "enum": ["stats"],
                             },
                             "equality_operator": {
                                 "type": "string",

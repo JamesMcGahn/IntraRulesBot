@@ -38,15 +38,16 @@ class SchemaValidationService(QObjectBase):
 
         rule_errors = []
         total_errors = 0
+        rule_name = payload.data.get("rule_name")
+        rule_name = rule_name or "Rule has no Name"
         for error in validator.iter_errors(payload.data):
-            rule_errors.append(error)
             total_errors = total_errors + 1
-
             failed_feild, error_path_msg, error_msg = self.format_validation_error(
                 error
             )
             rule_errors.append(
                 SchemaError(
+                    rule_name=rule_name,
                     message=error_msg,
                     error_path=error_path_msg,
                     failed_field=failed_feild,
@@ -55,6 +56,7 @@ class SchemaValidationService(QObjectBase):
 
         valid = total_errors == 0
         result = SchemaValidateResponse(
+            rule_guid=payload.data["guid"],
             schema_type=payload.schema_type,
             valid=valid,
             total_errors=total_errors,
