@@ -32,7 +32,7 @@ class RuleBuilder(QObjectBase):
         self.CONDITION_DETAIL_BUILDERS = {"stats": self._build_stats_details}
 
     def build_rules(self, rules) -> list[Rule]:
-        return [self.build_rules(rule) for rule in rules]
+        return [self.build_rule(rule) for rule in rules]
 
     def build_rule(self, data):
         rule_name = data["rule_name"]
