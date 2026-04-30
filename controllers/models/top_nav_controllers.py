@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ..rules_controller import RulesController
+from ..rules.rules_controller import RulesController
 
 
 @dataclass
