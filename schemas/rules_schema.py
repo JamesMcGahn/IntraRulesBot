@@ -28,10 +28,10 @@ RULES_SCHEMA = {
                             "items": {
                                 "type": "object",
                                 "properties": {
-                                    "code": {"type": "string", "minLength": 5},
+                                    "state": {"type": "string", "minLength": 5},
                                     "aux": {"type": "string"},
                                 },
-                                "required": ["code", "aux"],
+                                "required": ["state", "aux"],
                             },
                         },
                         "equality_operator": {

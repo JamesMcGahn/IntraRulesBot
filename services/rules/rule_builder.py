@@ -101,7 +101,7 @@ class RuleBuilder(QObjectBase):
     def _build_action_trigger_change_state(self, data_detail):
         state = []
         for state_obj in data_detail["state"]:
-            state.append(AgentState(state=state_obj["code"], aux=state_obj["aux"]))
+            state.append(AgentState(state=state_obj["state"], aux=state_obj["aux"]))
         return AgentStateChangeDetails(
             equality_operator=data_detail["equality_operator"],
             state=state,
