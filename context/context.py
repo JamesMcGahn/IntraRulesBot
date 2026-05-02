@@ -2,8 +2,7 @@ import os
 import subprocess
 import sys
 
-import requests
-from PySide6.QtCore import QThread, QTimer, Signal, Slot
+from PySide6.QtCore import Signal
 
 from base import QObjectBase, QSingleton
 
@@ -19,7 +18,7 @@ from services.settings import (
 from services.settings.enums import SETTINGSCATEGORIES
 from services.validation import ValidationService
 from controllers import SettingsController, RulesController
-from services.rules import RuleRegistry
+from services.rules import RuleRegistry, RuleStore, RuleBuilder
 from schemas.registry import SchemaRegistry
 
 
@@ -37,6 +36,8 @@ class AppContext(QObjectBase, metaclass=QSingleton):
 
         self.schema_registry = SchemaRegistry()
         self.rules_registry = RuleRegistry()
+        self.rule_store = RuleStore()
+        self.rule_builder = RuleBuilder()
 
         self.validation_service = ValidationService(
             settings_meta_provider=self.settings_manager,
@@ -55,6 +56,8 @@ class AppContext(QObjectBase, metaclass=QSingleton):
         self.rules_controller = RulesController(
             validation_service=self.validation_service,
             rules_registry=self.rules_registry,
+            rule_store=self.rule_store,
+            rule_builder=self.rule_builder,
         )
 
         folder = PathManager.create_folder_in_app_data("playwright")

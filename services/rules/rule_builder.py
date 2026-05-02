@@ -6,7 +6,6 @@ if TYPE_CHECKING:
     from .models import Rule
 
 from .models.triggers import FrequencyTrigger
-from .models.triggers.action_based import ActionTrigger
 from .models import Rule
 
 from .models.triggers.action_based import ActionTrigger, AgentStateChangeDetails

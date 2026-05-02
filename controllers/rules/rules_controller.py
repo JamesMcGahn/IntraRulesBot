@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from services.validation import ValidationService
     from services.base.models import JobResponse
     from services.validation.models import ValidationResponse, SchemaValidateResponse
-    from services.rules import RuleRegistry
+    from services.rules import RuleRegistry, RuleStore, RuleBuilder
     from services.validation.models import SchemaError
 
 from uuid import uuid4
@@ -26,10 +26,8 @@ from services.validation.models import (
     ValidationResponse,
 )
 from services.rules.models import RuleSet
-import json
 from .models import ValidationBatch, ValidationRulesResult
 from .enums import VALIDATIONBATCHTYPE
-from services.rules.rule_builder import RuleBuilder
 
 
 class RulesController(QObjectBase):
@@ -37,12 +35,17 @@ class RulesController(QObjectBase):
     runtime_validation_result = Signal(object)
 
     def __init__(
-        self, validation_service: ValidationService, rules_registry: RuleRegistry
+        self,
+        validation_service: ValidationService,
+        rules_registry: RuleRegistry,
+        rule_builder: RuleBuilder,
+        rule_store: RuleStore,
     ):
         super().__init__()
         self.validation_service = validation_service
         self.rules_registry = rules_registry
-        self.rule_builder = RuleBuilder()
+        self.rule_builder = rule_builder
+        self.rules_store = rule_store
 
         self._active_jobs: dict[str, SchemaValidatePayload] = {}
         self._active_batches: dict[str, ValidationBatch] = {}
@@ -52,18 +55,10 @@ class RulesController(QObjectBase):
 
     def import_from_file(self, file_path):
         self.logging(f"Opening file - {file_path} to load json data.", LOGLEVEL.INFO)
-        data = None
-        try:
-            with open(file_path, "r") as file:
-                data = json.load(file)
+        data, error = self.rules_store.load_from_json(file_path=file_path)
 
-        except json.JSONDecodeError as e:
-            message = f"JSON error in the file {file_path} - {str(e)}"
-            self.send_toast_failure(title="Error Loading File", message=message)
-            return
-        except Exception as e:
-            message = f"Error in the file {file_path} - {str(e)}"
-            self.send_toast_failure(title="Error Loading File", message=message)
+        if error:
+            self.send_toast_failure(title="Error Loading File", message=error)
             return
 
         if not data.get("rules"):
