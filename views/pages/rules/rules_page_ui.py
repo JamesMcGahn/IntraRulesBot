@@ -44,6 +44,7 @@ class RulesPageView(QWidget):
     delete_all_rules = Signal()
     clone_rule = Signal(str)
     validate_rules = Signal(dict)
+    user_save_rules = Signal(dict)
 
     def __init__(self):
         """
@@ -194,6 +195,7 @@ class RulesPageView(QWidget):
 
         self.clone.clicked.connect(self.handle_clone_rule)
         self.validate.clicked.connect(self.handle_validate_rules)
+        self.download.clicked.connect(self.handle_user_save)
 
         # Setup
         self.update_navigation_buttons()
@@ -399,6 +401,9 @@ class RulesPageView(QWidget):
         form = self.stacked_widget.get_form_by_index(self.stacked_widget.currentIndex())
 
         self.clone_rule.emit(form.rule_guid)
+
+    def handle_user_save(self):
+        self.user_save_rules.emit(self.extract_forms_to_dict())
 
     def handle_validate_rules(self):
         self.validate_rules.emit(self.extract_forms_to_dict())

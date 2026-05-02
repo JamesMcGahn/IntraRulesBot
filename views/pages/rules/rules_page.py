@@ -8,7 +8,6 @@ if TYPE_CHECKING:
 
 from controllers.rules.enums import VALIDATIONBATCHTYPE
 from base.events import RulesLoadedEvent
-import json
 import uuid
 from typing import Optional, Tuple
 
@@ -82,7 +81,7 @@ class RulesPage(QWidgetBase):
         # Signal / Slot Connections
         self.send_rule_sets.connect(self.ruleSetModel.add_rule_set)
         # self.rulesModel.data_changed.connect(self.ui.rules_changed)
-        self.ui.download.clicked.connect(self.save_rules_to_file)
+        self.ui.user_save_rules.connect(self.handle_user_rules_save)
         self.ui.validate_rules.connect(self.handle_validate_rules)
         self.ui.save.clicked.connect(self.save_rules_to_system)
         self.send_rules.connect(self.ui.rules_changed)
@@ -101,9 +100,6 @@ class RulesPage(QWidgetBase):
         self.apply_event_filter()
         self.focus_object_name = None
         self.focus_object_text = None
-
-    def handle_validation_result(self, errors):
-        print("kkkkkkk", errors)
 
     @Slot(object)
     def receive_ui_event(self, event: UIEvent):
@@ -355,8 +351,7 @@ class RulesPage(QWidgetBase):
             data = {"rules": rules}
             return (data, rules_with_guid)
 
-    # TODO Remove heavy logic from Page
-    def save_rules_to_file(self) -> None:
+    def handle_user_rules_save(self, rules) -> None:
         """
         Save the validated rules to a JSON file selected by the user. It ensures the file has
         a `.json` extension.
@@ -364,30 +359,22 @@ class RulesPage(QWidgetBase):
         Returns:
             None: This function does not return a value.
         """
-        if self.ui.get_forms():
-            data, _ = self.validate_rules()
-            if data:
-                file_path, _ = QFileDialog.getSaveFileName(
-                    self,
-                    "Save JSON File",
-                    "",
-                    "JSON Files (*.json);;All Files (*)",
-                )
-                if file_path:
-                    # Ensure the file has a .json extension
-                    if not file_path.endswith(".json"):
-                        file_path += ".json"
+        if not rules:
+            return
 
-                    with open(file_path, "w") as f:
-                        json.dump(data, f, indent=4)
-                    self.log_with_toast(
-                        "File Saved",
-                        "Rules JSON File Saved Successfully.",
-                        "INFO",
-                        "SUCCESS",
-                        True,
-                        self,
-                    )
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save JSON File",
+            "",
+            "JSON Files (*.json);;All Files (*)",
+        )
+        if file_path:
+            # Ensure the file has a .json extension
+            if not file_path.endswith(".json"):
+                file_path += ".json"
+        self.controllers.rules.validate_json(
+            rules, batch_type=VALIDATIONBATCHTYPE.USER_SAVE, file_path=file_path
+        )
 
     # TODO Remove heavy logic from Page -> change to storage to appdata file
     def save_rules_to_system(self) -> None:

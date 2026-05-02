@@ -21,3 +21,4 @@ class ValidationBatch:
     invalid_rules: list[Rule] = field(default_factory=list)
     total_errors: int = 0
     rule_errors: list[SchemaError] = field(default_factory=list)
+    file_path: str = ""

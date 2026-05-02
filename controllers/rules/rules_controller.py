@@ -28,6 +28,7 @@ from services.validation.models import (
 from services.rules.models import RuleSet
 from .models import ValidationBatch, ValidationRulesResult
 from .enums import VALIDATIONBATCHTYPE
+from utils.files import PathManager
 
 
 class RulesController(QObjectBase):
@@ -53,6 +54,7 @@ class RulesController(QObjectBase):
         # CONNECTIONS
         self.validation_service.task_complete.connect(self.on_validation_complete)
 
+    # FEATURE Add an Import File Type - Right now active guids will overwrite.
     def import_from_file(self, file_path):
         self.logging(f"Opening file - {file_path} to load json data.", LOGLEVEL.INFO)
         data, error = self.rules_store.load_from_json(file_path=file_path)
@@ -68,8 +70,9 @@ class RulesController(QObjectBase):
 
         self.validate_json(data, VALIDATIONBATCHTYPE.IMPORT)
 
-    def validate_json(self, data, batch_type: VALIDATIONBATCHTYPE):
+    def validate_json(self, data, batch_type: VALIDATIONBATCHTYPE, file_path: str = ""):
         rules = data.get("rules")
+        print(rules)
         batch_id = str(uuid4())
         rule_batch_name = data.get("rule_set_name", f"Rule Batch - {batch_id}")
         rule_batch_description = data.get("description", "")
@@ -79,6 +82,7 @@ class RulesController(QObjectBase):
             rule_batch_description=rule_batch_description,
             batch_id=batch_id,
             batch_total=len(rules),
+            file_path=file_path,
         )
         self._active_batches[batch_id] = batch
         for rule in rules:
@@ -166,18 +170,51 @@ class RulesController(QObjectBase):
                 self.rules_registry.add_rule_set(rule_set)
                 self._emit_rules_updated()
         elif batch.batch_type == VALIDATIONBATCHTYPE.RUNTIME:
-            errors_grouped_dict: dict[str, list[SchemaError]] = {}
-
-            for error in batch.rule_errors:
-                if error.rule_guid not in errors_grouped_dict:
-                    errors_grouped_dict[error.rule_guid] = []
-                errors_grouped_dict[error.rule_guid].append(error)
-            for valid in batch.valid_rules:
-                errors_grouped_dict[valid["guid"]] = []
+            errors_grouped_dict = self._group_batch_errors(batch)
 
             self.runtime_validation_result.emit(
                 ValidationRulesResult(errors_grouped_dict)
             )
+        elif batch.batch_type == VALIDATIONBATCHTYPE.USER_SAVE:
+            if batch.rule_errors:
+                errors_grouped_dict = self._group_batch_errors(batch)
+
+                self.runtime_validation_result.emit(
+                    ValidationRulesResult(errors_grouped_dict)
+                )
+            else:
+                if not batch.file_path:
+                    return
+                path = PathManager.regex_path(batch.file_path)
+                rules = {
+                    "rule_set_name": path["filename"],
+                    "description": "Saved Rules From Editor",
+                    "rules": batch.valid_rules,
+                }
+
+                is_saved, error = self.rules_store.save(rules, batch.file_path)
+                if is_saved:
+                    toast = ToastEvent(
+                        message="File Saved",
+                        title=f"File Saved to {batch.file_path}",
+                        toast_level=QTOASTSTATUS.SUCCESS,
+                        log_level=LOGLEVEL.INFO,
+                    )
+                    event = UIEvent(UIEVENTTYPE.DISPLAY, payload=toast)
+                    self.ui_event.emit(event)
+
+    def _group_batch_errors(
+        self, batch: ValidationBatch
+    ) -> dict[str, list[SchemaError]]:
+        errors_grouped_dict: dict[str, list[SchemaError]] = {}
+
+        for error in batch.rule_errors:
+            if error.rule_guid not in errors_grouped_dict:
+                errors_grouped_dict[error.rule_guid] = []
+            errors_grouped_dict[error.rule_guid].append(error)
+        for valid in batch.valid_rules:
+            errors_grouped_dict[valid["guid"]] = []
+        return errors_grouped_dict
 
     def send_toast_failure(self, title, message):
         toast = ToastEvent(
