@@ -41,10 +41,11 @@ class MainScreen(QWidgetBase):
         self.setObjectName("main_screen")
         self.controller_factory = controller_factory
         self.settings_page_controllers = self.controller_factory.create_settings_page()
+        self.rules_page_controllers = self.controller_factory.create_rules_page()
         # self.appshutdown.connect(self.ui.rules_page.notified_app_shutting)
 
         # Pages
-        self.rules_page = RulesPage()
+        self.rules_page = RulesPage(controllers=self.rules_page_controllers)
         self.login_page = LoginPage()
         self.settings_page = SettingsPage(controllers=self.settings_page_controllers)
         self.logs_page = LogsPage()

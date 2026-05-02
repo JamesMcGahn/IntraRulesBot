@@ -13,11 +13,14 @@ class StackedFormWidget(StackedWidget):
         self.form_factories = []
 
     def remove_all(self):
-        while self.count() > 0 and len(self.form_factories) > 0:
+        while self.count() > 0:
+            if len(self.form_factories) > 0:
+                del self.form_factories[0]
             widget = self.widget(0)
             self.removeWidget(widget)
             widget.deleteLater()
-            del self.form_factories[0]
+        self.widget_map.clear()
+        self.form_factories.clear()
 
     def add_form(self, rule_form: RuleFormManager, styleSheet=""):
         """Add a widget to the stacked widget and map its name."""
@@ -41,7 +44,7 @@ class StackedFormWidget(StackedWidget):
         self.widget_map[rule_form.rule_guid] = index
         self.form_factories.append(rule_form)
 
-    def get_form_by_index(self, index):
+    def get_form_by_index(self, index) -> RuleFormManager:
         if not isinstance(index, int):
             return
         if index >= 0 and index <= self.count():
@@ -56,8 +59,17 @@ class StackedFormWidget(StackedWidget):
             widget.deleteLater()
             del self.form_factories[index]
 
-    def get_form_factories(self):
+    def get_form_factories(self) -> list[RuleFormManager]:
         return self.form_factories
 
     def get_widget_map(self):
         return self.widget_map
+
+    def get_widget_index_by_guid(self, guid: str) -> int:
+        return self.widget_map.get(guid, -1)
+
+    def get_form_by_guid(self, guid: str):
+        index = self.get_widget_index_by_guid(guid)
+        print(index, self.widget_map)
+        if index > -1:
+            return self.get_form_by_index(index)

@@ -19,7 +19,7 @@ from services.settings import (
 from services.settings.enums import SETTINGSCATEGORIES
 from services.validation import ValidationService
 from controllers import SettingsController, RulesController
-
+from services.rules import RuleRegistry
 from schemas.registry import SchemaRegistry
 
 
@@ -36,6 +36,7 @@ class AppContext(QObjectBase, metaclass=QSingleton):
         self.settings_manager = SettingsService(repo=self.settings_repo)
 
         self.schema_registry = SchemaRegistry()
+        self.rules_registry = RuleRegistry()
 
         self.validation_service = ValidationService(
             settings_meta_provider=self.settings_manager,
@@ -52,7 +53,8 @@ class AppContext(QObjectBase, metaclass=QSingleton):
             validation_service=self.validation_service,
         )
         self.rules_controller = RulesController(
-            validation_service=self.validation_service
+            validation_service=self.validation_service,
+            rules_registry=self.rules_registry,
         )
 
         folder = PathManager.create_folder_in_app_data("playwright")

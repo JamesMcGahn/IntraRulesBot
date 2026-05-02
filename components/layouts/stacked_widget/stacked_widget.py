@@ -8,6 +8,7 @@ class StackedWidget(QStackedWidget):
 
     def add_widget(self, name: str, widget: QWidget):
         """Add a widget to the stacked widget and map its name."""
+        print("adding name", name)
         self.addWidget(widget)
         index = self.indexOf(widget)
         self.widget_map[name] = index
