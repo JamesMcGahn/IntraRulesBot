@@ -1,7 +1,9 @@
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QHBoxLayout, QWidget
+from __future__ import annotations
 
-from managers import RuleFormManager
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    pass
 
 from ..stacked_widget import StackedWidget
 
@@ -22,29 +24,16 @@ class StackedFormWidget(StackedWidget):
         self.widget_map.clear()
         self.form_factories.clear()
 
-    def add_form(self, rule_form: RuleFormManager, styleSheet=""):
+    def add_form(self, adapter):
         """Add a widget to the stacked widget and map its name."""
-        rule_widget = QWidget()
-        rule_widget.setContentsMargins(12, 0, 0, 0)
-        rule_widget.setStyleSheet(styleSheet)
 
-        form = rule_form.rule_form
-        form.setContentsMargins(0, 0, 0, 0)
-        rule_widget.setLayout(form)
+        self.addWidget(adapter.widget)
 
-        rule_widget2 = QWidget()
-        rule_widget2.setContentsMargins(12, 0, 0, 0)
-        rule_widget2.setStyleSheet("margin-top: 0px; padding-top: 0px;")
-        h_layout = QHBoxLayout(rule_widget2)
-        h_layout.addWidget(rule_widget, alignment=Qt.AlignLeft)
+        index = self.indexOf(adapter.widget)
+        self.widget_map[adapter.guid] = index
+        self.form_factories.append(adapter)
 
-        self.addWidget(rule_widget2)
-
-        index = self.indexOf(rule_widget2)
-        self.widget_map[rule_form.rule_guid] = index
-        self.form_factories.append(rule_form)
-
-    def get_form_by_index(self, index) -> RuleFormManager:
+    def get_form_by_index(self, index):
         if not isinstance(index, int):
             return
         if index >= 0 and index <= self.count():

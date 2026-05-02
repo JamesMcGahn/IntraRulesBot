@@ -3,93 +3,28 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from services.validation.models import SchemaError
+    from services.rules.models import Rule
 
-from typing import List, Optional, Tuple
+from typing import Optional
 
 from PySide6.QtWidgets import QFormLayout, QLabel, QLineEdit, QTextEdit
 
 from components.helpers.widget_factory import WidgetFactory
-from services.validator import SchemaValidator, ValidationError
-from services.rules.models import Rule
+
 from services.rules.models.triggers import FrequencyTrigger
 from services.rules.models.triggers.action_based import ActionTrigger
 from services.rules.models.conditions import Condition
 from services.rules.models.actions import Action
 
-# TODO SPLIT form manager -> doing too much
+from .rule_widget import RuleWidget
 
 
-class RuleFormManager:
-    """
-    A manager for handling rule forms, including creation, validation, and managing input fields.
+class RuleFactory:
 
-    Args:
-        rule (dict): The rule data used to populate the form.
-        schema_folder (str): The folder containing the JSON schemas for validation.
-        schema_path (str): The path to the specific schema for rule validation.
-        int_keys (tuple): Keys that should be converted to integers from input fields.
-
-    Attributes:
-        form_errors (List): List to store validation errors.
-        schema_folder (str): Folder containing schemas for validation.
-        schema_path (str): Path to the schema used for validation.
-        int_keys (tuple): Tuple of keys to treat as integer values when processing form data.
-        rule (dict): The rule data that is managed by this form manager.
-        _rule_form (Optional[QFormLayout]): The generated form layout for the rule.
-        _rule_guid (Optional[str]): The GUID of the rule.
-        _rule_inputs (Optional[Dict]): A dictionary mapping input fields to their corresponding form fields.
-    """
-
-    def __init__(
-        self,
-        rule: Rule,
-        schema_folder: str = "./schemas",
-        schema_path: str = "/schemas/rules",
-        int_keys: Tuple[str] = ("time_interval", "equality_threshold"),
-    ):
-        super().__init__()
-        self.rule = rule
-
-        self._rule_form = None
-        self._rule_guid = None
-        self._rule_inputs = None
-
-        self.form_errors = []
-        self.schema_folder = schema_folder
-        self.schema_path = schema_path
-        self.int_keys = int_keys
-        self.create_rule_form(self.rule)
-
-    @property
-    def rule_guid(self) -> Optional[str]:
-        """
-        Returns the GUID of the rule.
-
-        Returns:
-            Optional[str]: The GUID of the rule.
-        """
-        return self._rule_guid
-
-    @property
-    def rule_inputs(self) -> Optional[str]:
-        """
-        Returns the dictionary of rule input fields.
-
-        Returns:
-            Optional[dict]: A dictionary mapping input fields to their corresponding form fields.
-        """
-        return self._rule_inputs
-
-    @property
-    def rule_form(self) -> Optional[str]:
-        """
-        Returns the generated form layout for the rule.
-
-        Returns:
-            Optional[QFormLayout]: The generated form layout for the rule.
-        """
-        return self._rule_form
+    def build(self, rule: Rule, style=""):
+        layout, field_map = self.create_rule_form(rule)
+        widget = RuleWidget().add_inner_layout(layout, style)
+        return widget, field_map
 
     def create_rule_form(self, rule: Rule) -> None:
         """
@@ -125,9 +60,7 @@ class RuleFormManager:
         self.rf_add_conditions_settings(rule, rule_inputs, rule_layout)
         self.rf_add_actions_settings(rule, rule_inputs, rule_layout)
 
-        self._rule_form = rule_outter_layout
-        self._rule_guid = rule_guid
-        self._rule_inputs = rule_inputs
+        return rule_outter_layout, rule_inputs
 
     def create_text_input_row(
         self,
@@ -620,91 +553,3 @@ class RuleFormManager:
 
         action_data["details"] = details_data
         return action_data
-
-    def highlight_errors(self, rule_errors: list[SchemaError]) -> None:
-        """
-        Highlights form fields that have validation errors.
-
-        Args:
-            rule (dict): The rule input fields that will be highlighted.
-
-        Returns:
-            None: This function does not return a value.
-        """
-        rule_imports = self._rule_inputs
-
-        def set_sheet(el, status=False):
-            print(el)
-            if status:
-                color = "green"
-            else:
-                color = "red"
-
-            el.setStyleSheet(f"border: 1px solid {color};")
-
-        def turn_green(field_refs):
-            if isinstance(field_refs, ValidationError):
-                return
-            # print(field_refs)
-            for key, field in field_refs.items():
-                if key == "guid":
-                    continue
-                if isinstance(field, dict):
-                    turn_green(field)
-                elif isinstance(field, list):
-                    for list_item in field:
-                        turn_green(list_item)
-                else:
-                    set_sheet(field, status=True)
-
-        turn_green(rule_imports)
-
-        def get_value_from_path(data, path):
-            current = data
-
-            for key in path:
-                try:
-                    current = current[key]
-                except Exception as e:
-                    print(e)
-            return current
-
-        for error in rule_errors:
-            element = get_value_from_path(rule_imports, error.error_path)
-            if element is not None:
-                set_sheet(element)
-
-    def to_validation_dict(self) -> dict:
-        """
-        Creates a dictionary from the form inputs, converting fields to the appropriate types (e.g. string, int).
-
-        Args:
-            int_keys (Tuple[str]): Keys that should be converted to integers from input fields.
-
-        Returns:
-            dict: A dictionary representing the form input data.
-        """
-        int_keys = self.int_keys
-
-        def make_rule_dict(field_refs, int_keys):
-            x = {}
-            if isinstance(field_refs, ValidationError):
-                return
-            for key, field in field_refs.items():
-                if isinstance(field, dict):
-                    x[key] = make_rule_dict(field, int_keys)
-                elif isinstance(field, list):
-                    x[key] = [make_rule_dict(item, int_keys) for item in field]
-                else:
-                    if key in int_keys:
-                        if field.text().isdigit():
-                            x[key] = int(field.text())
-                        else:
-                            x[key] = field.text()
-                    elif isinstance(field, QLineEdit):
-                        x[key] = field.text()
-                    elif isinstance(field, QTextEdit):
-                        x[key] = field.toPlainText()
-            return x
-
-        return make_rule_dict(self.rule_inputs, int_keys)

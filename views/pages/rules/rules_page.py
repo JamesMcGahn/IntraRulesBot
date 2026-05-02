@@ -1,3 +1,13 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from controllers.models import RulesPageControllers
+    from base.events import UIEvent
+
+from controllers.rules.enums import VALIDATIONBATCHTYPE
+from base.events import RulesLoadedEvent
 import json
 import uuid
 from typing import Optional, Tuple
@@ -30,12 +40,15 @@ class RulesPage(QWidgetBase):
 
     send_rules = Signal(list)
     send_rule_sets = Signal(object)
+    runtime_validation_result = Signal(object)
 
-    def __init__(self):
+    def __init__(self, controllers: RulesPageControllers):
         """
         Initialize the RulesPage, set up models, connect signals/slots, and load the saved rules.
         """
         super().__init__()
+        self.controllers = controllers
+        self.rules_controller = controllers.rules
         self.event_filter = EventFilter()
         self.setStyleSheet(STYLES)
 
@@ -57,11 +70,20 @@ class RulesPage(QWidgetBase):
         self.url = url
         self.login_url = login_url
 
+        ##
+        self.rules_controller.ui_event.connect(self.receive_ui_event)
+        self.rules_controller.runtime_validation_result.connect(
+            self.ui.update_form_validation
+        )
+        self.ui.delete_rule.connect(self.handle_delete_rule)
+        self.ui.delete_all_rules.connect(self.handle_delete_all_rules)
+        self.ui.clone_rule.connect(self.handle_clone_rule)
+
         # Signal / Slot Connections
         self.send_rule_sets.connect(self.ruleSetModel.add_rule_set)
-        self.rulesModel.data_changed.connect(self.ui.rules_changed)
+        # self.rulesModel.data_changed.connect(self.ui.rules_changed)
         self.ui.download.clicked.connect(self.save_rules_to_file)
-        self.ui.validate.clicked.connect(self.validate_rules)
+        self.ui.validate_rules.connect(self.handle_validate_rules)
         self.ui.save.clicked.connect(self.save_rules_to_system)
         self.send_rules.connect(self.ui.rules_changed)
         self.ui.validate_open_dialog.clicked.connect(self.display_errors_dialog)
@@ -79,6 +101,32 @@ class RulesPage(QWidgetBase):
         self.apply_event_filter()
         self.focus_object_name = None
         self.focus_object_text = None
+
+    def handle_validation_result(self, errors):
+        print("kkkkkkk", errors)
+
+    @Slot(object)
+    def receive_ui_event(self, event: UIEvent):
+        if isinstance(event.payload, RulesLoadedEvent):
+            self.ui.rules_changed(event.payload.rules)
+
+    @Slot(str)
+    def handle_delete_rule(self, guid: str):
+        self.rules_controller.delete_rule(guid)
+
+    @Slot(str)
+    def handle_delete_all_rules(self):
+        self.rules_controller.delete_all_rules()
+
+    @Slot(str)
+    def handle_clone_rule(self, guid: str):
+        self.rules_controller.clone_rule(guid)
+
+    @Slot(list)
+    def handle_validate_rules(self, rules: dict):
+        self.controllers.rules.validate_json(
+            rules, batch_type=VALIDATIONBATCHTYPE.RUNTIME
+        )
 
     @Slot()
     def apply_event_filter(self):
@@ -179,6 +227,7 @@ class RulesPage(QWidgetBase):
         """
         self.send_rules.emit(self.rulesModel.rules)
 
+    # TODO Remove from Page
     def start_rule_runner(self) -> None:
         """
         Start the rule processing thread if the forms are valid and all credentials are provided.
@@ -232,6 +281,7 @@ class RulesPage(QWidgetBase):
         self.ui.progress_bar.setHidden(True)
         self.ui.start.setDisabled(False)
 
+    # TODO Remove from Page
     def validate_rules(self) -> Tuple[Optional[dict], Optional[list]]:
         """
         Validate all the rules in the form, returning a tuple with the valid rule data and
@@ -305,6 +355,7 @@ class RulesPage(QWidgetBase):
             data = {"rules": rules}
             return (data, rules_with_guid)
 
+    # TODO Remove heavy logic from Page
     def save_rules_to_file(self) -> None:
         """
         Save the validated rules to a JSON file selected by the user. It ensures the file has
@@ -338,6 +389,7 @@ class RulesPage(QWidgetBase):
                         self,
                     )
 
+    # TODO Remove heavy logic from Page -> change to storage to appdata file
     def save_rules_to_system(self) -> None:
         """
         Save the validated rules to the internal system storage.

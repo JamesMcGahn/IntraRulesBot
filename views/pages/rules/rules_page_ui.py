@@ -1,4 +1,10 @@
-import uuid
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from controllers.rules.models import ValidationRulesResult
+
 from typing import List
 
 from PySide6.QtCore import QSize, Qt, Signal, Slot
@@ -15,11 +21,10 @@ from PySide6.QtWidgets import (
 )
 
 from components.buttons import EditorActionButton, GradientButton
-from components.dialogs import AddRuleWizard
 from components.helpers import StyleHelper, WidgetFactory
 from components.layouts import ScrollArea, StackedFormWidget
-from managers import RuleFormManager
-from translators import GenerateRuleObject
+
+from ...components.rules import RuleAdapter, RuleFactory
 
 
 class RulesPageView(QWidget):
@@ -33,8 +38,12 @@ class RulesPageView(QWidget):
         rules_form_updated: Signal emitted when a rule is added
     """
 
-    delete_rule = Signal()
     rules_form_updated = Signal()
+
+    delete_rule = Signal(str)
+    delete_all_rules = Signal()
+    clone_rule = Signal(str)
+    validate_rules = Signal(dict)
 
     def __init__(self):
         """
@@ -51,6 +60,7 @@ class RulesPageView(QWidget):
         navigation buttons, and rule actions.
         """
         self.current_rule_index = 0
+        self.previous_guid = None
 
         self.rules_layout = QVBoxLayout(self)
 
@@ -174,18 +184,17 @@ class RulesPageView(QWidget):
 
         self.init_thread_controls()
 
-        self.add_rule = AddRuleWizard()
-        self.add_rule.submit_form.connect(self.add_rule_form_submit)
-
         # Signal / Slot Connections
         self.scroll_area.verticalScrollBar().valueChanged.connect(self.repaint_shadow)
         self.scroll_area.horizontalScrollBar().valueChanged.connect(self.repaint_shadow)
         self.trash.clicked.connect(self.on_delete_rule)
         self.prev_button.clicked.connect(self.show_previous_rule)
         self.next_button.clicked.connect(self.show_next_rule)
-        self.delete_all.clicked.connect(self.delete_all_forms)
-        self.add.clicked.connect(self.show_add_rule_dialog)
-        self.clone.clicked.connect(self.clone_rule)
+        self.delete_all.clicked.connect(self.handle_delete_all)
+
+        self.clone.clicked.connect(self.handle_clone_rule)
+        self.validate.clicked.connect(self.handle_validate_rules)
+
         # Setup
         self.update_navigation_buttons()
 
@@ -199,7 +208,7 @@ class RulesPageView(QWidget):
 
         self.form_actions_btn_inner_layout.setSpacing(0)
         self.form_actions_btn_inner_layout.setContentsMargins(0, 0, 0, 0)
-        self.add = EditorActionButton("")
+        # self.add = EditorActionButton("")
         self.save = EditorActionButton("")
         self.download = EditorActionButton("")
         self.validate = EditorActionButton("")
@@ -210,12 +219,6 @@ class RulesPageView(QWidget):
         self.bookmark = EditorActionButton("")
 
         actionBtns = [
-            (
-                self.add,
-                "Add Rule",
-                ":/images/add_off_b.png",
-                ":/images/add_on.png",
-            ),
             (
                 self.save,
                 "Save",
@@ -373,48 +376,36 @@ class RulesPageView(QWidget):
         self.progress_bar.setRange(0, total)
         self.progress_bar.setValue(current)
 
-    def clone_rule(self) -> None:
+    @Slot(object)
+    def update_form_validation(self, errors_result: ValidationRulesResult):
+        print("jere - man", errors_result)
+        for guid, errors in errors_result.errors_by_rule.items():
+            print(guid, errors)
+            form = self.stacked_widget.get_form_by_guid(guid)
+            if form:
+                print("form", form)
+                form.highlight_errors(errors)
+
+    def handle_delete_all(self):
+        self.delete_all_forms()
+        self.delete_all_rules.emit()
+
+    def handle_clone_rule(self) -> None:
         """Clones the currently selected rule and adds it to the rule list.
 
         Returns:
             None: This function does not return a value.
         """
         form = self.stacked_widget.get_form_by_index(self.stacked_widget.currentIndex())
-        data = form.create_input_dict()
-        data["guid"] = str(uuid.uuid4())
-        self.current_rule_index = self.stacked_widget.count()
-        self.rules_changed([data])
-        self.stacked_widget.setCurrentIndex(self.current_rule_index)
-        self.update_navigation_buttons()
 
-    def show_add_rule_dialog(self) -> None:
-        """Displays the dialog to add a new rule.
+        self.clone_rule.emit(form.rule_guid)
 
-        Returns:
-            None: This function does not return a value.
-        """
-        self.add_rule.show()
+    def handle_validate_rules(self):
+        self.validate_rules.emit(self.extract_forms_to_dict())
 
-    @Slot(object)
-    def add_rule_form_submit(self, form: object) -> None:
-        """
-        Handles the submission of a new rule form.
-
-        Args:
-            form (object): The form object containing rule data.
-
-        Returns:
-            None: This function does not return a value.
-        """
-        add = GenerateRuleObject(form)
-        current_count = self.stacked_widget.count()
-        new_rule = add.generate_dynamic_object()
-
-        if new_rule:
-            self.rules_changed([new_rule])
-            self.current_rule_index = current_count
-            self.stacked_widget.setCurrentIndex(current_count)
-            self.update_navigation_buttons()
+    def extract_forms_to_dict(self):
+        rule_forms = self.get_forms()
+        return {"rules": [form.to_validation_dict() for form in rule_forms]}
 
     def delete_all_forms(self) -> None:
         """Deletes all rule forms from the UI.
@@ -423,7 +414,7 @@ class RulesPageView(QWidget):
             None: This function does not return a value.
         """
         self.stacked_widget.remove_all()
-        self.current_rule_index = 0
+        # self.current_rule_index = 0
         self.set_up_rules([])
         self.update_navigation_buttons()
 
@@ -438,6 +429,9 @@ class RulesPageView(QWidget):
         Returns:
             None: This function does not return a value.
         """
+        self.stacked_widget.remove_all()
+        if not len(rules) - 1 > self.current_rule_index:
+            self.current_rule_index = 0
         self.set_up_rules(rules)
         self.rules_form_updated.emit()
 
@@ -453,7 +447,7 @@ class RulesPageView(QWidget):
         """
         self.validate_open_dialog.setHidden(state)
 
-    def get_forms(self) -> List[object]:
+    def get_forms(self) -> List[RuleAdapter]:
         """
         Retrieves the list of form objects currently displayed in the UI.
 
@@ -477,10 +471,14 @@ class RulesPageView(QWidget):
             None: This function does not return a value.
         """
         if self.stacked_widget.get_form_factories():
-            self.stacked_widget.remove_form_by_index(self.stacked_widget.currentIndex())
-            self.update_navigation_buttons()
-            if self.stacked_widget.count() == 0:
-                self.setup_no_rules_widget()
+            current_index = self.stacked_widget.currentIndex()
+            rule_form = self.stacked_widget.get_form_by_index(current_index)
+            if current_index > 0:
+                previous_form = self.stacked_widget.get_form_by_index(current_index - 1)
+                self.previous_guid = previous_form.rule_guid
+            guid = rule_form.rule_guid
+            self.delete_all_forms()
+            self.delete_rule.emit(guid)
 
     def set_disable_action_btns(self) -> None:
         """Enables or disables the action buttons based on the presence of rules.
@@ -516,13 +514,21 @@ class RulesPageView(QWidget):
         if rules:
             self.stacked_widget.remove_by_name("No-Rules-Widget")
             for rule in rules:
-                rule_form = RuleFormManager(rule)
-                self.stacked_widget.add_form(
-                    rule_form, "margin-top: 0px; padding-left: 0px;padding-top: 0px;"
+                widget, field_map = RuleFactory().build(
+                    rule, "margin-top: 0px; padding-left: 0px;padding-top: 0px;"
                 )
-
+                print(widget, field_map)
+                adapter = RuleAdapter(
+                    guid=rule.guid, rule_inputs=field_map, widget=widget
+                )
+                self.stacked_widget.add_form(adapter)
+            if self.previous_guid:
+                index = self.stacked_widget.get_widget_index_by_guid(self.previous_guid)
+                if index > -1:
+                    self.stacked_widget.setCurrentIndex(index)
             self.update_navigation_buttons()
         else:
+
             self.setup_no_rules_widget()
         self.set_disable_action_btns()
 
@@ -574,6 +580,9 @@ class RulesPageView(QWidget):
         if self.current_rule_index > 0:
             self.current_rule_index -= 1
             self.stacked_widget.setCurrentIndex(self.current_rule_index)
+            self.previous_guid = self.stacked_widget.get_form_by_index(
+                self.current_rule_index
+            ).guid
 
         self.update_navigation_buttons()
 
@@ -586,6 +595,9 @@ class RulesPageView(QWidget):
         if self.current_rule_index < self.stacked_widget.count() - 1:
             self.current_rule_index += 1
             self.stacked_widget.setCurrentIndex(self.current_rule_index)
+            self.previous_guid = self.stacked_widget.get_form_by_index(
+                self.current_rule_index
+            ).guid
 
             self.prev_button.setDisabled(False)
         self.update_navigation_buttons()
