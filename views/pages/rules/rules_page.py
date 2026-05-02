@@ -16,7 +16,7 @@ from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import QFileDialog, QLineEdit, QTextEdit
 
 from base import QWidgetBase
-from components.dialogs import SchemaErrorDialog, RuleSetDialog
+from views.components.dialogs import SchemaErrorDialog, RuleSetDialog
 from models import LoginModel, RuleSetsModel, RulesModel
 from rulerunner import RuleRunnerThread
 from services.event_filter import EventFilter

@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from components.helpers import StyleHelper, WidgetFactory
+from views.components.helpers import StyleHelper, WidgetFactory
 
 
 class IconTextNavBarView(QWidget):

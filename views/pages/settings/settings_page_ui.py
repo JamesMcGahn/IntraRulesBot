@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
 )
 
 from __version__ import __version__
-from components.helpers import WidgetFactory
+from views.components.helpers import WidgetFactory
 
 
 class PageSettingsUI(QWidget):

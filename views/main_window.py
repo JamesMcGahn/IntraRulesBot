@@ -2,8 +2,8 @@ from PySide6.QtCore import QSize, Signal, Slot
 from PySide6.QtGui import QAction, QCloseEvent, QFontDatabase, QIcon
 from PySide6.QtWidgets import QMainWindow, QMenu, QSystemTrayIcon
 
-from components.dialogs import ConfirmationDialog
-from components.helpers import StyleHelper
+from views.components.dialogs import ConfirmationDialog
+from views.components.helpers import StyleHelper
 
 # trunk-ignore(ruff/F401)
 from resources import resources_rc

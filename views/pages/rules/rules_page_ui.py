@@ -20,9 +20,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from components.buttons import EditorActionButton, GradientButton
-from components.helpers import StyleHelper, WidgetFactory
-from components.layouts import ScrollArea, StackedFormWidget
+from views.components.buttons import EditorActionButton, GradientButton
+from views.components.helpers import StyleHelper, WidgetFactory
+from views.components.layouts import ScrollArea, StackedFormWidget
 
 from ...components.rules import RuleAdapter, RuleFactory
 

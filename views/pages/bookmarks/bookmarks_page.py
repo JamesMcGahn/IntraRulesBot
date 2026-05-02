@@ -1,6 +1,6 @@
 from base import QWidgetBase
 from models import RuleSetsModel, RulesModel
-
+from PySide6.QtWidgets import QWidget
 from .bookmarks_page_css import STYLES
 from .bookmarks_page_ui import BookMarksPageView
 

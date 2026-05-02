@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QTextEdit, QVBoxLayout, QWidget
 
-from components.helpers import WidgetFactory
-from components.layouts import ScrollArea
+from views.components.helpers import WidgetFactory
+from views.components.layouts import ScrollArea
 
 from .logs_page_css import SCROLL_AREA_STYLES
 

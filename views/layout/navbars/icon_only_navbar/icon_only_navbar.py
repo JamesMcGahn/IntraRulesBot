@@ -1,7 +1,7 @@
 from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import QPushButton, QWidget
 
-from components.helpers import StyleHelper
+from views.components.helpers import StyleHelper
 
 from .icon_only_navbar_css import STYLES
 from .icon_only_navbar_ui import IconOnlyNavBarView

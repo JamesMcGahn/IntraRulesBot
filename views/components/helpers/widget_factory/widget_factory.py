@@ -2,7 +2,7 @@ from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QColor, QIcon, QValidator
 from PySide6.QtWidgets import QFormLayout, QGroupBox, QLabel, QLineEdit, QSizePolicy
 
-from components.boxes import GradientGroupBox
+from ...boxes import GradientGroupBox
 
 from ..style_helper import StyleHelper
 

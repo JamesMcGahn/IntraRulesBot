@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QSpacerItem,
     QWidget,
 )
-from components.helpers import WidgetFactory
+from views.components.helpers import WidgetFactory
 from ....base.field_registry import FieldRegistry
 
 

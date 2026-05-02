@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
 
 
 from ...helpers import WidgetFactory
-from ...layouts import ScrollArea
+from views.components.layouts import ScrollArea
 from ..gradient_dialog import GradientDialog
 from .schema_error_dialog_css import STYLES
 

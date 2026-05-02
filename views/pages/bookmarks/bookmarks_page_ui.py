@@ -16,12 +16,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from base import QWidgetBase
-from components.buttons import EditorActionButton, GradientButton
-from components.helpers import WidgetFactory
+from views.components.buttons import EditorActionButton, GradientButton
+from views.components.helpers import WidgetFactory
 
 
-class BookMarksPageView(QWidgetBase):
+# TODO : UI doing too much -> move to controller & page controller
+class BookMarksPageView(QWidget):
     """
     A UI component that represents the Bookmarks display page.
 
@@ -229,12 +229,12 @@ class BookMarksPageView(QWidgetBase):
             for rule in rules:
                 rule["guid"] = str(uuid.uuid4())
             self.load_rules.emit(rules)
-            self.log_with_toast(
-                "Rules Loaded to Editor",
-                f"Rule Set: {rule_set_name} has been loaded to the editor.",
-                "INFO",
-                "SUCCESS",
-            )
+            # self.log_with_toast(
+            #     "Rules Loaded to Editor",
+            #     f"Rule Set: {rule_set_name} has been loaded to the editor.",
+            #     "INFO",
+            #     "SUCCESS",
+            # )
 
     def init_rule_set(self, rule_sets: list) -> None:
         """
@@ -312,23 +312,24 @@ class BookMarksPageView(QWidgetBase):
         if selected_item:
             id_selected = selected_item.data(Qt.UserRole)
             if id_selected == "default":
-                self.log_with_toast(
-                    "Rules Set Cannot Be Removed",
-                    "Default Rule Sets cannot be removed.",
-                    "INFO",
-                    "WARN",
-                )
+                pass
+                # self.log_with_toast(
+                #     "Rules Set Cannot Be Removed",
+                #     "Default Rule Sets cannot be removed.",
+                #     "INFO",
+                #     "WARN",
+                # )
             else:
                 index = self.list_widget.currentRow()
                 self.delete_rule_set.emit(id_selected)
                 self.list_widget.takeItem(self.list_widget.row(selected_item))
                 rule_set_name = self.rule_sets[index]["name"]
-                self.log_with_toast(
-                    "Rules Set Removed",
-                    f"Rule Set: {rule_set_name} has been removed.",
-                    "INFO",
-                    "SUCCESS",
-                )
+                # self.log_with_toast(
+                #     "Rules Set Removed",
+                #     f"Rule Set: {rule_set_name} has been removed.",
+                #     "INFO",
+                #     "SUCCESS",
+                # )
                 self.rule_sets.pop(index)
 
     def update_rule_set_detail(self) -> None:
@@ -344,12 +345,13 @@ class BookMarksPageView(QWidgetBase):
         if selected_item:
             id_selected = selected_item.data(Qt.UserRole)
             if id_selected == "default":
-                self.log_with_toast(
-                    "Rules Set Cannot Be Edited",
-                    "Default Rule Sets cannot be edited.",
-                    "INFO",
-                    "WARN",
-                )
+                pass
+                # self.log_with_toast(
+                #     "Rules Set Cannot Be Edited",
+                #     "Default Rule Sets cannot be edited.",
+                #     "INFO",
+                #     "WARN",
+                # )
 
             else:
                 index = self.list_widget.currentRow()
@@ -361,12 +363,12 @@ class BookMarksPageView(QWidgetBase):
                     self.rule_sets[index]["guid"], self.rule_sets[index]
                 )
                 rule_set_name = self.rule_sets[index]["name"]
-                self.log_with_toast(
-                    "Rules Set Details Updated",
-                    f"Rule Set: {rule_set_name} has been updated.",
-                    "INFO",
-                    "SUCCESS",
-                )
+                # self.log_with_toast(
+                #     "Rules Set Details Updated",
+                #     f"Rule Set: {rule_set_name} has been updated.",
+                #     "INFO",
+                #     "SUCCESS",
+                # )
 
     def save_rule_sets_to_file(self) -> None:
         """
@@ -394,11 +396,11 @@ class BookMarksPageView(QWidgetBase):
 
                 with open(file_path, "w") as f:
                     json.dump(data, f, indent=4)
-                    self.log_with_toast(
-                        "File Saved",
-                        "Rule Sets JSON File Saved Successfully.",
-                        "INFO",
-                        "SUCCESS",
-                        True,
-                        self,
-                    )
+                    # self.log_with_toast(
+                    #     "File Saved",
+                    #     "Rule Sets JSON File Saved Successfully.",
+                    #     "INFO",
+                    #     "SUCCESS",
+                    #     True,
+                    #     self,
+                    # )

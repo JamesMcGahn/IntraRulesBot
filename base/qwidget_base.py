@@ -3,9 +3,9 @@ from typing import Optional
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
-from components.toasts import QToast
+from views.components.toasts import QToast
 from base.enums import LOGLEVEL
-from components.toasts.qtoast.enums import QTOASTSTATUS
+from views.components.toasts.qtoast.enums import QTOASTSTATUS
 
 
 class QWidgetBase(QWidget):

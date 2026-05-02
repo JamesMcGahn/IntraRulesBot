@@ -10,7 +10,7 @@ from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import QFileDialog
 
 from base import QWidgetBase
-from components.dialogs import SchemaErrorDialog
+from views.components.dialogs import SchemaErrorDialog
 
 
 from .header_navbar_css import STYLES

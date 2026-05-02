@@ -9,7 +9,7 @@ from typing import Optional
 
 from PySide6.QtWidgets import QFormLayout, QLabel, QLineEdit, QTextEdit
 
-from components.helpers.widget_factory import WidgetFactory
+from views.components.helpers.widget_factory import WidgetFactory
 
 from services.rules.models.triggers import FrequencyTrigger
 from services.rules.models.triggers.action_based import ActionTrigger

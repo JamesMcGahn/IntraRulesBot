@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from components.helpers import WidgetFactory
+from views.components.helpers import WidgetFactory
 
 
 class IconOnlyNavBarView(QWidget):

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from base.enums import LOGLEVEL
-from components.toasts.qtoast.enums import QTOASTSTATUS
+from views.components.toasts.qtoast.enums import QTOASTSTATUS
 
 
 @dataclass

@@ -3,8 +3,8 @@ from typing import Tuple
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QLineEdit, QVBoxLayout, QWidget
 
-from components.buttons import GradientButton
-from components.helpers import WidgetFactory
+from views.components.buttons import GradientButton
+from views.components.helpers import WidgetFactory
 
 
 class LoginPageView(QWidget):
@@ -63,7 +63,7 @@ class LoginPageView(QWidget):
             self.url.setText(self.url.text() + "/")
 
         return (
-            self.username.text() if  self.username.text() else None,
+            self.username.text() if self.username.text() else None,
             self.password.text() if self.password.text() else None,
             self.url.text() if self.url.text() else None,
             self.login_url.text() if self.login_url.text() else None,

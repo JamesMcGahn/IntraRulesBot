@@ -15,7 +15,7 @@ from base.enums import LOGLEVEL, UIEVENTTYPE
 from services.settings.enums import FIELDSTATESTATUS, SETTINGSCATEGORIES
 from services.settings.events import FieldStateEvent
 from services.settings.models import LogSettings
-from components.toasts.qtoast.enums import QTOASTSTATUS
+from views.components.toasts.qtoast.enums import QTOASTSTATUS
 from .tab_settings_ui import TabSettingsBaseUI
 from .tab_ui_helper import SettingsUIHelper
 

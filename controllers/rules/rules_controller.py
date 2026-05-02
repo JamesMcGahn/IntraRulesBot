@@ -16,7 +16,7 @@ from copy import deepcopy
 from base import QObjectBase
 from base.enums import UIEVENTTYPE, LOGLEVEL
 from base.events import ToastEvent, UIEvent, SchemaErrorDialogEvent, RulesLoadedEvent
-from components.toasts.qtoast.enums import QTOASTSTATUS
+from views.components.toasts.qtoast.enums import QTOASTSTATUS
 from schemas.enums import SCHEMATYPE
 from services.base.models import JobRequest
 from services.validation.enums import VALIDATEJOBTYPE
