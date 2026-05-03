@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from services.validation.models import SchemaError
 
 from uuid import uuid4
-
+from pathlib import Path
 from PySide6.QtCore import Signal, Slot
 from copy import deepcopy
 from base import QObjectBase
@@ -54,6 +54,32 @@ class RulesController(QObjectBase):
         # CONNECTIONS
         self.validation_service.task_complete.connect(self.on_validation_complete)
 
+    def hydrate_rules_page(self):
+        self._emit_rules_updated()
+
+    def load_editor_state(self):
+        path = PathManager.create_folder_in_app_data("rule_editor_state")
+        base_dir = Path(path)
+        file_path = base_dir / "rule_editor_state.json"
+        data, error = self.rules_store.load_from_json(file_path=file_path)
+        if not data:
+            return
+
+        raw_rules = data.get("rules", None)
+        raw_rule_set = data
+        if not raw_rules:
+            return
+
+        import_rules = self.rule_builder.build_rules(raw_rules)
+        import_rule_set = RuleSet(
+            rule_set_name=raw_rule_set.get("rule_set_name", "Editor Rules"),
+            description=raw_rule_set.get("description", "Editor Saved State"),
+            guid=str(uuid4()),
+            rules_guids=[rule.guid for rule in import_rules],
+        )
+        self.rules_registry.add_rules(import_rules)
+        self.rules_registry.add_rule_set(import_rule_set)
+
     # FEATURE Add an Import File Type - Right now active guids will overwrite.
     def import_from_file(self, file_path):
         self.logging(f"Opening file - {file_path} to load json data.", LOGLEVEL.INFO)
@@ -84,6 +110,8 @@ class RulesController(QObjectBase):
             batch_total=len(rules),
             file_path=file_path,
         )
+        if not rules and batch_type == VALIDATIONBATCHTYPE.SYS_SAVE:
+            self.handle_sys_save(batch)
         self._active_batches[batch_id] = batch
         for rule in rules:
             rule_guid = rule.get("guid", None)
@@ -202,6 +230,35 @@ class RulesController(QObjectBase):
                     )
                     event = UIEvent(UIEVENTTYPE.DISPLAY, payload=toast)
                     self.ui_event.emit(event)
+        elif batch.batch_type == VALIDATIONBATCHTYPE.SYS_SAVE:
+            self.handle_sys_save(batch)
+
+    def handle_sys_save(self, batch: ValidationBatch):
+        if batch.rule_errors:
+            errors_grouped_dict = self._group_batch_errors(batch)
+
+            self.runtime_validation_result.emit(
+                ValidationRulesResult(errors_grouped_dict)
+            )
+        else:
+            path = PathManager.create_folder_in_app_data("rule_editor_state")
+            rules = {
+                "rule_set_name": "Saved Rules",
+                "description": "Saved Rules From Editor",
+                "rules": batch.valid_rules,
+            }
+            base_dir = Path(path)
+            file_path = base_dir / "rule_editor_state.json"
+            is_saved, error = self.rules_store.save(rules, file_path)
+            if is_saved:
+                toast = ToastEvent(
+                    message="Rules Saved",
+                    title="Rules Saved to System",
+                    toast_level=QTOASTSTATUS.SUCCESS,
+                    log_level=LOGLEVEL.INFO,
+                )
+                event = UIEvent(UIEVENTTYPE.DISPLAY, payload=toast)
+                self.ui_event.emit(event)
 
     def _group_batch_errors(
         self, batch: ValidationBatch

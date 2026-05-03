@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from controllers.rules.models import ValidationRulesResult
+    from services.rules.models import Rule
 
 from typing import List
 
@@ -45,6 +46,7 @@ class RulesPageView(QWidget):
     clone_rule = Signal(str)
     validate_rules = Signal(dict)
     user_save_rules = Signal(dict)
+    sys_save_rules = Signal(dict)
 
     def __init__(self):
         """
@@ -196,6 +198,7 @@ class RulesPageView(QWidget):
         self.clone.clicked.connect(self.handle_clone_rule)
         self.validate.clicked.connect(self.handle_validate_rules)
         self.download.clicked.connect(self.handle_user_save)
+        self.save.clicked.connect(self.handle_sys_save)
 
         # Setup
         self.update_navigation_buttons()
@@ -400,7 +403,10 @@ class RulesPageView(QWidget):
         """
         form = self.stacked_widget.get_form_by_index(self.stacked_widget.currentIndex())
 
-        self.clone_rule.emit(form.rule_guid)
+        self.clone_rule.emit(form.guid)
+
+    def handle_sys_save(self):
+        self.sys_save_rules.emit(self.extract_forms_to_dict())
 
     def handle_user_save(self):
         self.user_save_rules.emit(self.extract_forms_to_dict())
@@ -480,8 +486,8 @@ class RulesPageView(QWidget):
             rule_form = self.stacked_widget.get_form_by_index(current_index)
             if current_index > 0:
                 previous_form = self.stacked_widget.get_form_by_index(current_index - 1)
-                self.previous_guid = previous_form.rule_guid
-            guid = rule_form.rule_guid
+                self.previous_guid = previous_form.guid
+            guid = rule_form.guid
             self.delete_all_forms()
             self.delete_rule.emit(guid)
 
@@ -506,12 +512,12 @@ class RulesPageView(QWidget):
             else:
                 btn.setDisabled(True)
 
-    def set_up_rules(self, rules: List[dict]) -> None:
+    def set_up_rules(self, rules: list[Rule]) -> None:
         """
         Sets up the UI with the provided rules.
 
         Args:
-            rules (List[dict]): A list of rule dictionaries.
+            rules (List[Rule]): A list of rule models.
 
         Returns:
             None: This function does not return a value.
@@ -524,7 +530,7 @@ class RulesPageView(QWidget):
                 )
                 print(widget, field_map)
                 adapter = RuleAdapter(
-                    guid=rule.guid, rule_inputs=field_map, widget=widget
+                    guid=rule.guid, field_map=field_map, widget=widget
                 )
                 self.stacked_widget.add_form(adapter)
             if self.previous_guid:

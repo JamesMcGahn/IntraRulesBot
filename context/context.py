@@ -61,6 +61,7 @@ class AppContext(QObjectBase, metaclass=QSingleton):
         )
 
         folder = PathManager.create_folder_in_app_data("playwright")
+        self.rules_controller.load_editor_state()
         self.ensure_playwright_browsers(folder)
 
         self.appshutdown.connect(self.settings_manager.save_settings)

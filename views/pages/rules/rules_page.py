@@ -58,8 +58,6 @@ class RulesPage(QWidgetBase):
         self.total_errors = 0
         self.rule_set_data = None
         self.setGraphicsEffect(None)
-        self.rulesModel = RulesModel()
-        self.ruleSetModel = RuleSetsModel()
 
         self.loginModel = LoginModel()
         self.loginModel.creds_changed.connect(self.update_credentials)
@@ -79,11 +77,11 @@ class RulesPage(QWidgetBase):
         self.ui.clone_rule.connect(self.handle_clone_rule)
 
         # Signal / Slot Connections
-        self.send_rule_sets.connect(self.ruleSetModel.add_rule_set)
+        # self.send_rule_sets.connect(self.ruleSetModel.add_rule_set)
         # self.rulesModel.data_changed.connect(self.ui.rules_changed)
         self.ui.user_save_rules.connect(self.handle_user_rules_save)
         self.ui.validate_rules.connect(self.handle_validate_rules)
-        self.ui.save.clicked.connect(self.save_rules_to_system)
+        self.ui.sys_save_rules.connect(self.handle_sys_rules_save)
         self.send_rules.connect(self.ui.rules_changed)
         self.ui.validate_open_dialog.clicked.connect(self.display_errors_dialog)
         self.ui.copy_field.clicked.connect(self.on_copy_fields)
@@ -221,7 +219,7 @@ class RulesPage(QWidgetBase):
         Returns:
             None: This function does not return a value.
         """
-        self.send_rules.emit(self.rulesModel.rules)
+        self.rules_controller.hydrate_rules_page()
 
     # TODO Remove from Page
     def start_rule_runner(self) -> None:
@@ -277,80 +275,6 @@ class RulesPage(QWidgetBase):
         self.ui.progress_bar.setHidden(True)
         self.ui.start.setDisabled(False)
 
-    # TODO Remove from Page
-    def validate_rules(self) -> Tuple[Optional[dict], Optional[list]]:
-        """
-        Validate all the rules in the form, returning a tuple with the valid rule data and
-        the list of rules with GUIDs.
-
-        Returns:
-            tuple: (data, rules_with_guid)
-                   - data (dict): The valid rules data.
-                   - rules_with_guid (list): The list of rules with GUIDs.
-                   Returns (None, None) if there are validation errors.
-        """
-
-        rules = []
-        rules_with_guid = []
-
-        rules_inputs = self.ui.get_forms()
-        self.total_errors = 0
-        self.forms_errors = []
-        if len(rules_inputs) == 0:
-            return (None, None)
-        self.logging("Starting Rules Validation", "INFO", True)
-        for index, rule in enumerate(rules_inputs):
-
-            error_count, form_errors, data = rule.validate_form()
-
-            rule_name = data.get("rule_name", None)
-            if not rule_name:
-                rule_name = f"Rule {index + 1}: Rule Has No Name"
-            else:
-                rule_name = f"Rule {index + 1}: {rule_name}"
-
-            self.total_errors = self.total_errors + error_count
-
-            error_dict = {"errors": form_errors, "rule_name": rule_name}
-
-            self.forms_errors.append(error_dict)
-            rules_with_guid.append(data)
-            data_copy = data.copy()
-            del data_copy["guid"]
-            rules.append(data_copy)
-
-        if self.total_errors > 0:
-            self.ui.validate_feedback.setText(f"Total Errors : {self.total_errors}")
-            self.log_with_toast(
-                "Validation Failed",
-                f"Total Errors : {self.total_errors}",
-                "WARN",
-                "WARN",
-                True,
-                self,
-            )
-            self.ui.validate_feedback.setIcon(self.ui.error_icon)
-
-            self.display_errors_dialog()
-            return (None, None)
-        else:
-            self.log_with_toast(
-                "Validation Succeeded",
-                "Validation Successful. Total Errors : 0",
-                "INFO",
-                "SUCCESS",
-                True,
-                self,
-            )
-            self.total_errors = 0
-            self.forms_errors = []
-            self.ui.set_hidden_errors_dialog_btn(True)
-            self.ui.validate_feedback.setText("No Errors Found")
-            self.ui.validate_feedback.setIcon(self.ui.no_error_icon)
-            [rule.pop("errors", None) for rule in rules]
-            data = {"rules": rules}
-            return (data, rules_with_guid)
-
     def handle_user_rules_save(self, rules) -> None:
         """
         Save the validated rules to a JSON file selected by the user. It ensures the file has
@@ -376,28 +300,16 @@ class RulesPage(QWidgetBase):
             rules, batch_type=VALIDATIONBATCHTYPE.USER_SAVE, file_path=file_path
         )
 
-    # TODO Remove heavy logic from Page -> change to storage to appdata file
-    def save_rules_to_system(self) -> None:
+    def handle_sys_rules_save(self, rules) -> None:
         """
         Save the validated rules to the internal system storage.
 
         Returns:
             None: This function does not return a value.
         """
-        if self.ui.get_forms():
-            _, data = self.validate_rules()
-            if data:
-                self.rulesModel.save_rules(data)
-                self.log_with_toast(
-                    "Rules Saved",
-                    "Rules Saved Successfully.",
-                    "INFO",
-                    "SUCCESS",
-                    True,
-                    self,
-                )
-        else:
-            self.rulesModel.save_rules([])
+        self.controllers.rules.validate_json(
+            rules, batch_type=VALIDATIONBATCHTYPE.SYS_SAVE
+        )
 
     def on_bookmark_click(self):
         if self.ui.get_forms():

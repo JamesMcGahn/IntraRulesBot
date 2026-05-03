@@ -22,14 +22,14 @@ class RuleAdapter:
     def __init__(
         self,
         guid: str,
-        rule_inputs: dict,
+        field_map: dict,
         widget: QWidget,
         int_keys: Tuple[str] = ("time_interval", "equality_threshold"),
     ):
         super().__init__()
 
         self._guid = guid
-        self._rule_inputs = rule_inputs
+        self._field_map = field_map
         self._widget = widget
 
         self.int_keys = int_keys
@@ -50,14 +50,14 @@ class RuleAdapter:
         return self._guid
 
     @property
-    def rule_inputs(self) -> dict:
+    def field_map(self) -> dict:
         """
         Returns the dictionary of rule input fields.
 
         Returns:
             dict: A dictionary mapping input fields to their corresponding form fields.
         """
-        return self._rule_inputs
+        return self._field_map
 
     def highlight_errors(self, rule_errors: list[SchemaError]) -> None:
         """
@@ -69,7 +69,7 @@ class RuleAdapter:
         Returns:
             None: This function does not return a value.
         """
-        rule_imports = self._rule_inputs
+        rule_imports = self._field_map
 
         def set_sheet(el, status=False):
             print(el)
@@ -146,4 +146,4 @@ class RuleAdapter:
                         x[key] = field.toPlainText()
             return x
 
-        return make_rule_dict(self.rule_inputs, int_keys)
+        return make_rule_dict(self.field_map, int_keys)
