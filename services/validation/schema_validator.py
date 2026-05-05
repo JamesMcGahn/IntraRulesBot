@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from .models import ValidationRequest, SchemaValidatePayload
     from jsonschema import ValidationError
 
-    from .schema_meta_provider import SchemaMetaProvider
+    from .interfaces.schema_meta_provider import SchemaMetaProvider
 
 from PySide6.QtCore import Signal
 

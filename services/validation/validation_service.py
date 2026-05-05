@@ -8,8 +8,8 @@ if TYPE_CHECKING:
     from ..base.models import JobRequest
     from .models import ValidationRequest
     from .base_validator import BaseValidator
-    from .settings_meta_provider import SettingsMetaProvider
-    from .schema_meta_provider import SchemaMetaProvider
+    from .interfaces.settings_meta_provider import SettingsMetaProvider
+    from .interfaces.schema_meta_provider import SchemaMetaProvider
 
 from PySide6.QtCore import Signal
 

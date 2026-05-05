@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from .models import ValidationRequest, SettingsValidatePayload
 
     from settings.models import SettingsFieldMeta
-    from .settings_meta_provider import SettingsMetaProvider
+    from .interfaces.settings_meta_provider import SettingsMetaProvider
 
 from PySide6.QtCore import Signal
 
