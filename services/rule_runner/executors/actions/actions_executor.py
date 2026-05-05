@@ -1,13 +1,18 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ...interfaces import BrowserPort
+
 from time import sleep
 import threading
 
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 
 from base import ErrorWrappers
 
 from .actions_email_executor import ActionsEmailExecutor
-from rulerunner.utils import WaitConditions, WebElementInteractions
 
 
 class ActionsExecutor:
@@ -27,7 +32,7 @@ class ActionsExecutor:
         rule (dict): The rule data used to configure the actions.
     """
 
-    def __init__(self, driver: webdriver.Chrome, rule: dict, logger):
+    def __init__(self, browser_port: BrowserPort, rule: dict, logger):
         """
         Initializes the ActionsWorker with the provided driver and rule data.
         Sets up the necessary connections for interacting with web elements.
@@ -37,11 +42,9 @@ class ActionsExecutor:
             rule (dict): The rule data used to configure the actions.
         """
         super().__init__()
-        self.driver = driver
+        self.browser_port = browser_port
         self.rule = rule
-        self.wELI = WebElementInteractions(self.driver)
         self._rule_condition_queues_source = "queues"
-        self.wELI.send_msg.connect(self.logging)
         self.logger = logger
 
     def logging(self, msg, level="INFO", print_msg=True) -> None:
@@ -122,17 +125,12 @@ class ActionsExecutor:
         """
         self.logging(f"Selecting provider category for Action {i+1}...", "INFO")
         user_action_category_selection = action["provider_category"]
-
-        action_category_dropdown = self.wELI.select_item_from_list(
-            20,
+        self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "overlayContent_selectAction_radMenuCategory")]/ul/li',
             user_action_category_selection,
+            retries=5,
         )
-        if not action_category_dropdown:
-            raise ValueError(
-                f"For Condition {i+1} - Unable to select provider category: {user_action_category_selection}"
-            )
         sleep(1)
 
     def set_provider_instance(self, action: dict, i: int) -> None:
@@ -149,17 +147,12 @@ class ActionsExecutor:
         self.logging(f"Selecting provider instance for Action {i+1}...", "INFO")
         user_action_provider_instance = action["provider_instance"]
 
-        action_provider_dropdown = self.wELI.select_item_from_list(
-            20,
+        self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "ctl00_overlayContent_selectAction_radMenuProviderInstance")]/ul/li',
             user_action_provider_instance,
+            retries=5,
         )
-        if not action_provider_dropdown:
-            raise ValueError(
-                f"For Action {i+1} - Unable to select provider instance: {user_action_provider_instance}"
-            )
-
         sleep(1)
 
     def set_provider_condition(self, action: dict, i: int) -> None:
@@ -175,16 +168,12 @@ class ActionsExecutor:
         """
         self.logging(f"Selecting condition selection for Action {i+1}...", "INFO")
         user_action_selection = action["provider_condition"]
-        action_selection_dropdown = self.wELI.select_item_from_list(
-            20,
+        self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "ctl00_overlayContent_selectAction_radMenuItem")]/ul/li',
             user_action_selection,
+            retries=5,
         )
-        if not action_selection_dropdown:
-            raise ValueError(
-                f"For Condition {i+1} - Unable to select provider condition: {user_action_selection}"
-            )
 
     def set_email_action(self, action: dict, rule: dict, i: int) -> None:
         """
@@ -200,7 +189,7 @@ class ActionsExecutor:
         """
         if action["details"]["action_type"] == "email":
             executor = ActionsEmailExecutor(
-                self.driver, self, action, rule, i, self.logger
+                self.browser_port, self, action, rule, i, self.logger
             )
             executor.execute()
 
@@ -215,13 +204,9 @@ class ActionsExecutor:
             None: This function does not return a value.
         """
         if index != len(self.rule["actions"]) - 1 and len(self.rule["actions"]) > 1:
-            add__addit_action = self.wELI.wait_for_element(
-                20,
+            self.logging(f"Adding condition {index+2}...", "INFO")
+            self.browser_port.wait_and_click(
                 By.XPATH,
                 '//*[contains(@id, "overlayContent_lblAddAction")]',
-                WaitConditions.CLICKABLE,
-                raise_exception=True,
             )
-            self.logging(f"Adding condition {index+2}...", "INFO")
-            add__addit_action.click()
             sleep(1)

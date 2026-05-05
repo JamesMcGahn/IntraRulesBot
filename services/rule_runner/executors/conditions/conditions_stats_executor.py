@@ -1,9 +1,14 @@
-from selenium import webdriver
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ...interfaces import BrowserPort
+
+
 from selenium.webdriver.common.by import By
 import threading
 from base import ErrorWrappers
-
-from rulerunner.utils import WaitConditions, WebElementInteractions
 
 
 class ConditionsStatsExecutor:
@@ -29,7 +34,7 @@ class ConditionsStatsExecutor:
 
     def __init__(
         self,
-        driver: webdriver.Chrome,
+        browser_port: BrowserPort,
         conditions_worker,
         condition: dict,
         index: int,
@@ -46,11 +51,10 @@ class ConditionsStatsExecutor:
             index (int): The index of the current condition.
         """
         super().__init__()
-        self.driver = driver
+        self.browser_port = browser_port
         self.condition = condition
         self.index = index
         self.conditions_worker = conditions_worker
-        self.wELI = WebElementInteractions(self.driver)
         self._rule_condition_queues_source = "queues"
         self.logger = logger
 
@@ -115,27 +119,19 @@ class ConditionsStatsExecutor:
             f"Selecting stats equality comparison operator for Condition {self.index+1}...",
             "INFO",
         )
-        agents_in_after_call_eq_drop = self.wELI.wait_for_element(
-            20,
+        self.browser_port.wait_and_click(
             By.XPATH,
             '//*[contains(@id, "overlayContent_conditionParameters_ddExposedDataOperator_Arrow")]',
-            WaitConditions.CLICKABLE,
-            raise_exception=True,
         )
-        agents_in_after_call_eq_drop.click()
 
         # equality comparison operator selection
         user_agents_in_after_call_eq = condition_details["equality_operator"]
-        agents_in_after_call_eq = self.wELI.select_item_from_list(
-            20,
+
+        self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "overlayContent_conditionParameters_ddExposedDataOperator_DropDown")]/div/ul/li',
             user_agents_in_after_call_eq,
         )
-        if not agents_in_after_call_eq:
-            raise ValueError(
-                f"For Condition {self.index+1} - Cant not find {user_agents_in_after_call_eq}. Make sure the comparison operator text is correct"
-            )
 
     def set_equality_threshold(self, condition_details: dict) -> None:
         """
@@ -151,18 +147,11 @@ class ConditionsStatsExecutor:
             f"Selecting stats threshold for Condition {self.index+1}...",
             "INFO",
         )
-        agents_in_after_call_eq_condition = self.wELI.wait_for_element(
-            20,
+        user_agents_in_after_call_eq_condition = condition_details["equality_threshold"]
+        self.browser_port.wait_and_type(
             By.XPATH,
             '//*[contains(@id, "overlayContent_conditionParameters_tbExposedDataValue")]',
-            WaitConditions.VISIBILITY,
-            raise_exception=True,
-        )
-
-        user_agents_in_after_call_eq_condition = condition_details["equality_threshold"]
-
-        agents_in_after_call_eq_condition.send_keys(
-            user_agents_in_after_call_eq_condition
+            user_agents_in_after_call_eq_condition,
         )
 
     def set_queues_sources_users(self) -> None:
@@ -189,34 +178,23 @@ class ConditionsStatsExecutor:
             f"Selecting queue source as 'queues' for Condition {self.index+1}...",
             "INFO",
         )
-        queues_radio_btn = self.wELI.wait_for_element(
-            20,
+        self.browser_port.wait_and_click(
             By.XPATH,
             '//*[contains(@id, "overlayContent_conditionParameters_ctl16_1")]',
-            WaitConditions.CLICKABLE,
-            raise_exception=True,
         )
-        queues_radio_btn.click()
+
         self.logging(
             f"Selecting queue all listed queues for Condition {self.index+1}...",
             "INFO",
         )
-        user_queues_dropdown_btn = self.wELI.wait_for_element(
-            20,
+        self.browser_port.wait_and_click(
             By.XPATH,
             '//*[contains(@id, "overlayContent_conditionParameters_ctl22_Arrow")]',
-            WaitConditions.CLICKABLE,
-            raise_exception=True,
         )
-        user_queues_dropdown_btn.click()
-        queues_list = self.wELI.click_all_items_in_list(
-            20,
+
+        self.browser_port.click_all_items_in_list(
             By.XPATH,
             '//*[contains(@id, "overlayContent_conditionParameters_ctl22_DropDown")]/div/ul/li',
-            5,
-            "queues in queues list",
+            retries=5,
+            item_name="queues in queues list",
         )
-        if not queues_list:
-            raise ValueError(
-                f"For Condition {self.index+1} - unable to select all queues"
-            )

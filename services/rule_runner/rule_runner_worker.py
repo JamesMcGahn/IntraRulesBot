@@ -5,13 +5,13 @@ from collections import deque
 
 from selenium.common.exceptions import NoSuchWindowException, WebDriverException
 
-from managers import WebDriverManager
 
 from rulerunner.login import LoginManagerWorker
 
 # from rulerunner.rule_worker import RuleWorker
 from .executors import RuleExecutor
 from .models import RuleRunnerConfig
+from services.selenium import SeleniumBrowserAdapter, WebDriverManager
 
 
 class RuleRunnerWorker(QWorkerBase):
@@ -26,9 +26,13 @@ class RuleRunnerWorker(QWorkerBase):
         self.rules_total_count = len(rules)
 
         # TODO Remove Later: ONLY FOR TESTING
+
         self.username = ""
         self.password = ""
         self.url = ""
+
+        self.driver = None
+        self.driver_adapter = None
 
         self._rule_finished = False
         self.current_rule = None
@@ -60,6 +64,7 @@ class RuleRunnerWorker(QWorkerBase):
         self.driver_manager = WebDriverManager()
         self.driver_manager.init_driver()
         self.driver = self.driver_manager.get_driver()
+        self.driver_adapter = SeleniumBrowserAdapter(self.driver)
 
     def close_down_driver(self):
         """
@@ -185,9 +190,10 @@ class RuleRunnerWorker(QWorkerBase):
         )
         if rules_length > 0:
             try:
+                print("exeeee")
                 self.current_rule = self.rules.popleft()
                 self.executor = RuleExecutor(
-                    self.driver, self.current_rule, self.logger
+                    self.driver_adapter, self.current_rule, self.logger
                 )
 
                 # self.rule_worker.send_logs.connect(self.receiver_thread_logs)
@@ -195,6 +201,7 @@ class RuleRunnerWorker(QWorkerBase):
                 self.executor.execute()
                 # self.on_rule_finished(self.current_rule.get("rule_name"))
             except Exception as e:
+                print(e)
                 self.receiver_thread_logs(
                     f"Failure trying to process next rule: {e}",
                     "ERROR",

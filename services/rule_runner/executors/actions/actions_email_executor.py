@@ -1,12 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ...interfaces import BrowserPort
 from time import sleep
 import threading
 
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 
 from base import ErrorWrappers
-
-from rulerunner.utils import WaitConditions, WebElementInteractions
 
 
 class ActionsEmailExecutor:
@@ -33,7 +36,7 @@ class ActionsEmailExecutor:
 
     def __init__(
         self,
-        driver: webdriver.Chrome,
+        browser_port: BrowserPort,
         actions_worker,
         action: dict,
         rule: dict,
@@ -45,13 +48,11 @@ class ActionsEmailExecutor:
         Connects logging to web element interactions and sets up internal references for rule processing.
         """
         super().__init__()
-        self.driver = driver
+        self.browser_port = browser_port
         self.action = action
         self.rule = rule
         self.index = index
-        self.wELI = WebElementInteractions(self.driver)
         self._rule_condition_queues_source = actions_worker.rule_condition_queues_source
-        self.wELI.send_msg.connect(self.logging)
         self.logger = logger
 
     def logging(self, msg, level="INFO", print_msg=True) -> None:
@@ -101,15 +102,10 @@ class ActionsEmailExecutor:
         Returns:
             None: This function does not return a value.
         """
-
-        email_page_settings_btn = self.wELI.wait_for_element(
-            20,
+        self.browser_port.wait_and_click(
             By.XPATH,
             '//*[contains(@id, "overlayContent_actionParameters_lblSettings")]',
-            WaitConditions.CLICKABLE,
-            raise_exception=True,
         )
-        email_page_settings_btn.click()
 
     def set_email_subject(self, rule_name: str) -> None:
         """
@@ -122,14 +118,11 @@ class ActionsEmailExecutor:
             None: This function does not return a value.
         """
         self.logging(f"Setting email subject for Action {self.index+1}...", "INFO")
-        email_subject = self.wELI.wait_for_element(
-            20,
+        self.browser_port.wait_and_type(
             By.XPATH,
             '//*[contains(@id, "overlayContent_actionParameters_ctl05")]',
-            WaitConditions.VISIBILITY,
-            raise_exception=True,
+            rule_name,
         )
-        email_subject.send_keys(rule_name)
 
     def set_email_message(self, action: dict) -> None:
         """
@@ -144,23 +137,18 @@ class ActionsEmailExecutor:
         self.logging(f"Setting email message for Action {self.index+1}...", "INFO")
         sleep(1)
         if "frequency_based" in self.rule:
-            email_message = self.wELI.wait_for_element(
-                20,
+            self.browser_port.wait_and_type(
                 By.XPATH,
                 '//*[contains(@id, "overlayContent_actionParameters_ctl12")]',
-                WaitConditions.VISIBILITY,
-                raise_exception=True,
+                action["details"]["email_body"],
             )
         else:
-            email_message = self.wELI.wait_for_element(
-                20,
+            self.browser_port.wait_and_type(
                 By.XPATH,
                 '//*[contains(@id, "overlayContent_actionParameters_ctl13")]',
-                WaitConditions.VISIBILITY,
-                raise_exception=True,
+                action["details"]["email_body"],
             )
 
-        email_message.send_keys(action["details"]["email_body"])
         sleep(1)
 
     def click_next_page(self) -> None:
@@ -170,14 +158,10 @@ class ActionsEmailExecutor:
         Returns:
             None: This function does not return a value.
         """
-        continue_btn = self.wELI.wait_for_element(
-            20,
+        self.browser_port.wait_and_click(
             By.XPATH,
             '//*[contains(@id, "overlayButtons_rbContinue_input")]',
-            WaitConditions.CLICKABLE,
-            raise_exception=True,
         )
-        continue_btn.click()
 
     def set_email_address(self, action) -> None:
         """
@@ -193,31 +177,21 @@ class ActionsEmailExecutor:
         self.logging(
             f"Setting receiver email address for Action {self.index+1}...", "INFO"
         )
-        select_email_individual = self.wELI.wait_for_element(
-            20,
+        self.browser_port.wait_and_click(
             By.XPATH,
             '//*[contains(@id, "overlayContent_actionParameters_rblIntradiemUsersIndividual_Users_1")]',
-            WaitConditions.CLICKABLE,
-            raise_exception=True,
         )
-        select_email_individual.click()
 
         if self._rule_condition_queues_source == "users":
-            input_email_address = self.wELI.wait_for_element(
-                20,
+            self.browser_port.wait_and_type(
                 By.XPATH,
                 '//*[contains(@id, "overlayContent_actionParameters_ctl65")]',
-                WaitConditions.VISIBILITY,
-                raise_exception=True,
+                action["details"]["email_address"],
             )
 
         elif self._rule_condition_queues_source == "queues":
-            input_email_address = self.wELI.wait_for_element(
-                20,
+            self.browser_port.wait_and_type(
                 By.XPATH,
                 '//*[contains(@id, "overlayContent_actionParameters_ctl61")]',
-                WaitConditions.VISIBILITY,
-                raise_exception=True,
+                action["details"]["email_address"],
             )
-
-        input_email_address.send_keys(action["details"]["email_address"])

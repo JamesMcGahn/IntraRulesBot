@@ -1,21 +1,23 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..interfaces import BrowserPort
+
 from time import sleep
 import threading
-from selenium import webdriver
 from selenium.common.exceptions import (
     NoSuchFrameException,
-    TimeoutException,
     WebDriverException,
 )
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
 
 from base.exceptions import DuplicateRuleName
 
 from .actions import ActionsExecutor
 from .conditions import ConditionsExecutor
 from .triggers import TriggerExecutor
-from rulerunner.utils import WaitConditions, WebElementInteractions
 
 
 class RuleExecutor:
@@ -36,7 +38,7 @@ class RuleExecutor:
         error (Signal[bool]): Emitted when an error occurs during rule creation.
     """
 
-    def __init__(self, driver: webdriver.Chrome, rule: dict, logger):
+    def __init__(self, browser_port: BrowserPort, rule: dict, logger):
         """
         Initializes the RuleWorker with the provided WebDriver instance and rule data.
 
@@ -45,12 +47,9 @@ class RuleExecutor:
             rule (dict): The rule data that contains trigger, condition, and action information.
         """
         super().__init__()
-        self.driver = driver
+        self.browser_port = browser_port
         self.rule = rule
-        self.wELI = WebElementInteractions(self.driver)
-
         self.logger = logger
-        self.wELI.send_msg.connect(self.logging)
 
         self.rule_rename_attempts = 0
         self.rule_name = rule["rule_name"]
@@ -82,58 +81,52 @@ class RuleExecutor:
                 f"Starting {self.__class__.__name__} in thread: {threading.get_ident()}",
                 "INFO",
             )
-            addRuleBtn = self.wELI.wait_for_element(
-                20,
+            self.browser_port.wait_and_click(
                 By.ID,
                 "ctl00_ActionBarContent_rbAction_Add",
-                WaitConditions.CLICKABLE,
-                raise_exception=True,
             )
-            if addRuleBtn:
-                addRuleBtn.click()
+            self.switch_to_rule_module()
 
-                self.switch_to_rule_module()
-
-                if self.is_tutorial_page_present():
-                    self.logging("Tutorial Page is present...", "INFO")
-                    self.next_page()
-
-                self.set_rule_name(self.rule_name)
-                self.start_trigger_page()
-                if self.stop_rule_worker:
-                    return
-
+            if self.is_tutorial_page_present():
+                self.logging("Tutorial Page is present...", "INFO")
                 self.next_page()
 
-                self.start_conditions_page()
-                if self.stop_rule_worker:
-                    return
+            self.set_rule_name(self.rule_name)
+            self.start_trigger_page()
+            if self.stop_rule_worker:
+                return
 
-                self.next_page()
+            self.next_page()
 
-                self.start_actions_page()
-                if self.stop_rule_worker:
-                    return
+            self.start_conditions_page()
+            if self.stop_rule_worker:
+                return
 
-                self.set_rule_category()
-                if self.stop_rule_worker:
-                    return
+            self.next_page()
 
-                self.switch_to_rule_module()
-                self.next_page()
-                if self.stop_rule_worker:
-                    return
+            self.start_actions_page()
+            if self.stop_rule_worker:
+                return
 
-                self.submit_rule()
-                if self.stop_rule_worker:
-                    return
+            self.set_rule_category()
+            if self.stop_rule_worker:
+                return
 
-                if self.rule_rename_attempts == 0:
-                    return self.rule["guid"]
-                else:
-                    old_rule_name = self.rule["rule_name"]
-                    self.logging(f"{old_rule_name} renamed {self.rule_name}")
-                    return self.rule["guid"]
+            self.switch_to_rule_module()
+            self.next_page()
+            if self.stop_rule_worker:
+                return
+
+            self.submit_rule()
+            if self.stop_rule_worker:
+                return
+
+            if self.rule_rename_attempts == 0:
+                return self.rule["guid"]
+            else:
+                old_rule_name = self.rule["rule_name"]
+                self.logging(f"{old_rule_name} renamed {self.rule_name}")
+                return self.rule["guid"]
         except DuplicateRuleName:
             return None
 
@@ -154,7 +147,7 @@ class RuleExecutor:
         Returns:
             None: This function does not return a value.
         """
-        self.trigger = TriggerExecutor(self.driver, self.rule, self.logger)
+        self.trigger = TriggerExecutor(self.browser_port, self.rule, self.logger)
         self.trigger.execute()
 
     def start_conditions_page(self) -> None:
@@ -166,7 +159,9 @@ class RuleExecutor:
         """
 
         if "conditions" in self.rule and self.rule["conditions"]:
-            self.conditions = ConditionsExecutor(self.driver, self.rule, self.logger)
+            self.conditions = ConditionsExecutor(
+                self.browser_port, self.rule, self.logger
+            )
             self.conditions.execute()
 
     def start_actions_page(self) -> None:
@@ -178,7 +173,7 @@ class RuleExecutor:
         """
 
         if "actions" in self.rule and self.rule["actions"]:
-            executor = ActionsExecutor(self.driver, self.rule, self.logger)
+            executor = ActionsExecutor(self.browser_port, self.rule, self.logger)
             # TODO remove this dependacy
             executor.rule_condition_queues_source = (
                 self.conditions.rule_condition_queues_source
@@ -194,7 +189,7 @@ class RuleExecutor:
             None: This function does not return a value.
         """
         self.logging("Switching to the Rule Modal...", "INFO")
-        self.wELI.switch_to_frame(20, By.NAME, "RadWindowAddEditRule")
+        self.browser_port.switch_to_frame(By.NAME, "RadWindowAddEditRule")
 
     def set_rule_name(self, rule_name: str) -> None:
         """
@@ -207,14 +202,11 @@ class RuleExecutor:
             None: This function does not return a value.
         """
         self.logging("Setting the Rule Name...", "INFO")
-        rule_name_input = self.wELI.wait_for_element(
-            15,
+        self.browser_port.wait_and_type(
             By.XPATH,
             '//*[contains(@id, "overlayRuleProgressArea_tbRuleName")]',
-            WaitConditions.VISIBILITY,
+            rule_name,
         )
-        rule_name_input.clear()
-        rule_name_input.send_keys(rule_name)
 
     def next_page(self) -> None:
         """
@@ -224,14 +216,11 @@ class RuleExecutor:
             None: This function does not return a value.
         """
         self.logging("Navigating to the Next Page...", "INFO")
-        continue_btn = self.wELI.wait_for_element(
-            15,
+        self.browser_port.wait_and_click(
             By.XPATH,
             '//*[contains(@id, "overlayButtons_rbContinue_input")]',
-            WaitConditions.CLICKABLE,
+            wait_time=35,
         )
-        sleep(1)
-        continue_btn.click()
 
     def is_tutorial_page_present(self) -> bool:
         """
@@ -240,13 +229,12 @@ class RuleExecutor:
         Returns:
             bool: True if the tutorial page is present, False otherwise.
         """
-        return self.wELI.wait_for_element(
-            5,
+        return self.browser_port.wait_for_element(
             By.XPATH,
             '//*[contains(@id, "overlayButtonsLeft_cbDontAskLead")]',
-            WaitConditions.CLICKABLE,
-            raise_exception=False,
+            wait_time=5,
             retries=1,
+            raise_exception=False,
         )
 
     def submit_rule(self) -> None:
@@ -258,13 +246,6 @@ class RuleExecutor:
         """
 
         self.logging(f"Submitting Rule - {self.rule_name }...", "INFO")
-        submit_btn = self.wELI.wait_for_element(
-            15,
-            By.XPATH,
-            '//*[contains(@id, "overlayButtons_rbSubmit_input")]',
-            WaitConditions.CLICKABLE,
-            raise_exception=True,
-        )
 
         def handle_duplicate_alert():
             for _ in range(2):
@@ -277,13 +258,20 @@ class RuleExecutor:
                         f"Retrying Rule Submission for renamed rule - {self.rule_name }...",
                         "INFO",
                     )
-                    submit_btn.click()
+                    self.browser_port.wait_and_click(
+                        By.XPATH,
+                        '//*[contains(@id, "overlayButtons_rbSubmit_input")]',
+                        15,
+                    )
                 else:
                     return False  # No alert found, submission is successful
             return True
 
-        submit_btn.click()
-
+        self.browser_port.wait_and_click(
+            By.XPATH,
+            '//*[contains(@id, "overlayButtons_rbSubmit_input")]',
+            15,
+        )
         if handle_duplicate_alert():
             if self.wait_for_dup_rule_alert(5):
                 self.logging(
@@ -292,7 +280,7 @@ class RuleExecutor:
                 )
                 raise DuplicateRuleName
 
-        self.driver.switch_to.default_content()
+        self.browser_port.switch_to_main_frame()
         self.success_message()
 
     def rename_rule(self) -> None:
@@ -318,14 +306,11 @@ class RuleExecutor:
         Returns:
             None: This function does not return a value.
         """
-        self.wELI.wait_for_element(
-            20,
+        self.browser_port.wait_for_element(
             By.ID,
             "ctl00_ActionBarContent_rbAction_Add",
-            WaitConditions.CLICKABLE,
             raise_exception=True,
         )
-
         self.logging(f"Rule: {self.rule_name} has been created.", "INFO")
 
     def set_rule_category(self) -> None:
@@ -336,36 +321,26 @@ class RuleExecutor:
             None: This function does not return a value.
         """
         self.logging("Setting the rule category", "INFO")
-        rule_settings_hamburger = self.wELI.wait_for_element(
-            15,
+        self.browser_port.wait_and_click(
             By.XPATH,
             '//*[contains(@id, "overlayContent_divAddEditAction")]/div[3]/a',
-            WaitConditions.CLICKABLE,
-            raise_exception=True,
         )
-        rule_settings_hamburger.click()
         sleep(1)
-        self.driver.switch_to.default_content()
-        self.wELI.switch_to_frame(20, By.NAME, "RadWindowAddEditRuleSettings")
-        rule_category_dropdown_arrow = self.wELI.wait_for_element(
-            15,
+        self.browser_port.switch_to_main_frame()
+        self.browser_port.switch_to_frame(By.NAME, "RadWindowAddEditRuleSettings")
+        self.browser_port.wait_and_click(
             By.XPATH,
             '//*[contains(@id, "ddRuleCategory_Arrow")]',
-            WaitConditions.CLICKABLE,
-            raise_exception=True,
         )
-        rule_category_dropdown_arrow.click()
-        rule_category_selection = self.rule["rule_category"]
-        self.wELI.select_item_from_list(
-            20,
+        self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "ddRuleCategory_DropDown")]/div/ul/li',
-            rule_category_selection,
-            raise_exception=True,
+            self.rule["rule_category"],
         )
+
         sleep(1)
         self.logging("Switching the main frame", "INFO")
-        self.driver.switch_to.default_content()
+        self.browser_port.switch_to_main_frame()
 
     def wait_for_dup_rule_alert(self, wait_time: int) -> bool:
         """
@@ -377,25 +352,18 @@ class RuleExecutor:
         Returns:
             bool: True if the alert is found and accepted, False otherwise.
         """
-
-        try:
-            WebDriverWait(self.driver, wait_time).until(EC.alert_is_present())
-
-            alert = self.driver.switch_to.alert
-            if "A Rule with this name already exists" in alert.text:
-
-                self.logging(
-                    f"A Rule with the name {self.rule_name} already exists.", "ERROR"
-                )
-                self.logging(
-                    "Accepting window alert notifying of duplicate rule name.", "INFO"
-                )
-                alert.accept()
-
-                if alert:
-                    return True
-
-        except TimeoutException:
+        alert_present = self.browser_port.wait_and_accept_alert(
+            "A Rule with this name already exists", wait_time
+        )
+        if alert_present:
+            self.logging(
+                f"A Rule with the name {self.rule_name} already exists.", "ERROR"
+            )
+            self.logging(
+                "Accepting window alert notifying of duplicate rule name.", "INFO"
+            )
+            return True
+        else:
             self.logging(f"Rule: {self.rule_name} has been submitted.", "INFO")
             return False
 

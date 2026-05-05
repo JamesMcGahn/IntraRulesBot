@@ -1,10 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ...interfaces import BrowserPort
+
+
 from time import sleep
 import threading
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 from base import ErrorWrappers
 
-from rulerunner.utils import WaitConditions, WebElementInteractions
 from .conditions_stats_executor import ConditionsStatsExecutor
 
 
@@ -25,7 +31,7 @@ class ConditionsExecutor:
         rule (dict): The rule data used to configure the conditions.
     """
 
-    def __init__(self, driver: webdriver.Chrome, rule: dict, logger):
+    def __init__(self, browser_port: BrowserPort, rule: dict, logger):
         """
         Initializes the ConditionsWorker with the provided driver and rule data.
         Sets up the necessary connections for interacting with web elements.
@@ -35,11 +41,10 @@ class ConditionsExecutor:
             rule (dict): The rule data used to configure the conditions.
         """
         super().__init__()
-        self.driver = driver
+        self.browser_port = browser_port
         self.rule = rule
-        self.wELI = WebElementInteractions(self.driver)
+
         self._rule_condition_queues_source = "queues"
-        self.wELI.send_msg.connect(self.logging)
         self.logger = logger
 
     def logging(self, msg, level="INFO", print_msg=True) -> None:
@@ -121,18 +126,13 @@ class ConditionsExecutor:
         """
         user_provider_category = condition["provider_category"]
         self.logging(f"Selecting provider category for Condition {i+1}...", "INFO")
-        provider_category_select = self.wELI.select_item_from_list(
-            20,
+
+        self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "overlayContent_selectCondition_radMenuCategory")]/ul/li',
             user_provider_category,
+            retries=5,
         )
-
-        if not provider_category_select:
-            raise ValueError(
-                f"For Condition {i+1} - Unable to select provider category: {user_provider_category}"
-            )
-
         sleep(1)
 
     def set_provider_instance(self, condition: dict, i: int) -> None:
@@ -148,17 +148,11 @@ class ConditionsExecutor:
         """
         self.logging(f"Selecting provider instance for Condition {i+1}...", "INFO")
         user_provider_instance = condition["provider_instance"]
-        provider_instance_selection = self.wELI.select_item_from_list(
-            20,
+        self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "overlayContent_selectCondition_radMenuProviderInstance")]/ul/li',
             user_provider_instance,
         )
-        if not provider_instance_selection:
-            raise ValueError(
-                f"For Condition {i+1} - Unable to select provider instance: {user_provider_instance}"
-            )
-
         sleep(1)
 
     def set_provider_condition(self, condition: dict, i: int) -> None:
@@ -174,18 +168,12 @@ class ConditionsExecutor:
         """
         self.logging(f"Selecting condition selection for Condition {i+1}...", "INFO")
         user_provider_condition = condition["provider_condition"]
-        provider_condition_selection = self.wELI.select_item_from_list(
-            20,
+        self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "overlayContent_selectCondition_radMenuItem")]/ul/li',
             user_provider_condition,
-            5,
+            retries=5,
         )
-        if not provider_condition_selection:
-            raise ValueError(
-                f"For Condition {i+1} - Unable to select provider condition: {user_provider_condition}"
-            )
-
         sleep(1)
 
     def set_stats_based_condition(self, condition: dict, index: int) -> None:
@@ -202,7 +190,7 @@ class ConditionsExecutor:
         condition_details = condition["details"]
         if condition_details["condition_type"] == "stats":
             executor = ConditionsStatsExecutor(
-                self.driver, self, condition, index, self.logger
+                self.browser_port, self, condition, index, self.logger
             )
 
             executor.execute()
@@ -221,12 +209,8 @@ class ConditionsExecutor:
             index != len(self.rule["conditions"]) - 1
             and len(self.rule["conditions"]) > 1
         ):
-            add__addit_condition = self.wELI.wait_for_element(
-                20,
+            self.logging(f"Adding condition {index+2}...", "INFO")
+            self.browser_port.wait_and_click(
                 By.XPATH,
                 '//*[contains(@id, "overlayContent_lblAddCondition")]',
-                WaitConditions.CLICKABLE,
-                raise_exception=True,
             )
-            self.logging(f"Adding condition {index+2}...", "INFO")
-            add__addit_condition.click()

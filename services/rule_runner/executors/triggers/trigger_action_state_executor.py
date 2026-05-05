@@ -1,11 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ...interfaces import BrowserPort
+
 from time import sleep
 import threading
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 
 from base import ErrorWrappers
-
-from rulerunner.utils import WaitConditions, WebElementInteractions
 
 
 class TriggerActionStateExecutor:
@@ -29,7 +33,7 @@ class TriggerActionStateExecutor:
         index (int): The index of the current condition.
     """
 
-    def __init__(self, driver: webdriver.Chrome, action_based: dict, logger):
+    def __init__(self, browser_port: BrowserPort, action_based: dict, logger):
         """
         Initializes the TriggerActionStateWorker with the provided driver, condition, index, and conditions_worker.
         Connects logging to web element interactions and sets up internal references for stats-based condition processing.
@@ -40,11 +44,8 @@ class TriggerActionStateExecutor:
             index (int): The index of the current condition.
         """
         super().__init__()
-        self.driver = driver
-        self.action_based = action_based
-        self.wELI = WebElementInteractions(self.driver)
+        self.browser_port = browser_port
         self._rule_condition_queues_source = "queues"
-        self.wELI.send_msg.connect(self.logging)
         self.logger = logger
 
     def logging(self, msg, level="INFO", print_msg=True) -> None:
@@ -86,26 +87,15 @@ class TriggerActionStateExecutor:
         self.set_user_list()
 
     def set_state_changed_to(self, state):
-
-        state_dropdown_btn = self.wELI.wait_for_element(
-            20,
+        self.browser_port.wait_and_click(
             By.XPATH,
             '//*[contains(@id, "overlayContent_triggerParameters_agentStateSelectValue_Arrow")]',
-            WaitConditions.CLICKABLE,
-            raise_exception=True,
         )
-        state_dropdown_btn.click()
-
-        agent_state_changed_to = self.wELI.select_item_from_list(
-            20,
+        self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "overlayContent_triggerParameters_agentStateSelectValue_DropDown")]/div/ul/li',
             state,
         )
-        if not agent_state_changed_to:
-            raise ValueError(
-                f"For Action Trigger State - Cant not find {state}. Make sure the state text is correct"
-            )
 
     def set_agent_aux(self, aux) -> None:
         """
@@ -117,15 +107,11 @@ class TriggerActionStateExecutor:
         Returns:
             None: This function does not return a value.
         """
-        aux_code_input = self.wELI.wait_for_element(
-            20,
+        self.browser_port.wait_and_type(
             By.XPATH,
             '//*[contains(@id, "overlayContent_triggerParameters_agentStateAuxCodeValue")]',
-            WaitConditions.VISIBILITY,
-            raise_exception=True,
+            aux,
         )
-
-        aux_code_input.send_keys(aux)
 
     def set_agent_and_aux(self) -> None:
         """
@@ -138,15 +124,10 @@ class TriggerActionStateExecutor:
             self.set_state_changed_to(agent_changed["code"])
             self.set_agent_aux(agent_changed["aux"])
 
-            agent_state_add_plus_button = self.wELI.wait_for_element(
-                20,
+            self.browser_port.wait_and_click(
                 By.XPATH,
                 '//*[contains(@id, "overlayContent_triggerParameters_divParameters")]/div[1]/div[1]/div[3]/img',
-                WaitConditions.VISIBILITY,
-                raise_exception=True,
             )
-            agent_state_add_plus_button.click()
-
             sleep(1)
 
     def set_equality_operator(self) -> None:
@@ -162,25 +143,16 @@ class TriggerActionStateExecutor:
             f"Setting equality operator to {user_selected_equality_op}.", "INFO"
         )
         if user_selected_equality_op == "Equal To":
-
-            equal_button = self.wELI.wait_for_element(
-                20,
+            self.browser_port.wait_and_click(
                 By.XPATH,
                 '//*[contains(@id, "overlayContent_triggerParameters_ctl16_0")]',
-                WaitConditions.VISIBILITY,
-                raise_exception=True,
             )
-            equal_button.click()
-        elif user_selected_equality_op == "Not Equal To":
 
-            not_equal_button = self.wELI.wait_for_element(
-                20,
+        elif user_selected_equality_op == "Not Equal To":
+            self.browser_port.wait_and_click(
                 By.XPATH,
                 '//*[contains(@id, "overlayContent_triggerParameters_ctl16_1")]',
-                WaitConditions.VISIBILITY,
-                raise_exception=True,
             )
-            not_equal_button.click()
 
     def set_user_list(self) -> None:
         """
@@ -191,22 +163,12 @@ class TriggerActionStateExecutor:
         """
         user_list_selection = self.action_based["details"]["user_list"]
 
-        user_list_dropdown_btn = self.wELI.wait_for_element(
-            20,
+        self.browser_port.wait_and_click(
             By.XPATH,
             '//*[contains(@id, "user_filter_static_id_Arrow")]',
-            WaitConditions.VISIBILITY,
-            raise_exception=True,
         )
-        user_list_dropdown_btn.click()
-
-        agent_state_changed_to = self.wELI.select_item_from_list(
-            20,
+        self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "user_filter_static_id_DropDown")]/div/ul/li',
             user_list_selection,
         )
-        if not agent_state_changed_to:
-            raise ValueError(
-                f"For Action Trigger State - Cant not find {user_list_selection}. Make sure the User List text is correct"
-            )

@@ -1,11 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ...interfaces import BrowserPort
+
 from time import sleep
 import threading
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 
 from base import ErrorWrappers
 
-from rulerunner.utils import WebElementInteractions
 from .trigger_action_state_executor import TriggerActionStateExecutor
 
 
@@ -26,7 +31,7 @@ class TriggerActionBasedExectuor:
         rule (dict): The rule data used to configure the actions.
     """
 
-    def __init__(self, driver: webdriver.Chrome, rule: dict, logger):
+    def __init__(self, browser_port: BrowserPort, rule: dict, logger):
         """
         Initializes the ActionsWorker with the provided driver and rule data.
         Sets up the necessary connections for interacting with web elements.
@@ -36,11 +41,9 @@ class TriggerActionBasedExectuor:
             rule (dict): The rule data used to configure the actions.
         """
         super().__init__()
-        self.driver = driver
+        self.browser_port = browser_port
         self.rule = rule
-        self.wELI = WebElementInteractions(self.driver)
         self._rule_condition_queues_source = "queues"
-        self.wELI.send_msg.connect(self.logging)
         self.logger = logger
 
     @ErrorWrappers.qworker_web_raise_error
@@ -94,16 +97,11 @@ class TriggerActionBasedExectuor:
         self.logging("Selecting provider category for Action Trigger", "INFO")
         user_action_trigger_category_selection = action_trigger["provider_category"]
 
-        action_trigger_category_dropdown = self.wELI.select_item_from_list(
-            20,
+        self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "overlayContent_selectTrigger_radMenuCategory")]/ul/li',
             user_action_trigger_category_selection,
         )
-        if not action_trigger_category_dropdown:
-            raise ValueError(
-                f"Action Trigger - Unable to select provider category: {user_action_trigger_category_selection}"
-            )
         sleep(1)
 
     def set_provider_instance(self, action_trigger: dict) -> None:
@@ -118,16 +116,11 @@ class TriggerActionBasedExectuor:
         """
         self.logging("Selecting provider instance for Action Trigger", "INFO")
         user_provider_instance = action_trigger["provider_instance"]
-        provider_instance_selection = self.wELI.select_item_from_list(
-            20,
+        self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "overlayContent_selectTrigger_radMenuProviderInstance")]/ul/li',
             user_provider_instance,
         )
-        if not provider_instance_selection:
-            raise ValueError(
-                f"Action Trigger - Unable to select provider instance: {user_provider_instance}"
-            )
 
         sleep(1)
 
@@ -143,23 +136,19 @@ class TriggerActionBasedExectuor:
         """
         self.logging("Selecting condition selection for Action Trigger", "INFO")
         user_provider_condition = action_trigger["provider_condition"]
-        provider_condition_selection = self.wELI.select_item_from_list(
-            20,
+
+        self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "overlayContent_selectTrigger_radMenuItem")]/ul/li',
             user_provider_condition,
             5,
         )
-        if not provider_condition_selection:
-            raise ValueError(
-                f"Action Trigger - Unable to select provider condition: {user_provider_condition}"
-            )
 
         sleep(1)
 
     def set_action_state(self, action_trigger: dict):
         if action_trigger["details"]["action_type"] == "state":
             executor = TriggerActionStateExecutor(
-                self.driver, action_trigger, self.logger
+                self.browser_port, action_trigger, self.logger
             )
             executor.execute()
