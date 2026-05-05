@@ -13,7 +13,7 @@ class BrowserPort(Protocol):
         self,
         locator_type: By,
         locator_value: str,
-        wait_time: int = 20,
+        wait_time: int = 30,
         retries: int = 3,
     ): ...
     def select_item_from_list(
@@ -21,7 +21,7 @@ class BrowserPort(Protocol):
         locator_type: By,
         locator_value: str,
         text_to_select: str | int,
-        wait_time: int = 20,
+        wait_time: int = 30,
         retries: int = 3,
     ): ...
 
@@ -30,7 +30,7 @@ class BrowserPort(Protocol):
         locator_type: By,
         locator_value: str,
         text_to_input: str | int,
-        wait_time: int = 20,
+        wait_time: int = 30,
         retries: int = 3,
     ): ...
 
@@ -38,7 +38,7 @@ class BrowserPort(Protocol):
         self,
         locator_type: By,
         locator_value: str,
-        wait_time: int = 20,
+        wait_time: int = 30,
         retries: int = 3,
         item_name: str = "",
     ): ...
@@ -49,7 +49,7 @@ class BrowserPort(Protocol):
         self,
         locator_type: By,
         locator_value: str,
-        wait_time: int = 20,
+        wait_time: int = 30,
         retries: int = 3,
         raise_exception: bool = False,
     ) -> WebElement: ...
