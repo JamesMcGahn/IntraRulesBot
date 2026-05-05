@@ -158,7 +158,8 @@ class SettingsUIHelper(QObject):
             line_edit_field.setMinimumWidth(200)
             line_edit_field.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
             h_layout.addWidget(line_edit_field)
-
+            if meta.hide_secure_text:
+                line_edit_field.setEchoMode(QLineEdit.Password)
             line_edit_field.textChanged.connect(
                 lambda word, key=key, field_type=field_type, secure=secure_setting: self.handle_text_change_timer(
                     tab, key, word, field_type, secure
