@@ -1,5 +1,5 @@
 from .web_element_interactions import WebElementInteractions
-from .wait_conditions import WaitConditions
+from .enums.wait_conditions import WaitConditions
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebElement
