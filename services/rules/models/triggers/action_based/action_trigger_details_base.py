@@ -4,4 +4,4 @@ from ....enums import ACTIONTRIGGERDETAILTYPE
 
 @dataclass
 class BaseActionTriggerDetails:
-    pass
+    action_type: ACTIONTRIGGERDETAILTYPE

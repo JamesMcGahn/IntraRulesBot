@@ -72,7 +72,6 @@ class RuleAdapter:
         rule_imports = self._field_map
 
         def set_sheet(el, status=False):
-            print(el)
             if status:
                 color = "green"
             else:

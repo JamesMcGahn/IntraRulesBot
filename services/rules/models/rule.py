@@ -12,5 +12,5 @@ class Rule:
     guid: str
     rule_category: RULECATEGORY
     trigger: FrequencyTrigger | ActionTrigger
-    condtions: list[Condition] = field(default_factory=list)
+    conditions: list[Condition] = field(default_factory=list)
     actions: list[Action] = field(default_factory=list)

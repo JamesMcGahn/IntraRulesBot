@@ -21,7 +21,7 @@ RULES_SCHEMA = {
                 "details": {
                     "type": "object",
                     "properties": {
-                        "action_type": {"type": "string", "enum": ["state"]},
+                        "action_type": {"type": "string", "enum": ["state_changed"]},
                         "state": {
                             "type": "array",
                             "minItems": 1,
@@ -47,7 +47,11 @@ RULES_SCHEMA = {
                     "required": ["action_type"],
                     "anyOf": [
                         {
-                            "if": {"properties": {"action_type": {"const": "state"}}},
+                            "if": {
+                                "properties": {
+                                    "action_type": {"const": "state_changed"}
+                                }
+                            },
                             "then": {
                                 "required": ["state", "equality_operator", "user_list"]
                             },

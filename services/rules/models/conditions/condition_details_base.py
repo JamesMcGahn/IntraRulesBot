@@ -4,4 +4,4 @@ from ...enums import CONDITIONDETAILTYPE
 
 @dataclass
 class BaseConditionDetails:
-    pass
+    condition_type: CONDITIONDETAILTYPE

@@ -13,7 +13,7 @@ from .models.agent_state import AgentState
 
 from .models.conditions import Condition, ConditionStatsDetails
 from .models.actions import Action, ActionsEmailDetails
-
+from .enums import ACTIONDETAILTYPE, CONDITIONDETAILTYPE, ACTIONTRIGGERDETAILTYPE
 
 from base import QObjectBase
 from base.enums import LOGLEVEL
@@ -26,7 +26,7 @@ class RuleBuilder(QObjectBase):
 
         self.ACTION_DETAIL_BUILDERS = {"email": self._build_action_email}
         self.ACTION_DETAIL_TRIGGER_BUILDERS = {
-            "state": self._build_action_trigger_change_state
+            ACTIONTRIGGERDETAILTYPE.STATE_CHANGED: self._build_action_trigger_state_changed
         }
         self.CONDITION_DETAIL_BUILDERS = {"stats": self._build_stats_details}
 
@@ -55,7 +55,7 @@ class RuleBuilder(QObjectBase):
             guid=guid,
             rule_category=rule_category,
             trigger=trigger,
-            condtions=conditions,
+            conditions=conditions,
             actions=actions,
         )
 
@@ -97,11 +97,12 @@ class RuleBuilder(QObjectBase):
             raise ValueError(msg)
         return builder(data_detail)
 
-    def _build_action_trigger_change_state(self, data_detail):
+    def _build_action_trigger_state_changed(self, data_detail):
         state = []
         for state_obj in data_detail["state"]:
             state.append(AgentState(state=state_obj["state"], aux=state_obj["aux"]))
         return AgentStateChangeDetails(
+            action_type=ACTIONTRIGGERDETAILTYPE(data_detail["action_type"]),
             equality_operator=data_detail["equality_operator"],
             state=state,
             user_list=data_detail["user_list"],
@@ -119,6 +120,7 @@ class RuleBuilder(QObjectBase):
 
     def _build_stats_details(self, data_detail):
         return ConditionStatsDetails(
+            condition_type=CONDITIONDETAILTYPE(data_detail["condition_type"]),
             equality_operator=data_detail["equality_operator"],
             equality_threshold=data_detail["equality_threshold"],
             queues_source=data_detail["queues_source"],
@@ -137,6 +139,7 @@ class RuleBuilder(QObjectBase):
 
     def _build_action_email(self, data_detail):
         return ActionsEmailDetails(
+            action_type=ACTIONDETAILTYPE(data_detail["action_type"]),
             email_address=data_detail["email_address"],
             email_body=data_detail["email_body"],
             email_subject=data_detail["email_subject"],

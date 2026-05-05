@@ -216,7 +216,7 @@ class RuleFactory:
             None: This function does not return a value.
         """
         rule_input["conditions"] = []
-        for i, condition in enumerate(rule.condtions):
+        for i, condition in enumerate(rule.conditions):
             title = condition.details.condition_type.title()
 
             condition_layout = WidgetFactory.create_form_box(
@@ -263,7 +263,7 @@ class RuleFactory:
             rule_input["actions"].append(inputs)
 
     def create_action_based_fields(
-        self, parent_layout: QFormLayout, condition: Condition
+        self, parent_layout: QFormLayout, trigger: ActionTrigger
     ) -> dict:
         """
         Creates form fields for the given condition.
@@ -289,17 +289,17 @@ class RuleFactory:
 
         action_based_fields = [
             (
-                condition.provider_category,
+                trigger.provider_category,
                 "Provider Category:",
                 "provider_category",
             ),
             (
-                condition.provider_instance,
+                trigger.provider_instance,
                 "Provider Instance:",
                 "provider_instance",
             ),
             (
-                condition.provider_condition,
+                trigger.provider_condition,
                 "Provider Condition:",
                 "provider_condition",
             ),
@@ -317,9 +317,9 @@ class RuleFactory:
         details_data = {}
 
         # Check details for condition type
-        details = condition.details
-        if details.action_type == "state":
-            title = condition.provider_condition
+        details = trigger.details
+        if details.action_type == "state_changed":
+            title = trigger.provider_condition
             details_layout = WidgetFactory.create_form_box(
                 f"{title} Settings",
                 parent_layout,

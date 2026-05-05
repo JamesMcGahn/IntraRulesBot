@@ -4,4 +4,4 @@ from ...enums import ACTIONDETAILTYPE
 
 @dataclass
 class BaseActionDetails:
-    pass
+    action_type: ACTIONDETAILTYPE
