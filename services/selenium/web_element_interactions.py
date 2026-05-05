@@ -1,6 +1,10 @@
-from typing import Optional
+from __future__ import annotations
 
-from PySide6.QtCore import QObject, Signal
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from ..logger.adapters import LogAdapter
+
 from selenium.common.exceptions import (
     NoSuchElementException,
     NoSuchFrameException,
@@ -15,26 +19,16 @@ from selenium.webdriver.support.ui import WebDriverWait
 from .enums.wait_conditions import WaitConditions
 
 
-class WebElementInteractions(QObject):
+class WebElementInteractions:
     """
     Class responsible for interacting with web elements using Selenium WebDriver.
     Provides methods for waiting for elements, selecting items from lists, and switching frames.
-
-    Attributes:
-        driver (webdriver.Chrome): The Selenium WebDriver instance used to interact with the browser.
-
-    Signals:
-        send_msg (Signal): Signal used to send logging messages.
-
-    Args:
-        driver (webdriver.Chrome): The Selenium WebDriver instance.
     """
 
-    send_msg = Signal(str, str, bool)
-
-    def __init__(self, driver):
+    def __init__(self, driver, logger: LogAdapter):
         super().__init__()
         self.driver = driver
+        self.logging = logger
 
     def wait_for_element(
         self,
@@ -44,7 +38,7 @@ class WebElementInteractions(QObject):
         condition: WaitConditions,
         text: Optional[str] = None,
         failure_message: tuple[str, str] = ("WARN", "default"),
-        retries: int = 3,
+        retries: int = 2,
         raise_exception: bool = False,
     ) -> Optional[WebElement]:
         """
@@ -59,7 +53,8 @@ class WebElementInteractions(QObject):
         Returns:
             Optional[WebElement]: Returns None if the operation fails or no element is found; returns a WebElement if the operation succeeds.
         """
-        for i in range(retries):
+
+        for i in range(retries + 1):
             try:
                 wait = WebDriverWait(self.driver, timeout)
                 if condition == WaitConditions.PRESENCE:
@@ -104,15 +99,15 @@ class WebElementInteractions(QObject):
             except TimeoutException:
                 log_level, msg = failure_message
                 if msg != "default":
-                    self.send_msg.emit(msg, log_level.upper(), True)
+                    self.logging(msg, log_level.upper(), True)
                 else:
-                    self.send_msg.emit(
+                    self.logging(
                         f"Element with {locator_type} = {locator_value} not found within {timeout} seconds.",
                         "ERROR",
                         True,
                     )
                 if i < retries - 1:
-                    self.send_msg.emit(
+                    self.logging(
                         f"Trying one more time to find Element with {locator_type} = {locator_value}.",
                         "WARN",
                         True,
@@ -129,7 +124,7 @@ class WebElementInteractions(QObject):
         locator_type: By,
         locator_value: str,
         text_to_select: str,
-        retries: int = 3,
+        retries: int = 2,
         raise_exception: bool = False,
     ) -> bool:
         """
@@ -145,7 +140,7 @@ class WebElementInteractions(QObject):
         Returns:
             bool: True if the item was successfully clicked, False otherwise.
         """
-        for _ in range(retries):
+        for _ in range(retries + 1):
             try:
                 # Re-locate the list of elements in each retry to avoid stale element issues
                 elements_list = self.wait_for_element(
@@ -158,7 +153,7 @@ class WebElementInteractions(QObject):
                     raise NoSuchElementException
                 for item in elements_list:
                     if item.text.strip() == text_to_select:
-                        self.send_msg.emit(f"Selected item: {item.text}", "INFO", True)
+                        self.logging(f"Selected item: {item.text}", "INFO", True)
                         WebDriverWait(self.driver, timeout).until(
                             EC.element_to_be_clickable(item)
                         )
@@ -166,21 +161,21 @@ class WebElementInteractions(QObject):
                         return True  # Successfully clicked, exit
             except StaleElementReferenceException:
 
-                self.send_msg.emit("Stale element reference, retrying...", "WARN", True)
+                self.logging("Stale element reference, retrying...", "WARN", True)
             except NoSuchElementException:
-                self.send_msg.emit(
+                self.logging(
                     "No Such element list...check to make sure the locator value is correct",
                     "ERROR",
                     True,
                 )
                 return False
             except Exception as e:
-                self.send_msg.emit(f"An error occurred: {str(e)}", "ERROR", True)
+                self.logging(f"An error occurred: {str(e)}", "ERROR", True)
                 if raise_exception:
                     raise Exception(e) from Exception
                 return False
 
-        self.send_msg.emit(
+        self.logging(
             f"Failed to select item with text: '{text_to_select}'",
             "ERROR",
             True,
@@ -194,7 +189,7 @@ class WebElementInteractions(QObject):
         timeout: int,
         locator_type: By,
         locator_value: str,
-        retries: int = 3,
+        retries: int = 2,
         item_name: Optional[str] = None,
         raise_exception: bool = False,
     ) -> bool:
@@ -210,7 +205,7 @@ class WebElementInteractions(QObject):
         Returns:
             bool: True if the item was successfully clicked, False otherwise.
         """
-        for _ in range(retries):
+        for _ in range(retries + 1):
             try:
                 # Re-locate the list of elements in each retry to avoid stale element issues
                 elements_list = self.wait_for_element(
@@ -225,14 +220,14 @@ class WebElementInteractions(QObject):
                         EC.element_to_be_clickable(item)
                     )
                     item.click()
-                self.send_msg.emit(f"All {item_name} items clicked", "INFO", True)
+                self.logging(f"All {item_name} items clicked", "INFO", True)
 
                 return True  # exit inner loop
             except StaleElementReferenceException:
-                self.send_msg.emit("Stale element reference, retrying...", "WARN", True)
+                self.logging("Stale element reference, retrying...", "WARN", True)
 
             return False
-        self.send_msg.emit(f"Failed to click all {item_name} items", "ERROR", True)
+        self.logging(f"Failed to click all {item_name} items", "ERROR", True)
         if raise_exception:
             raise Exception
         return False
@@ -253,7 +248,7 @@ class WebElementInteractions(QObject):
             )
             return True
         except NoSuchFrameException:
-            self.send_msg.emit(f"Cannot not find {locator_value} frame.", "ERROR", True)
+            self.logging(f"Cannot not find {locator_value} frame.", "ERROR", True)
             if raise_exception:
                 raise NoSuchFrameException from NoSuchFrameException
             return False

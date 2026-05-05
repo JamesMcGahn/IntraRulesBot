@@ -1,5 +1,11 @@
-from base import QWorkerBase
-from PySide6.QtCore import Signal, Slot
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..rules.models import Rule
+
+from PySide6.QtCore import Signal, Slot, QObject
 import threading
 from collections import deque
 
@@ -7,6 +13,8 @@ from selenium.common.exceptions import NoSuchWindowException, WebDriverException
 
 
 from rulerunner.login import LoginManagerWorker
+from services.logger import Logger
+from services.logger.adapters import LogAdapter
 
 # from rulerunner.rule_worker import RuleWorker
 from .executors import RuleExecutor
@@ -14,15 +22,16 @@ from .models import RuleRunnerConfig
 from services.selenium import SeleniumBrowserAdapter, WebDriverManager
 
 
-class RuleRunnerWorker(QWorkerBase):
-
+class RuleRunnerWorker(QObject):
+    done = Signal()
     progress = Signal(int, int)
 
-    def __init__(self, rules, config: RuleRunnerConfig):
+    def __init__(self, rules: list[Rule], config: RuleRunnerConfig):
         super().__init__()
         self.rules = deque(rules)
         self.config = config
-
+        self.logger = Logger()
+        self.logging = LogAdapter(self.logger)
         self.rules_total_count = len(rules)
 
         # TODO Remove Later: ONLY FOR TESTING
@@ -43,7 +52,10 @@ class RuleRunnerWorker(QWorkerBase):
         self.shut_down = False
 
     def do_work(self):
-        self.log_thread()
+        self.logging(
+            f"Starting {self.__class__.__name__} in thread: {threading.get_ident()}",
+            "INFO",
+        )
         print("here")
         try:
             self._init_driver()
@@ -57,21 +69,15 @@ class RuleRunnerWorker(QWorkerBase):
     def _init_driver(self) -> None:
         """
         Initializes the Selenium WebDriver through the WebDriverManager.
-
-        Returns:
-            None: This function does not return a value.
         """
         self.driver_manager = WebDriverManager()
         self.driver_manager.init_driver()
         self.driver = self.driver_manager.get_driver()
-        self.driver_adapter = SeleniumBrowserAdapter(self.driver)
+        self.driver_adapter = SeleniumBrowserAdapter(self.driver, self.logging)
 
     def close_down_driver(self):
         """
         Closes and cleans up the Selenium WebDriver instance.
-
-        Returns:
-            None: This function does not return a value.
         """
         self.driver_manager.close()
         self.driver_manager.deleteLater()
@@ -84,7 +90,7 @@ class RuleRunnerWorker(QWorkerBase):
             self.url,
         )
 
-        self.login_worker.send_logs.connect(self.receiver_thread_logs)
+        # self.login_worker.send_logs.connect(self.logging)
         self.login_worker.error.connect(self.login_error)
         self.login_worker.success.connect(self.login_success)
 
@@ -94,52 +100,30 @@ class RuleRunnerWorker(QWorkerBase):
         """
         Loads the login URL in the browser. Handles exceptions such as browser closure
         and retries if necessary.
-
-        Returns:
-            None: This function does not return a value.
         """
         if self.shut_down:
             return
         try:
             self.driver.get(self.url)
-            self.receiver_thread_logs(f"Loaded in the browser: {self.url} ", "INFO")
+            self.logging(f"Loaded in the browser: {self.url} ", "INFO")
         except NoSuchWindowException:
-            self.receiver_thread_logs("Error loading URL. Browser closed.", "ERROR")
-            self.receiver_thread_logs("Restarting WebDriver.....", "INFO")
+            self.logging("Error loading URL. Browser closed.", "ERROR")
+            self.logging("Restarting WebDriver.....", "INFO")
             if not self.shut_down:
-                self.init_driver()
+                self._init_driver()
                 self.driver.get(self.url)
         except WebDriverException as e:
             if not self.shut_down:
-                self.receiver_thread_logs(
+                self.logging(
                     f"Error loading URL. Browser likely closed: {str(e)}", "ERROR"
                 )
-                self.receiver_thread_logs("Restarting WebDriver.....", "INFO")
-                self.init_driver()
+                self.logging("Restarting WebDriver.....", "INFO")
+                self._init_driver()
                 self.driver.get(self.url)
         except Exception as e:
-            self.receiver_thread_logs(f"Error loading URL.: {str(e)}", "ERROR")
+            self.logging(f"Error loading URL.: {str(e)}", "ERROR")
             if not self.shut_down:
                 self.close()
-
-    # TODO Remove Later
-    @Slot(str, str, bool)
-    def receiver_thread_logs(
-        self, msg: str, level: str, print_msg: bool = True
-    ) -> None:
-        """
-        Receives and logs messages from the thread.
-
-        Args:
-            msg (str): The log message.
-            level (str): The log level (e.g., "INFO", "ERROR").
-            print_msg (bool, optional): Whether to print the message.
-
-        Returns:
-            None: This function does not return a value.
-        """
-        if not self.shut_down:
-            self.logging(msg, level, print_msg)
 
     # TODO
     @Slot()
@@ -153,14 +137,12 @@ class RuleRunnerWorker(QWorkerBase):
 
         if not self.login_attempt and not self.shut_down:
             self.login_attempt = True
-            self.receiver_thread_logs(
-                "Login Failed due to an error. Retrying again.", "INFO"
-            )
+            self.logging("Login Failed due to an error. Retrying again.", "INFO")
             self.get_login_url()
             self.start_login()
         else:
             if not self.shut_down:
-                self.receiver_thread_logs(
+                self.logging(
                     "Login Failed due to an error. Shutting down thread", "ERROR"
                 )
                 self.close()
@@ -175,6 +157,7 @@ class RuleRunnerWorker(QWorkerBase):
         """
         self.process_next_rule()
 
+    # TODO : Re design rule flow
     def process_next_rule(self) -> None:
         """
         Processes the next rule in the queue by initializing and running the RuleWorker.
@@ -190,19 +173,17 @@ class RuleRunnerWorker(QWorkerBase):
         )
         if rules_length > 0:
             try:
-                print("exeeee")
                 self.current_rule = self.rules.popleft()
                 self.executor = RuleExecutor(
-                    self.driver_adapter, self.current_rule, self.logger
+                    self.driver_adapter, self.current_rule, self.logging
                 )
 
-                # self.rule_worker.send_logs.connect(self.receiver_thread_logs)
                 # self.rule_worker.error.connect(self.on_rule_error)
                 self.executor.execute()
                 # self.on_rule_finished(self.current_rule.get("rule_name"))
             except Exception as e:
                 print(e)
-                self.receiver_thread_logs(
+                self.logging(
                     f"Failure trying to process next rule: {e}",
                     "ERROR",
                 )
@@ -225,8 +206,8 @@ class RuleRunnerWorker(QWorkerBase):
             errored_rules_msg += f"{tabs}- {e_rule_name} \n"
         for s_rule_rume in self.success_rules:
             succeeded_rules_msg += f"{tabs}- {s_rule_rume} \n"
-        self.receiver_thread_logs(succeeded_rules_msg, "INFO")
-        self.receiver_thread_logs(errored_rules_msg, "ERROR")
+        self.logging(succeeded_rules_msg, "INFO")
+        self.logging(errored_rules_msg, "ERROR")
 
     @Slot(str)
     def on_rule_finished(self, rule_name: str) -> None:
@@ -239,7 +220,7 @@ class RuleRunnerWorker(QWorkerBase):
         Returns:
             None: This function does not return a value.
         """
-        self.receiver_thread_logs("RuleWorker finished.", "INFO")
+        self.logging("RuleWorker finished.", "INFO")
         self.success_rules.append(rule_name)
         # self.rule_created.emit(rule_name)
         self.errors_in_a_row = 0
@@ -257,15 +238,13 @@ class RuleRunnerWorker(QWorkerBase):
             None: This function does not return a value.
         """
         self.errors_in_a_row += 1
-        self.receiver_thread_logs(
-            "RuleRunnerThread received error from Rule Worker.", "WARN"
-        )
-        self.receiver_thread_logs(
+        self.logging("RuleRunnerThread received error from Rule Worker.", "WARN")
+        self.logging(
             f"Rule: {self.current_rule["rule_name"]} has errored out {self.errors_in_a_row} times.",
             "WARN",
         )
         if self.errors_in_a_row < 2 and shouldRetry and not self.shut_down:
-            self.receiver_thread_logs(
+            self.logging(
                 f"Trying Again to create Rule for {self.current_rule["rule_name"]}",
                 "INFO",
             )
@@ -282,7 +261,7 @@ class RuleRunnerWorker(QWorkerBase):
             )
             if not self.shut_down:
 
-                self.receiver_thread_logs(msg, "INFO")
+                self.logging(msg, "INFO")
             self.errored_rules.append(self.current_rule["rule_name"])
             if len(self.rules) > 0:
                 self.get_login_url()
@@ -301,8 +280,8 @@ class RuleRunnerWorker(QWorkerBase):
             None: This function does not return a value.
         """
 
-        self.receiver_thread_logs("Stop Button Pressed", "INFO")
-        self.receiver_thread_logs(
+        self.logging("Stop Button Pressed", "INFO")
+        self.logging(
             f"Shutting down RuleRunnerThread: {threading.get_ident()} - {self.thread()}",
             "INFO",
         )

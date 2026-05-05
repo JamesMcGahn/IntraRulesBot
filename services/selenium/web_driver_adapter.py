@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..logger.adapters import LogAdapter
+
 from .web_element_interactions import WebElementInteractions
 from .enums.wait_conditions import WaitConditions
 
@@ -12,18 +19,18 @@ from selenium.common.exceptions import (
 
 class SeleniumBrowserAdapter:
 
-    def __init__(self, driver):
+    def __init__(self, driver, logging: LogAdapter):
         self.driver = driver
-        self.wELI = WebElementInteractions(self.driver)
+        self.logging = logging
+        self.wELI = WebElementInteractions(self.driver, self.logging)
 
     def wait_and_click(
         self,
         locator_type: By,
         locator_value: str,
         wait_time: int = 20,
-        retries: int = 3,
+        retries: int = 2,
     ):
-        print("hello")
         element = self.wELI.wait_for_element(
             wait_time,
             locator_type,
@@ -40,7 +47,7 @@ class SeleniumBrowserAdapter:
         locator_value: str,
         text_to_select: str | int,
         wait_time: int = 20,
-        retries: int = 3,
+        retries: int = 2,
     ):
         success = self.wELI.select_item_from_list(
             wait_time, locator_type, locator_value, text_to_select, retries=retries
@@ -54,7 +61,7 @@ class SeleniumBrowserAdapter:
         locator_value: str,
         text_to_input: str | int,
         wait_time: int = 20,
-        retries: int = 3,
+        retries: int = 2,
     ):
         element = self.wELI.wait_for_element(
             wait_time,
@@ -72,7 +79,7 @@ class SeleniumBrowserAdapter:
         locator_type: By,
         locator_value: str,
         wait_time: int = 20,
-        retries: int = 3,
+        retries: int = 2,
         item_name: str = "",
     ):
         self.wELI.click_all_items_in_list(
@@ -91,7 +98,7 @@ class SeleniumBrowserAdapter:
         locator_type: By,
         locator_value: str,
         wait_time: int = 20,
-        retries: int = 3,
+        retries: int = 2,
         raise_exception: bool = False,
     ) -> WebElement:
         element = self.wELI.wait_for_element(
