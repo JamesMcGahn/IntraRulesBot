@@ -9,14 +9,13 @@ if TYPE_CHECKING:
 from controllers.rules.enums import VALIDATIONBATCHTYPE
 from base.events import RulesLoadedEvent
 import uuid
-from typing import Optional, Tuple
 
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import QFileDialog, QLineEdit, QTextEdit
 
 from base import QWidgetBase
 from views.components.dialogs import SchemaErrorDialog, RuleSetDialog
-from models import LoginModel, RuleSetsModel, RulesModel
+from models import LoginModel
 from rulerunner import RuleRunnerThread
 from services.event_filter import EventFilter
 from services.validator import SchemaValidator
@@ -82,10 +81,11 @@ class RulesPage(QWidgetBase):
         self.ui.user_save_rules.connect(self.handle_user_rules_save)
         self.ui.validate_rules.connect(self.handle_validate_rules)
         self.ui.sys_save_rules.connect(self.handle_sys_rules_save)
+        self.ui.start_runner.connect(self.handle_start_runner)
         self.send_rules.connect(self.ui.rules_changed)
         self.ui.validate_open_dialog.clicked.connect(self.display_errors_dialog)
         self.ui.copy_field.clicked.connect(self.on_copy_fields)
-        self.ui.start.clicked.connect(self.start_rule_runner)
+        # self.ui.start.clicked.connect(self.start_rule_runner)
         self.ui.rules_form_updated.connect(self.apply_event_filter)
         self.ui.bookmark.clicked.connect(self.on_bookmark_click)
 
@@ -122,6 +122,12 @@ class RulesPage(QWidgetBase):
             rules, batch_type=VALIDATIONBATCHTYPE.RUNTIME
         )
 
+    @Slot(list)
+    def handle_start_runner(self, rules: dict):
+        self.controllers.rules.validate_json(
+            rules, batch_type=VALIDATIONBATCHTYPE.RULE_RUNNER
+        )
+
     @Slot()
     def apply_event_filter(self):
         for child in self.findChildren(QLineEdit):
@@ -146,6 +152,7 @@ class RulesPage(QWidgetBase):
         self.focus_object_name = field_name
         self.focus_object_text = object_text
 
+    # TODO: move to controller
     def on_copy_fields(self) -> None:
         """
         Copy the value from the currently focused field across all rules in the form.
@@ -160,6 +167,7 @@ class RulesPage(QWidgetBase):
             for rule in rule_inputs:
                 self.find_field_set_field(rule)
 
+    # TODO: move out of here
     def find_field_set_field(self, rule: dict) -> None:
         """
         Traverse through the rule structure to find the field corresponding to the currently
@@ -180,6 +188,7 @@ class RulesPage(QWidgetBase):
             elif isinstance(value, list):
                 [self.find_field_set_field(item) for item in value]
 
+    # TODO: needs to go
     @Slot(str, str, str, str)
     def update_credentials(
         self, username: str, password: str, url: str, login_url: str
@@ -221,7 +230,7 @@ class RulesPage(QWidgetBase):
         """
         self.rules_controller.hydrate_rules_page()
 
-    # TODO Remove from Page
+    # TODO No longer Used - Remove from Page
     def start_rule_runner(self) -> None:
         """
         Start the rule processing thread if the forms are valid and all credentials are provided.
