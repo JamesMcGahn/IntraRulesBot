@@ -15,3 +15,4 @@ class SettingsFieldMeta:
     folder_icon: bool = False
     combo_box: list[str] | None = None
     verify: Optional[Callable] = None
+    hide_secure_text: bool = False

@@ -16,7 +16,8 @@ def setting(
     secure: bool = False,
     folder_icon: bool = False,
     combo_box: list[str] | None = None,
-    verify: Optional[Callable] = None
+    verify: Optional[Callable] = None,
+    hide_secure_text: bool = False
 ):
     return field(
         default=default,
@@ -31,6 +32,7 @@ def setting(
                 folder_icon=folder_icon,
                 combo_box=combo_box,
                 verify=verify,
+                hide_secure_text=hide_secure_text,
             )
         },
     )

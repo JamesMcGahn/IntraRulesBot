@@ -16,6 +16,7 @@ from .models import AppSettings
 from .models.base_category_map import SettingsCategoryBase
 from .models.map_app_settings import AppSettings as AppSettingsMap
 from .models.map_log_settings import LogSettings
+from .models.map_login_settings import LoginSettings
 
 
 class SettingsService(QObjectBase):
@@ -26,6 +27,7 @@ class SettingsService(QObjectBase):
         self._settings: AppSettingsMap = None
         self._validated: dict[SETTINGSCATEGORIES, dict[str, bool]] = {}
         self.sections: dict[SETTINGSCATEGORIES, SettingsCategoryBase] = {
+            SETTINGSCATEGORIES.LOGIN: LoginSettings,
             SETTINGSCATEGORIES.LOG: LogSettings,
         }
         self._settings_loaded = False
