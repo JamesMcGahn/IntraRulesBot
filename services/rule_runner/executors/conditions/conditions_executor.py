@@ -4,7 +4,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ...interfaces import BrowserPort
-
+    from ....rules.models import Rule
+    from ....rules.models.conditions import Condition
 
 from time import sleep
 import threading
@@ -12,6 +13,7 @@ from selenium.webdriver.common.by import By
 from base import ErrorWrappers
 
 from .conditions_stats_executor import ConditionsStatsExecutor
+from ....rules.enums import CONDITIONDETAILTYPE
 
 
 class ConditionsExecutor:
@@ -19,79 +21,19 @@ class ConditionsExecutor:
     Worker class responsible for handling conditions within rules.
     This worker interacts with the UI to set up provider categories,
     instances, conditions, and stats-based conditions using Selenium WebDriver.
-
-    Attributes:
-        driver (webdriver.Chrome): The Selenium WebDriver instance used to interact with the browser.
-        rule (dict): The rule data that contains the list of conditions.
-        wELI (WebElementInteractions): Instance for interacting with web elements in the browser.
-        _rule_condition_queues_source (str): The source of the rule condition, initially set to "queues".
-
-    Args:
-        driver (webdriver.Chrome): The Selenium WebDriver instance.
-        rule (dict): The rule data used to configure the conditions.
     """
 
-    def __init__(self, browser_port: BrowserPort, rule: dict, logger):
-        """
-        Initializes the ConditionsWorker with the provided driver and rule data.
-        Sets up the necessary connections for interacting with web elements.
-
-        Args:
-            driver (webdriver.Chrome): The Selenium WebDriver instance.
-            rule (dict): The rule data used to configure the conditions.
-        """
+    def __init__(self, browser_port: BrowserPort, rule: Rule, logger):
         super().__init__()
         self.browser_port = browser_port
         self.rule = rule
-
-        self._rule_condition_queues_source = "queues"
         self.logger = logger
 
+        self.condition_type_reg = {CONDITIONDETAILTYPE.STATS: ConditionsStatsExecutor}
+
     def logging(self, msg, level="INFO", print_msg=True) -> None:
-        """
-        Emit a log message.
-
-        Args:
-            msg (str): The message to log.
-            level (str): The log level (e.g., "INFO","WARN", "ERROR"). Defaults to "INFO".
-            print_msg (bool): Whether to print the message. Defaults to True.
-        """
         msg = f"{self.__class__.__name__}: {msg}"
-        self.logger.insert(msg, level, print_msg)
-
-    def log_thread(self) -> None:
-        """
-        Log the thread information for the worker.
-
-        Logs the name of the current class and the thread identifier.
-        """
-        self.logging(
-            f"Starting {self.__class__.__name__} in thread: {threading.get_ident()}",
-            "INFO",
-        )
-
-    @property
-    def rule_condition_queues_source(self) -> str:
-        """
-        Gets the source of the rule condition (either "users" or "queues").
-
-        Returns:
-            str: The current rule condition queues source.
-        """
-        return self._rule_condition_queues_source
-
-    @rule_condition_queues_source.setter
-    def rule_condition_queues_source(self, source: str) -> None:
-        """
-        Sets the source of the rule condition (either "users" or "queues").
-
-        Args:
-            source (str): The new rule condition source.
-
-        Returns:
-            None: This function does not return a value.
-        """
-        self._rule_condition_queues_source = source
+        self.logger(msg, level, print_msg)
 
     @ErrorWrappers.qworker_web_raise_error
     def execute(self) -> None:
@@ -99,116 +41,77 @@ class ConditionsExecutor:
         Executes the steps required to process each condition within the rule, including setting
         provider categories, instances, conditions, and stats-based conditions. Emits the
         finished signal when the work is complete.
-
-        Returns:
-            None: This function does not return a value.
         """
-        self.log_thread()
-        for i, condition in enumerate(self.rule["conditions"]):
+        self.logging(
+            f"Starting {self.__class__.__name__} in thread: {threading.get_ident()}",
+            "INFO",
+        )
+        for i, condition in enumerate(self.rule.conditions):
             self.set_provider_category(condition, i)
             self.set_provider_instance(condition, i)
             self.set_provider_condition(condition, i)
-            self.set_stats_based_condition(condition, i)
+            self.execute_details_type(condition.details.condition_type, self.rule, i)
             self.add_additional_condition(i)
 
             sleep(1)
 
-    def set_provider_category(self, condition: dict, i: int) -> None:
+    def set_provider_category(self, condition: Condition, index: int) -> None:
         """
         Selects the provider category for the specified condition.
-
-        Args:
-            condition (dict): The condition data containing the provider category.
-            i (int): The index of the condition in the list.
-
-        Returns:
-            None: This function does not return a value.
         """
-        user_provider_category = condition["provider_category"]
-        self.logging(f"Selecting provider category for Condition {i+1}...", "INFO")
+        self.logging(f"Selecting provider category for Condition {index+1}...", "INFO")
 
         self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "overlayContent_selectCondition_radMenuCategory")]/ul/li',
-            user_provider_category,
+            condition.provider_category,
             retries=5,
         )
         sleep(1)
 
-    def set_provider_instance(self, condition: dict, i: int) -> None:
+    def set_provider_instance(self, condition: Condition, index: int) -> None:
         """
         Selects the provider instance for the specified condition.
-
-        Args:
-            condition (dict): The condition data containing the provider instance.
-            i (int): The index of the condition in the list.
-
-        Returns:
-            None: This function does not return a value.
         """
-        self.logging(f"Selecting provider instance for Condition {i+1}...", "INFO")
-        user_provider_instance = condition["provider_instance"]
+        self.logging(f"Selecting provider instance for Condition {index+1}...", "INFO")
         self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "overlayContent_selectCondition_radMenuProviderInstance")]/ul/li',
-            user_provider_instance,
+            condition.provider_instance,
         )
         sleep(1)
 
-    def set_provider_condition(self, condition: dict, i: int) -> None:
+    def set_provider_condition(self, condition: Condition, index: int) -> None:
         """
         Selects the provider condition for the specified condition.
-
-        Args:
-            condition (dict): The condition data containing the provider condition.
-            i (int): The index of the condition in the list.
-
-        Returns:
-            None: This function does not return a value.
         """
-        self.logging(f"Selecting condition selection for Condition {i+1}...", "INFO")
-        user_provider_condition = condition["provider_condition"]
+        self.logging(
+            f"Selecting condition selection for Condition {index+1}...", "INFO"
+        )
         self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "overlayContent_selectCondition_radMenuItem")]/ul/li',
-            user_provider_condition,
+            condition.provider_condition,
             retries=5,
         )
         sleep(1)
 
-    def set_stats_based_condition(self, condition: dict, index: int) -> None:
-        """
-        Sets a stats-based condition if the condition type is 'stats'.
+    def execute_details_type(
+        self, condition_type: CONDITIONDETAILTYPE, rule: Rule, index: int
+    ):
+        executor = self.condition_type_reg.get(condition_type)
+        if not executor:
+            msg = f"{condition_type} is not a supported trigger action"
+            self.logging(msg, "ERROR")
+            raise ValueError(msg)
 
-        Args:
-            condition (dict): The condition data containing the stats-based condition details.
-            index (int): The index of the condition in the list.
-
-        Returns:
-            None: This function does not return a value.
-        """
-        condition_details = condition["details"]
-        if condition_details["condition_type"] == "stats":
-            executor = ConditionsStatsExecutor(
-                self.browser_port, self, condition, index, self.logger
-            )
-
-            executor.execute()
+        executor(self.browser_port, rule, index, self.logger).execute()
 
     def add_additional_condition(self, index: int) -> None:
         """
         Adds additional conditions to the UI if more than one condition exists.
-
-        Args:
-            index (int): The index of the current condition.
-
-        Returns:
-            None: This function does not return a value.
         """
-        if (
-            index != len(self.rule["conditions"]) - 1
-            and len(self.rule["conditions"]) > 1
-        ):
+        if index != len(self.rule.conditions) - 1 and len(self.rule.conditions) > 1:
             self.logging(f"Adding condition {index+2}...", "INFO")
             self.browser_port.wait_and_click(
                 By.XPATH,

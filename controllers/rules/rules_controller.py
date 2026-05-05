@@ -244,7 +244,7 @@ class RulesController(QObjectBase):
             self.handle_run_rules(batch)
 
     def handle_run_rules(self, batch: ValidationBatch):
-        rules = batch.valid_rules
+        rules = self.rule_builder.build_rules(batch.valid_rules)
         self.rule_runner_service.start_run(rules)
 
     def handle_sys_save(self, batch: ValidationBatch):

@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ...interfaces import BrowserPort
+    from ....rules.models import Rule
+    from ....rules.models.triggers import ActionTrigger
 
 from time import sleep
 import threading
@@ -11,7 +13,8 @@ from selenium.webdriver.common.by import By
 
 from base import ErrorWrappers
 
-from .trigger_action_state_executor import TriggerActionStateExecutor
+from .trigger_action_state_changed_executor import TriggerActionStateChangedExecutor
+from ....rules.enums import ACTIONTRIGGERDETAILTYPE
 
 
 class TriggerActionBasedExectuor:
@@ -19,26 +22,12 @@ class TriggerActionBasedExectuor:
     Worker class responsible for handling Action Based Triggers within rules.
     This worker interacts with the UI to set up Action Based Triggers's provider categories, instances,
     conditions, and email actions using Selenium WebDriver.
-
-    Attributes:
-        driver (webdriver.Chrome): The Selenium WebDriver instance used to interact with the browser.
-        rule (dict): The rule data that contains the list of actions.
-        wELI (WebElementInteractions): Instance for interacting with web elements in the browser.
-        _rule_condition_queues_source (str): The source of the rule condition, initially set to "queues".
-
-    Args:
-        driver (webdriver.Chrome): The Selenium WebDriver instance.
-        rule (dict): The rule data used to configure the actions.
     """
 
-    def __init__(self, browser_port: BrowserPort, rule: dict, logger):
+    def __init__(self, browser_port: BrowserPort, rule: Rule, logger):
         """
         Initializes the ActionsWorker with the provided driver and rule data.
         Sets up the necessary connections for interacting with web elements.
-
-        Args:
-            driver (webdriver.Chrome): The Selenium WebDriver instance.
-            rule (dict): The rule data used to configure the actions.
         """
         super().__init__()
         self.browser_port = browser_port
@@ -46,109 +35,84 @@ class TriggerActionBasedExectuor:
         self._rule_condition_queues_source = "queues"
         self.logger = logger
 
+        self.action_type_reg = {
+            ACTIONTRIGGERDETAILTYPE: TriggerActionStateChangedExecutor
+        }
+
+    def logging(self, msg, level="INFO", print_msg=True) -> None:
+        msg = f"{self.__class__.__name__}: {msg}"
+        self.logger(msg, level, print_msg)
+
     @ErrorWrappers.qworker_web_raise_error
     def execute(self) -> None:
         """
         Executes the steps required to process each Action Based Trigger within the rule, including setting
         provider categories, instances, conditions, and executing email actions. Emits the
         finished signal when the work is complete.
-
-        Returns:
-            None: This function does not return a value.
-        """
-
-        action_based = self.rule["action_based"]
-        self.set_provider_category(action_based)
-        self.set_provider_instance(action_based)
-        self.set_provider_condition(action_based)
-        self.set_action_state(action_based)
-
-    def log_thread(self) -> None:
-        """
-        Log the thread information for the worker.
-
-        Logs the name of the current class and the thread identifier.
         """
         self.logging(
             f"Starting {self.__class__.__name__} in thread: {threading.get_ident()}",
             "INFO",
         )
+        self.logging("Choosing Trigger Event", "INFO")
+        self.browser_port.wait_and_click(
+            By.XPATH,
+            '//*[contains(@id, "overlayContent_lblAddEventSetFrequency")]',
+        )
+        action_based = self.rule.trigger
+        self.set_provider_category(action_based)
+        self.set_provider_instance(action_based)
+        self.set_provider_condition(action_based)
+        self.set_action_state(action_based)
 
-    def logging(self, msg, level="INFO", print_msg=True) -> None:
-        """
-        Emit a log message.
+        self.execute_details_type(self.rule.trigger.details.action_type, self.rule)
 
-        Args:
-            msg (str): The message to log.
-            level (str): The log level (e.g., "INFO","WARN", "ERROR"). Defaults to "INFO".
-            print_msg (bool): Whether to print the message. Defaults to True.
-        """
-        msg = f"{self.__class__.__name__}: {msg}"
-        self.logger.insert(msg, level, print_msg)
-
-    def set_provider_category(self, action_trigger: dict) -> None:
+    def set_provider_category(self, action_trigger: ActionTrigger) -> None:
         """
         Selects the provider category for the specified action.
-        Args:
-            action_trigger (dict): The action trigger data containing the provider category.
-        Returns:
-            None: This function does not return a value.
         """
         self.logging("Selecting provider category for Action Trigger", "INFO")
-        user_action_trigger_category_selection = action_trigger["provider_category"]
 
         self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "overlayContent_selectTrigger_radMenuCategory")]/ul/li',
-            user_action_trigger_category_selection,
+            action_trigger.provider_category,
         )
         sleep(1)
 
-    def set_provider_instance(self, action_trigger: dict) -> None:
+    def set_provider_instance(self, action_trigger: ActionTrigger) -> None:
         """
         Selects the provider instance for the specified condition.
-
-        Args:
-            action_trigger (dict): The action trigger data containing the provider instance.
-
-        Returns:
-            None: This function does not return a value.
         """
         self.logging("Selecting provider instance for Action Trigger", "INFO")
-        user_provider_instance = action_trigger["provider_instance"]
         self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "overlayContent_selectTrigger_radMenuProviderInstance")]/ul/li',
-            user_provider_instance,
+            action_trigger.provider_instance,
         )
 
         sleep(1)
 
-    def set_provider_condition(self, action_trigger: dict) -> None:
+    def set_provider_condition(self, action_trigger: ActionTrigger) -> None:
         """
         Selects the provider condition for the specified condition.
-
-        Args:
-            action_trigger (dict): The action_trigger data containing the provider condition.
-
-        Returns:
-            None: This function does not return a value.
         """
         self.logging("Selecting condition selection for Action Trigger", "INFO")
-        user_provider_condition = action_trigger["provider_condition"]
 
         self.browser_port.select_item_from_list(
             By.XPATH,
             '//*[contains(@id, "overlayContent_selectTrigger_radMenuItem")]/ul/li',
-            user_provider_condition,
+            action_trigger.provider_condition,
             5,
         )
 
         sleep(1)
 
-    def set_action_state(self, action_trigger: dict):
-        if action_trigger["details"]["action_type"] == "state":
-            executor = TriggerActionStateExecutor(
-                self.browser_port, action_trigger, self.logger
-            )
-            executor.execute()
+    def execute_details_type(self, action_type: ACTIONTRIGGERDETAILTYPE, rule: Rule):
+        executor = self.action_type_reg.get(action_type)
+        if not executor:
+            msg = f"{action_type} is not a supported trigger action"
+            self.logging(msg, "ERROR")
+            raise ValueError(msg)
+
+        executor(self.browser_port, rule, self.logger).execute()
