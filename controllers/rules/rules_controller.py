@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from services.validation.models import ValidationResponse, SchemaValidateResponse
     from services.rules import RuleRegistry, RuleStore, RuleBuilder
     from services.validation.models import SchemaError
+    from services.rule_runner import RuleRunnerService
 
 from uuid import uuid4
 from pathlib import Path
@@ -34,6 +35,8 @@ from utils.files import PathManager
 class RulesController(QObjectBase):
     ui_event = Signal(object)
     runtime_validation_result = Signal(object)
+    # TODO convert to ui_event
+    runner_progress = Signal(int, int)
 
     def __init__(
         self,
@@ -41,18 +44,22 @@ class RulesController(QObjectBase):
         rules_registry: RuleRegistry,
         rule_builder: RuleBuilder,
         rule_store: RuleStore,
+        rule_runner_service: RuleRunnerService,
     ):
         super().__init__()
         self.validation_service = validation_service
         self.rules_registry = rules_registry
         self.rule_builder = rule_builder
         self.rules_store = rule_store
+        self.rule_runner_service = rule_runner_service
 
         self._active_jobs: dict[str, SchemaValidatePayload] = {}
         self._active_batches: dict[str, ValidationBatch] = {}
 
         # CONNECTIONS
         self.validation_service.task_complete.connect(self.on_validation_complete)
+        # TODO convert to ui_event
+        self.rule_runner_service.progress.connect(self.runner_progress)
 
     def hydrate_rules_page(self):
         self._emit_rules_updated()
@@ -232,6 +239,13 @@ class RulesController(QObjectBase):
                     self.ui_event.emit(event)
         elif batch.batch_type == VALIDATIONBATCHTYPE.SYS_SAVE:
             self.handle_sys_save(batch)
+
+        elif batch.batch_type == VALIDATIONBATCHTYPE.RULE_RUNNER:
+            self.handle_run_rules(batch)
+
+    def handle_run_rules(self, batch: ValidationBatch):
+        rules = batch.valid_rules
+        self.rule_runner_service.start_run(rules)
 
     def handle_sys_save(self, batch: ValidationBatch):
         if batch.rule_errors:

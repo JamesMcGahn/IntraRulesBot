@@ -15,11 +15,13 @@ from services.settings import (
     SettingsRepository,
     SettingsService,
 )
+from services.settings.providers import SettingsRuleRunnerConfigProvider
 from services.settings.enums import SETTINGSCATEGORIES
 from services.validation import ValidationService
 from controllers import SettingsController, RulesController
 from services.rules import RuleRegistry, RuleStore, RuleBuilder
 from schemas.registry import SchemaRegistry
+from services.rule_runner import RuleRunnerService
 
 
 class AppContext(QObjectBase, metaclass=QSingleton):
@@ -43,7 +45,12 @@ class AppContext(QObjectBase, metaclass=QSingleton):
             settings_meta_provider=self.settings_manager,
             schema_meta_provider=self.schema_registry,
         )
-
+        self.rule_settings_provider = SettingsRuleRunnerConfigProvider(
+            settings_service=self.settings_manager
+        )
+        self.rule_runner_service = RuleRunnerService(
+            settings_provider=self.rule_settings_provider
+        )
         log_settings = self.settings_manager.get_category(SETTINGSCATEGORIES.LOG)
         self.logger.load_settings(log_settings)
         self.logger.start_up()
@@ -58,6 +65,7 @@ class AppContext(QObjectBase, metaclass=QSingleton):
             rules_registry=self.rules_registry,
             rule_store=self.rule_store,
             rule_builder=self.rule_builder,
+            rule_runner_service=self.rule_runner_service,
         )
 
         folder = PathManager.create_folder_in_app_data("playwright")
