@@ -37,7 +37,9 @@ class CentralWidget(QWidgetBase):
         self.ui.add_widget_to_grid(self.header_widget, 0, 3, 1, 1)
 
         self.main_screen_widget.send_logs.connect(self.logging)
-        self.appshutdown.connect(self.main_screen_widget.notified_app_shutting)
+        self.prepare_ui_for_shutdown.connect(
+            self.main_screen_widget.notified_app_shutting
+        )
 
         self.header_widget.hamburger_signal.connect(self.icon_only_widget.hide_nav)
         self.header_widget.hamburger_signal.connect(self.icon_text_widget.hide_nav)

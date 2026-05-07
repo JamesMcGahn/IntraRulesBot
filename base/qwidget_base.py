@@ -21,7 +21,7 @@ class QWidgetBase(QWidget):
     """
 
     send_logs = Signal(str, str, bool)
-    appshutdown = Signal()
+    prepare_ui_for_shutdown = Signal()
 
     def __init__(self):
         """Initialize the base class."""
@@ -55,7 +55,7 @@ class QWidgetBase(QWidget):
     @Slot()
     def notified_app_shutting(self) -> None:
         """Emits the appshutdown signal to notify other components."""
-        self.appshutdown.emit()
+        self.prepare_ui_for_shutdown.emit()
 
     @Slot()
     def log_with_toast(
