@@ -61,6 +61,7 @@ class AppContext(QObject, metaclass=QSingleton):
             settings_provider=self.rule_settings_provider,
             session=self.session_registry.for_provider(PROVIDERS.INTRA),
             auth_service=self.auth_service,
+            logger=self.log_adapter,
         )
         log_settings = self.settings_manager.get_category(SETTINGSCATEGORIES.LOG)
         self.logger.load_settings(log_settings)

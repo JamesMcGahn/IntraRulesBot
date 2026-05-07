@@ -7,3 +7,4 @@ class RULEEXECSTATUS(StrEnum):
     NAME_EXISTS_ERROR = "name_exists_error"
     UNKNOWN_ERROR = "unknown_error"
     RUNNER_STOPPED_ERROR = "runner_stopped_error"
+    TIMEOUT_ERROR = "timeout_error"

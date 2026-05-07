@@ -7,12 +7,12 @@ if TYPE_CHECKING:
     from .interfaces import RuleRunnerConfigProvider
     from ..auth.auth_service import AuthService
     from ..intra.intra_provider_session import IntraProviderSession
-from PySide6.QtCore import Signal, QThread
-from base import QObjectBase
+    from ..logger.adapters import LogAdapter
+from PySide6.QtCore import Signal, QThread, QObject
 from .rule_runner_worker import RuleRunnerWorker
 
 
-class RuleRunnerService(QObjectBase):
+class RuleRunnerService(QObject):
     progress = Signal(int, int)
 
     def __init__(
@@ -20,6 +20,7 @@ class RuleRunnerService(QObjectBase):
         settings_provider: RuleRunnerConfigProvider,
         session: IntraProviderSession,
         auth_service: AuthService,
+        logger: LogAdapter,
     ):
         super().__init__()
         self._thread = None
@@ -27,6 +28,7 @@ class RuleRunnerService(QObjectBase):
         self._settings_provider = settings_provider
         self._session = session
         self._auth_service = auth_service
+        self._logger = logger
 
     def start_run(self, rules: list[Rule]):
         if self._thread and self._thread.isRunning():
@@ -36,7 +38,7 @@ class RuleRunnerService(QObjectBase):
 
         self._thread = QThread()
         self._worker = RuleRunnerWorker(
-            rules, login_config, self._session, self._auth_service
+            rules, login_config, self._session, self._auth_service, self._logger
         )
 
         self._worker.moveToThread(self._thread)
