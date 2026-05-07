@@ -29,8 +29,11 @@ class RuleExecutor:
     Handles exceptions such as duplicate rule names and WebDriver issues.
     """
 
-    def __init__(self, browser_port: BrowserPort, rule: Rule, logger: LogAdapter):
+    def __init__(
+        self, url: str, browser_port: BrowserPort, rule: Rule, logger: LogAdapter
+    ):
         super().__init__()
+        self.url = url
         self.browser_port = browser_port
         self.rule = rule
         self.logger = logger
@@ -57,6 +60,12 @@ class RuleExecutor:
                 f"Starting {self.__class__.__name__} in thread: {threading.get_ident()}",
                 "INFO",
             )
+
+            self.logging("Navigating to the Rules Page...", "INFO")
+            self.browser_port.go_to_page(
+                self.url + "/ManagerConsole/Delivery/Rules.aspx"
+            )
+
             self.browser_port.wait_and_click(
                 By.ID,
                 "ctl00_ActionBarContent_rbAction_Add",

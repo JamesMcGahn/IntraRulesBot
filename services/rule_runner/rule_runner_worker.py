@@ -4,41 +4,56 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..rules.models import Rule
+    from ..auth.auth_service import AuthService
+    from ..intra.intra_provider_session import IntraProviderSession
 
 from PySide6.QtCore import Signal, Slot, QObject
 import threading
 from collections import deque
 
-from selenium.common.exceptions import NoSuchWindowException, WebDriverException
 
-
-from rulerunner.login import LoginManagerWorker
 from services.logger import Logger
 from services.logger.adapters import LogAdapter
+from services.auth.enums import PROVIDERS
 
 # from rulerunner.rule_worker import RuleWorker
 from .executors import RuleExecutor
 from .models import RuleRunnerConfig
-from services.selenium import SeleniumBrowserAdapter, WebDriverManager
+from services.selenium import WebDriverManager
+from services.selenium.adapters import SeleniumBrowserAdapter
+from services.intra.models import IntraLogin
 
 
 class RuleRunnerWorker(QObject):
     done = Signal()
     progress = Signal(int, int)
 
-    def __init__(self, rules: list[Rule], config: RuleRunnerConfig):
+    def __init__(
+        self,
+        rules: list[Rule],
+        config: RuleRunnerConfig,
+        session: IntraProviderSession,
+        auth_service: AuthService,
+    ):
         super().__init__()
         self.rules = deque(rules)
         self.config = config
         self.logger = Logger()
         self.logging = LogAdapter(self.logger)
         self.rules_total_count = len(rules)
+        self.session = session
+        self.auth_service = auth_service
 
         # TODO Remove Later: ONLY FOR TESTING
-
+        self.tenant = ""
         self.username = ""
         self.password = ""
         self.url = ""
+        self.platform_version = "v10"
+
+        self.creds = IntraLogin(
+            self.username, self.password, self.tenant, self.platform_version
+        )
 
         self.driver = None
         self.driver_adapter = None
@@ -59,7 +74,6 @@ class RuleRunnerWorker(QObject):
         print("here")
         try:
             self._init_driver()
-            self.get_login_url()
             self.start_login()
 
         except Exception as e:
@@ -83,47 +97,14 @@ class RuleRunnerWorker(QObject):
         self.driver_manager.deleteLater()
 
     def start_login(self):
-        self.login_worker = LoginManagerWorker(
-            self.driver,
-            self.username,
-            self.password,
-            self.url,
+        self.driver_adapter = SeleniumBrowserAdapter(self.driver, self.logging)
+        result = self.auth_service.ensure_auth(
+            PROVIDERS.INTRA, self.creds, self.driver_adapter
         )
-
-        # self.login_worker.send_logs.connect(self.logging)
-        self.login_worker.error.connect(self.login_error)
-        self.login_worker.success.connect(self.login_success)
-
-        self.login_worker.do_work()
-
-    def get_login_url(self) -> None:
-        """
-        Loads the login URL in the browser. Handles exceptions such as browser closure
-        and retries if necessary.
-        """
-        if self.shut_down:
-            return
-        try:
-            self.driver.get(self.url)
-            self.logging(f"Loaded in the browser: {self.url} ", "INFO")
-        except NoSuchWindowException:
-            self.logging("Error loading URL. Browser closed.", "ERROR")
-            self.logging("Restarting WebDriver.....", "INFO")
-            if not self.shut_down:
-                self._init_driver()
-                self.driver.get(self.url)
-        except WebDriverException as e:
-            if not self.shut_down:
-                self.logging(
-                    f"Error loading URL. Browser likely closed: {str(e)}", "ERROR"
-                )
-                self.logging("Restarting WebDriver.....", "INFO")
-                self._init_driver()
-                self.driver.get(self.url)
-        except Exception as e:
-            self.logging(f"Error loading URL.: {str(e)}", "ERROR")
-            if not self.shut_down:
-                self.close()
+        if result.success:
+            self.login_success()
+        else:
+            self.login_error()
 
     # TODO
     @Slot()
@@ -138,7 +119,6 @@ class RuleRunnerWorker(QObject):
         if not self.login_attempt and not self.shut_down:
             self.login_attempt = True
             self.logging("Login Failed due to an error. Retrying again.", "INFO")
-            self.get_login_url()
             self.start_login()
         else:
             if not self.shut_down:
@@ -175,7 +155,7 @@ class RuleRunnerWorker(QObject):
             try:
                 self.current_rule = self.rules.popleft()
                 self.executor = RuleExecutor(
-                    self.driver_adapter, self.current_rule, self.logging
+                    self.url, self.driver_adapter, self.current_rule, self.logging
                 )
 
                 # self.rule_worker.error.connect(self.on_rule_error)
