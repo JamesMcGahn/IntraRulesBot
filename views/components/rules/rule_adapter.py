@@ -97,7 +97,6 @@ class RuleAdapter:
         turn_green(rule_imports)
 
         def get_value_from_path(data, path):
-            print(path)
             current = data
 
             for key in path:

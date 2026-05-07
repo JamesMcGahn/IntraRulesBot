@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    pass
+    from ....components.rules import RuleAdapter
 
 from ..stacked_widget import StackedWidget
 
@@ -48,7 +48,7 @@ class StackedFormWidget(StackedWidget):
             widget.deleteLater()
             del self.form_factories[index]
 
-    def get_form_factories(self) -> list[RuleFormManager]:
+    def get_form_factories(self) -> list[RuleAdapter]:
         return self.form_factories
 
     def get_widget_map(self):
@@ -59,6 +59,5 @@ class StackedFormWidget(StackedWidget):
 
     def get_form_by_guid(self, guid: str):
         index = self.get_widget_index_by_guid(guid)
-        print(index, self.widget_map)
         if index > -1:
             return self.get_form_by_index(index)

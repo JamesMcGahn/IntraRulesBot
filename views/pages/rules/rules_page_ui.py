@@ -385,12 +385,9 @@ class RulesPageView(QWidget):
 
     @Slot(object)
     def update_form_validation(self, errors_result: ValidationRulesResult):
-        print("jere - man", errors_result)
         for guid, errors in errors_result.errors_by_rule.items():
-            print(guid, errors)
             form = self.stacked_widget.get_form_by_guid(guid)
             if form:
-                print("form", form)
                 form.highlight_errors(errors)
 
     def handle_delete_all(self):
@@ -533,7 +530,6 @@ class RulesPageView(QWidget):
                 widget, field_map = RuleFactory().build(
                     rule, "margin-top: 0px; padding-left: 0px;padding-top: 0px;"
                 )
-                print(widget, field_map)
                 adapter = RuleAdapter(
                     guid=rule.guid, field_map=field_map, widget=widget
                 )
