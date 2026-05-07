@@ -12,6 +12,8 @@ import threading
 from selenium.common.exceptions import (
     NoSuchFrameException,
     WebDriverException,
+    TimeoutException,
+    NoSuchElementException,
 )
 from selenium.webdriver.common.by import By
 
@@ -20,6 +22,8 @@ from base.exceptions import DuplicateRuleName
 from .actions import ActionsExecutor
 from .conditions import ConditionsExecutor
 from .triggers import TriggerExecutor
+from ..models import RuleExecutionResult
+from ..enums import RULEEXECSTATUS
 
 
 class RuleExecutor:
@@ -41,19 +45,24 @@ class RuleExecutor:
         self.rule_rename_attempts = 0
         self.rule_name = rule.rule_name
 
-        self.stop_rule_worker = False
+        self._stop_requested = False
 
     def logging(self, msg, level="INFO", print_msg=True) -> None:
         msg = f"{self.__class__.__name__}: {msg}"
         self.logger(msg, level, print_msg)
 
-    def execute(self) -> None:
+    @property
+    def stop_requested(self):
+        return self._stop_requested
+
+    @stop_requested.setter
+    def stop_requested(self, stop: bool):
+        self._stop_requested = stop
+
+    def execute(self) -> RuleExecutionResult:
         """
         Executes the rule creation process by navigating through the form pages, setting up triggers, conditions,
         and actions, and submitting the rule. Handles duplicate rule names and retries.
-
-        Returns:
-            None: This function does not return a value.
         """
         try:
             self.logging(
@@ -78,52 +87,107 @@ class RuleExecutor:
 
             self.set_rule_name(self.rule_name)
             self.execute_triggers()
-            if self.stop_rule_worker:
-                return
+            if self.stop_requested:
+                return self._build_stopped_result()
 
             self.next_page()
 
             self.execute_conditions()
-            if self.stop_rule_worker:
-                return
+            if self.stop_requested:
+                return self._build_stopped_result()
 
             self.next_page()
 
             self.execute_actions()
-            if self.stop_rule_worker:
-                return
+            if self.stop_requested:
+                return self._build_stopped_result()
 
             self.set_rule_category()
-            if self.stop_rule_worker:
-                return
+            if self.stop_requested:
+                return self._build_stopped_result()
 
             self.switch_to_rule_module()
             self.next_page()
-            if self.stop_rule_worker:
-                return
+            if self.stop_requested:
+                return self._build_stopped_result()
 
             self.submit_rule()
-            if self.stop_rule_worker:
-                return
+            if self.stop_requested:
+                return self._build_stopped_result()
 
-            if self.rule_rename_attempts == 0:
-                return self.rule.guid
-            else:
+            if self.rule_rename_attempts > 0:
                 old_rule_name = self.rule.rule_name
                 self.logging(f"{old_rule_name} renamed {self.rule_name}")
-                return self.rule.guid
+
+            return RuleExecutionResult(
+                rule_guid=self.rule.guid,
+                rule_name=self.rule_name,
+                success=True,
+                status=RULEEXECSTATUS.SUCCESS,
+                message="Rule submitted successfully.",
+            )
+
         except DuplicateRuleName:
-            return None
+            return RuleExecutionResult(
+                rule_guid=self.rule.guid,
+                rule_name=self.rule.rule_name,
+                success=False,
+                status=RULEEXECSTATUS.NAME_EXISTS_ERROR,
+                message="Rule name still exists after 2 renaming tries.",
+            )
 
         except NoSuchFrameException:
-            self.logging("Can't Find Frame. The window was closed.", "ERROR")
-            return None
+            self.logging(
+                "Can't Find Frame. The window was closed. Rule Failed.", "ERROR"
+            )
+            return RuleExecutionResult(
+                rule_guid=self.rule.guid,
+                rule_name=self.rule.rule_name,
+                success=False,
+                status=RULEEXECSTATUS.BROWSER_ERROR,
+                message="Browser doesnt exist.",
+            )
+
+        except TimeoutException:
+            self.logging("Finding element timed out. Rule Failed.", "ERROR")
+            return RuleExecutionResult(
+                rule_guid=self.rule.guid,
+                rule_name=self.rule.rule_name,
+                success=False,
+                status=RULEEXECSTATUS.TIMEOUT_ERROR,
+                message="Element doesnt exist.",
+            )
+        except NoSuchElementException:
+            self.logging("Can't Find Element. Rule Failed.", "ERROR")
+            return RuleExecutionResult(
+                rule_guid=self.rule.guid,
+                rule_name=self.rule.rule_name,
+                success=False,
+                status=RULEEXECSTATUS.BROWSER_ERROR,
+                message="Element doesnt exist.",
+            )
         except WebDriverException as e:
-            self.logging(f"Something went wrong in RuleWorker: {e}", "ERROR")
-            return None
+            self.logging(
+                f"Something went wrong in RuleWorker. Rule Failed.: {e}", "ERROR"
+            )
+            return RuleExecutionResult(
+                rule_guid=self.rule.guid,
+                rule_name=self.rule.rule_name,
+                success=False,
+                status=RULEEXECSTATUS.BROWSER_ERROR,
+                message="Browser error.",
+            )
         except Exception as e:
-            self.logging(f"Something went wrong in RuleWorker: {e}", "ERROR")
-            return None
+            self.logging(
+                f"Something went wrong in RuleWorker. Rule Failed.: {e}", "ERROR"
+            )
+            return RuleExecutionResult(
+                rule_guid=self.rule.guid,
+                rule_name=self.rule.rule_name,
+                success=False,
+                status=RULEEXECSTATUS.UNKNOWN_ERROR,
+                message="Error happened in rule execution.",
+            )
 
     def execute_triggers(self) -> None:
         """
@@ -146,9 +210,6 @@ class RuleExecutor:
     def execute_actions(self) -> None:
         """
         Starts processing the actions for the rule by initializing the ActionsWorker.
-
-        Returns:
-            None: This function does not return a value.
         """
 
         if self.rule.actions:
@@ -158,9 +219,6 @@ class RuleExecutor:
     def switch_to_rule_module(self) -> None:
         """
         Switches the WebDriver to the rule modal frame to interact with rule elements.
-
-        Returns:
-            None: This function does not return a value.
         """
         self.logging("Switching to the Rule Modal...", "INFO")
         self.browser_port.switch_to_frame(By.NAME, "RadWindowAddEditRule")
@@ -168,12 +226,6 @@ class RuleExecutor:
     def set_rule_name(self, rule_name: str) -> None:
         """
         Sets the rule name in the rule creation form.
-
-        Args:
-            rule_name (str): The name of the rule to be set.
-
-        Returns:
-            None: This function does not return a value.
         """
         self.logging("Setting the Rule Name...", "INFO")
         self.browser_port.wait_and_type(
@@ -260,7 +312,7 @@ class RuleExecutor:
         self.rule_name = f"{old_rule_name}-{self.rule_rename_attempts}"
         self.logging(
             f"Trying to rename rule: {old_rule_name} as {self.rule_name}",
-            "ERROR",
+            "WARN",
         )
         self.set_rule_name(self.rule_name)
 
@@ -322,6 +374,11 @@ class RuleExecutor:
             self.logging(f"Rule: {self.rule_name} has been submitted.", "INFO")
             return False
 
-    def handle_child_error(self, msg):
-        self.stop_rule_worker = True
-        return
+    def _build_stopped_result(self):
+        return RuleExecutionResult(
+            rule_guid=self.rule.guid,
+            rule_name=self.rule.rule_name,
+            success=False,
+            status=RULEEXECSTATUS.RUNNER_STOPPED_ERROR,
+            message="Rule runner was stopped.",
+        )

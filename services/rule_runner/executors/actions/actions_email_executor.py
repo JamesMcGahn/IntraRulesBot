@@ -129,7 +129,7 @@ class ActionsEmailExecutor:
             By.XPATH,
             '//*[contains(@id, "overlayContent_actionParameters_rblIntradiemUsersIndividual_Users_1")]',
         )
-
+        self.logging("Trying to find which email body rule uses...")
         email_body_one = self.browser_port.wait_for_element(
             By.XPATH,
             '//*[contains(@id, "overlayContent_actionParameters_ctl65")]',

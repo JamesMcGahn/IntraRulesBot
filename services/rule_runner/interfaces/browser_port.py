@@ -49,7 +49,7 @@ class BrowserPort(Protocol):
         self,
         locator_type: By,
         locator_value: str,
-        wait_time: int = 30,
+        wait_time: int = 20,
         retries: int = 3,
         raise_exception: bool = False,
     ) -> WebElement: ...
