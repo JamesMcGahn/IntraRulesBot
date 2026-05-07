@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..logger.adapters import LogAdapter
+    from ...logger.adapters import LogAdapter
 
-from .web_element_interactions import WebElementInteractions
-from .enums.wait_conditions import WaitConditions
+from ..web_element_interactions import WebElementInteractions
+from ..enums.wait_conditions import WaitConditions
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebElement
@@ -35,7 +35,7 @@ class SeleniumBrowserAdapter:
             wait_time,
             locator_type,
             locator_value,
-            WaitConditions.VISIBILITY,
+            WaitConditions.CLICKABLE,
             retries=retries,
             raise_exception=True,
         )
@@ -114,16 +114,30 @@ class SeleniumBrowserAdapter:
     def switch_to_main_frame(self):
         self.driver.switch_to.default_content()
 
-    def wait_and_accept_alert(self, check_alert_text: str, wait_time: int) -> bool:
+    def wait_and_accept_alert(
+        self, check_alert_text: str | None, wait_time: int
+    ) -> bool:
         try:
             WebDriverWait(self.driver, wait_time).until(EC.alert_is_present())
 
             alert = self.driver.switch_to.alert
-            if check_alert_text in alert.text:
-                alert.accept()
+            if not alert:
+                return False
 
-                if alert:
-                    return True
+            if check_alert_text and check_alert_text in alert.text:
+                alert.accept()
+                return True
+            else:
+                alert.accept()
+                return True
 
         except TimeoutException:
             return False
+
+    def go_to_page(self, url: str):
+        self.driver.get(url)
+
+    def wait_for_page_ready(self, wait_time: int = 20):
+        WebDriverWait(self.driver, wait_time).until(
+            lambda d: d.execute_script("return document.readyState") == "complete"
+        )

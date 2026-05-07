@@ -28,7 +28,11 @@ class WebElementInteractions:
     def __init__(self, driver, logger: LogAdapter):
         super().__init__()
         self.driver = driver
-        self.logging = logger
+        self.logger = logger
+
+    def logging(self, msg, level="INFO", print_msg=True) -> None:
+        msg = f"{self.__class__.__name__}: {msg}"
+        self.logger(msg, level, print_msg)
 
     def wait_for_element(
         self,
