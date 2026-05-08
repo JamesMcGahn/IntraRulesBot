@@ -3,6 +3,7 @@ from typing import Optional
 
 import keyring
 from keyring import get_keyring
+from keyring.errors import NoKeyringError
 from PySide6.QtCore import Signal, Slot
 
 from base import QObjectBase, QSingleton
@@ -74,7 +75,11 @@ class SecureCredentials(QObjectBase, metaclass=QSingleton):
         Returns:
             str: secure credential.
         """
-        return keyring.get_password(service_name, name_field)
+        try:
+            return keyring.get_password(service_name, name_field)
+        except NoKeyringError:
+            self.logging("No keyring backend available.", "ERROR")
+            return None
 
     @Slot(str, str, str)
     def save_creds(self, service_name: str, name_field: str, secure: str) -> None:

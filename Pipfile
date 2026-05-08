@@ -11,6 +11,7 @@ jsonschema = "*"
 uuid = "*"
 keyring = "*"
 playwright = "*"
+pywin32 = "*"
 
 [dev-packages]
 
