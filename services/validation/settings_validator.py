@@ -57,7 +57,6 @@ class SettingsValidationService(QObjectBase):
         field_meta: SettingsFieldMeta = self.settings_meta_provider.get_field_meta(
             payload.category, payload.field
         )
-
         if not field_meta:
             self.handle_failure(
                 job.id,
@@ -69,7 +68,6 @@ class SettingsValidationService(QObjectBase):
             return
 
         result = field_meta.verify(payload.field, payload.value)
-
         if result is None:
             self.handle_failure(
                 job.id,
@@ -81,7 +79,6 @@ class SettingsValidationService(QObjectBase):
             return
 
         if isinstance(result, SettingsValidateResponse):
-            self._pending_jobs.pop(job.id)
             self.send_validation_response(job.id, result)
         else:
             raise ValueError("Invalid validator return type")
@@ -150,6 +147,7 @@ class SettingsValidationService(QObjectBase):
             job_ref=JobRef(job_id, task=None, status=JOBSTATUS.COMPLETE),
             payload=ValidationResponse(kind=VALIDATEJOBTYPE.SETTINGS, data=res),
         )
+        print("emitting")
         self.task_complete.emit(job_response)
         self._pending_jobs.pop(job_id)
 
