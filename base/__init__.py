@@ -1,4 +1,3 @@
-from .error_wrappers import ErrorWrappers
 from .qobject_base import QObjectBase
 from .qsingleton import QSingleton
 from .qwidget_base import QWidgetBase
@@ -11,5 +10,4 @@ __all__ = [
     "QWidgetBase",
     "QObjectBase",
     "QWorkerBase",
-    "ErrorWrappers",
 ]

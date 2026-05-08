@@ -1,18 +1,19 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from ...interfaces import BrowserPort
     from ....rules.models import Rule
     from ....rules.models.actions import Action
+    from ....logger.adapters import LogAdapter
 
 from time import sleep
 import threading
 
 from selenium.webdriver.common.by import By
 
-from base import ErrorWrappers
+from ..wrappers import ExecutorWrappers
 
 from .actions_email_executor import ActionsEmailExecutor
 from ....rules.enums import ACTIONDETAILTYPE
@@ -25,18 +26,25 @@ class ActionsExecutor:
     conditions, and email actions using Selenium WebDriver.
     """
 
-    def __init__(self, browser_port: BrowserPort, rule: Rule, logger):
+    def __init__(
+        self,
+        browser_port: BrowserPort,
+        rule: Rule,
+        logger: LogAdapter,
+        should_stop: Callable,
+    ):
         super().__init__()
         self.browser_port = browser_port
         self.rule = rule
         self.logger = logger
+        self.should_stop = should_stop
         self.action_type_reg = {ACTIONDETAILTYPE.EMAIL: ActionsEmailExecutor}
 
     def logging(self, msg, level="INFO", print_msg=True) -> None:
         msg = f"{self.__class__.__name__}: {msg}"
         self.logger(msg, level, print_msg)
 
-    @ErrorWrappers.qworker_web_raise_error
+    @ExecutorWrappers.child_raise_error
     def execute(self) -> None:
         """
         Executes the steps required to process each action within the rule, including setting
@@ -103,7 +111,9 @@ class ActionsExecutor:
             self.logging(msg, "ERROR")
             raise ValueError(msg)
 
-        executor(self.browser_port, rule, index, self.logger).execute()
+        executor(
+            self.browser_port, rule, index, self.logger, self.should_stop
+        ).execute()
 
     def add_additional_action(self, index: int) -> None:
         """

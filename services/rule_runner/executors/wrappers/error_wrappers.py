@@ -4,11 +4,12 @@ from selenium.common.exceptions import (
     NoSuchFrameException,
     NoSuchWindowException,
 )
+from ...errors import StoppedRequestException
 
 
-class ErrorWrappers:
+class ExecutorWrappers:
     @staticmethod
-    def qworker_web_raise_error(func: Callable) -> Callable:
+    def child_raise_error(func: Callable) -> Callable:
         """
         Wrapper for handling Selenium WebDriver exceptions.
 
@@ -27,21 +28,27 @@ class ErrorWrappers:
                 return func(self, *args, **kwargs)
 
             except NoSuchWindowException as e:
+                if self.should_stop():
+                    raise StoppedRequestException from NoSuchWindowException
                 self.logging(
-                    f"{self.__class__.__name__}:Can't Find Window. The browser was closed.",
+                    "Can't Find Window. The browser was closed.",
                     "ERROR",
                 )
                 self.loggin(f"{e}", "DEBUG")
                 raise NoSuchWindowException from NoSuchWindowException
             except NoSuchFrameException as e:
+                if self.should_stop():
+                    raise StoppedRequestException from NoSuchFrameException
                 self.logging(
-                    f"{self.__class__.__name__}: Can't Find Frame. The Frame was closed.",
+                    "Can't Find Frame. The Frame was closed.",
                     "ERROR",
                 )
                 self.loggin(f"{e}", "DEBUG")
                 raise NoSuchFrameException from NoSuchFrameException
             except Exception as e:
-                self.logging(f"{self.__class__.__name__}: {e}", "ERROR")
+                if self.should_stop():
+                    raise StoppedRequestException from Exception
+                self.logging(f"{e}", "ERROR")
                 raise Exception(e) from Exception
 
         return wrapper

@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from ...interfaces import BrowserPort
     from ....rules.models import Rule
     from ....rules.models.triggers import ActionTrigger
+    from ....logger.adapters import LogAdapter
 
 from time import sleep
 import threading
 from selenium.webdriver.common.by import By
 
-from base import ErrorWrappers
+from ..wrappers import ExecutorWrappers
 
 from .trigger_action_state_changed_executor import TriggerActionStateChangedExecutor
 from ....rules.enums import ACTIONTRIGGERDETAILTYPE
@@ -24,7 +25,13 @@ class TriggerActionBasedExectuor:
     conditions, and email actions using Selenium WebDriver.
     """
 
-    def __init__(self, browser_port: BrowserPort, rule: Rule, logger):
+    def __init__(
+        self,
+        browser_port: BrowserPort,
+        rule: Rule,
+        logger: LogAdapter,
+        should_stop: Callable,
+    ):
         """
         Initializes the ActionsWorker with the provided driver and rule data.
         Sets up the necessary connections for interacting with web elements.
@@ -34,7 +41,7 @@ class TriggerActionBasedExectuor:
         self.rule = rule
         self._rule_condition_queues_source = "queues"
         self.logger = logger
-
+        self.should_stop = should_stop
         self.action_type_reg = {
             ACTIONTRIGGERDETAILTYPE: TriggerActionStateChangedExecutor
         }
@@ -43,7 +50,7 @@ class TriggerActionBasedExectuor:
         msg = f"{self.__class__.__name__}: {msg}"
         self.logger(msg, level, print_msg)
 
-    @ErrorWrappers.qworker_web_raise_error
+    @ExecutorWrappers.child_raise_error
     def execute(self) -> None:
         """
         Executes the steps required to process each Action Based Trigger within the rule, including setting
@@ -115,4 +122,4 @@ class TriggerActionBasedExectuor:
             self.logging(msg, "ERROR")
             raise ValueError(msg)
 
-        executor(self.browser_port, rule, self.logger).execute()
+        executor(self.browser_port, rule, self.logger, self.should_stop).execute()

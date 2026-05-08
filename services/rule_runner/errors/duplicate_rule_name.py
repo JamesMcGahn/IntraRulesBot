@@ -1,4 +1,4 @@
-class DuplicateRuleName(Exception):
+class DuplicateRuleNameException(Exception):
     """Rule has duplicate name."""
 
     def __init__(self, message=None):

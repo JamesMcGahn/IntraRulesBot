@@ -1,18 +1,19 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from ...interfaces import BrowserPort
     from ....rules.models import Rule
     from ....rules.models.triggers.action_based import AgentStateChangeDetails
+    from ....logger.adapters import LogAdapter
 
 from ....rules.enums import STATEEQUALITYOPERATOR
 from time import sleep
 import threading
 from selenium.webdriver.common.by import By
 
-from base import ErrorWrappers
+from ..wrappers import ExecutorWrappers
 
 
 class TriggerActionStateChangedExecutor:
@@ -22,11 +23,18 @@ class TriggerActionStateChangedExecutor:
     for stats-based conditions using Selenium WebDriver.
     """
 
-    def __init__(self, browser_port: BrowserPort, rule: Rule, logger):
+    def __init__(
+        self,
+        browser_port: BrowserPort,
+        rule: Rule,
+        logger: LogAdapter,
+        should_stop: Callable,
+    ):
         super().__init__()
         self.browser_port = browser_port
         self._rule_condition_queues_source = "queues"
         self.logger = logger
+        self.should_stop = should_stop
         self.rule = rule
         self.action_based_details: AgentStateChangeDetails = rule.trigger.details
 
@@ -34,7 +42,7 @@ class TriggerActionStateChangedExecutor:
         msg = f"{self.__class__.__name__}: {msg}"
         self.logger(msg, level, print_msg)
 
-    @ErrorWrappers.qworker_web_raise_error
+    @ExecutorWrappers.child_raise_error
     def execute(self) -> None:
         """
         Executes the steps required to process the stats-based condition, including setting the equality operator,

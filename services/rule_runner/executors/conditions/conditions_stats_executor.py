@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from ...interfaces import BrowserPort
     from ....rules.models import Rule
     from ....rules.models.conditions import ConditionStatsDetails
+    from ....logger.adapters import LogAdapter
 
 from ....rules.enums import QUEUESSOURCE
 
 from selenium.webdriver.common.by import By
 import threading
-from base import ErrorWrappers
+from ..wrappers import ExecutorWrappers
 
 
 class ConditionsStatsExecutor:
@@ -21,19 +22,27 @@ class ConditionsStatsExecutor:
     for stats-based conditions using Selenium WebDriver.
     """
 
-    def __init__(self, browser_port: BrowserPort, rule: Rule, index: int, logger):
+    def __init__(
+        self,
+        browser_port: BrowserPort,
+        rule: Rule,
+        index: int,
+        logger: LogAdapter,
+        should_stop: Callable,
+    ):
         super().__init__()
         self.browser_port = browser_port
         self.rule = rule
         self.index = index
         self.condition = None
         self.logger = logger
+        self.should_stop = should_stop
 
     def logging(self, msg, level="INFO", print_msg=True) -> None:
         msg = f"{self.__class__.__name__}: {msg}"
         self.logger(msg, level, print_msg)
 
-    @ErrorWrappers.qworker_web_raise_error
+    @ExecutorWrappers.child_raise_error
     def execute(self) -> None:
         """
         Executes the steps required to process the stats-based condition, including setting the equality operator,

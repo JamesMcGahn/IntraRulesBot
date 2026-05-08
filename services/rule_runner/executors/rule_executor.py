@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from ..interfaces import BrowserPort
@@ -17,7 +17,7 @@ from selenium.common.exceptions import (
 )
 from selenium.webdriver.common.by import By
 
-from base.exceptions import DuplicateRuleName
+from ..errors import DuplicateRuleNameException, StoppedRequestException
 
 from .actions import ActionsExecutor
 from .conditions import ConditionsExecutor
@@ -34,30 +34,25 @@ class RuleExecutor:
     """
 
     def __init__(
-        self, url: str, browser_port: BrowserPort, rule: Rule, logger: LogAdapter
+        self,
+        url: str,
+        browser_port: BrowserPort,
+        rule: Rule,
+        logger: LogAdapter,
+        should_stop: Callable,
     ):
         super().__init__()
         self.url = url
         self.browser_port = browser_port
         self.rule = rule
         self.logger = logger
-
+        self.should_stop = should_stop
         self.rule_rename_attempts = 0
         self.rule_name = rule.rule_name
-
-        self._stop_requested = False
 
     def logging(self, msg, level="INFO", print_msg=True) -> None:
         msg = f"{self.__class__.__name__}: {msg}"
         self.logger(msg, level, print_msg)
-
-    @property
-    def stop_requested(self):
-        return self._stop_requested
-
-    @stop_requested.setter
-    def stop_requested(self, stop: bool):
-        self._stop_requested = stop
 
     def execute(self) -> RuleExecutionResult:
         """
@@ -87,32 +82,32 @@ class RuleExecutor:
 
             self.set_rule_name(self.rule_name)
             self.execute_triggers()
-            if self.stop_requested:
+            if self.should_stop():
                 return self._build_stopped_result()
 
             self.next_page()
 
             self.execute_conditions()
-            if self.stop_requested:
+            if self.should_stop():
                 return self._build_stopped_result()
 
             self.next_page()
 
             self.execute_actions()
-            if self.stop_requested:
+            if self.should_stop():
                 return self._build_stopped_result()
 
             self.set_rule_category()
-            if self.stop_requested:
+            if self.should_stop():
                 return self._build_stopped_result()
 
             self.switch_to_rule_module()
             self.next_page()
-            if self.stop_requested:
+            if self.should_stop():
                 return self._build_stopped_result()
 
             self.submit_rule()
-            if self.stop_requested:
+            if self.should_stop():
                 return self._build_stopped_result()
 
             if self.rule_rename_attempts > 0:
@@ -126,8 +121,16 @@ class RuleExecutor:
                 status=RULEEXECSTATUS.SUCCESS,
                 message="Rule submitted successfully.",
             )
+        except StoppedRequestException:
+            return RuleExecutionResult(
+                rule_guid=self.rule.guid,
+                rule_name=self.rule.rule_name,
+                success=False,
+                status=RULEEXECSTATUS.RUNNER_STOPPED_ERROR,
+                message="Stopped Requested.",
+            )
 
-        except DuplicateRuleName:
+        except DuplicateRuleNameException:
             return RuleExecutionResult(
                 rule_guid=self.rule.guid,
                 rule_name=self.rule.rule_name,
@@ -137,6 +140,15 @@ class RuleExecutor:
             )
 
         except NoSuchFrameException:
+            if self.should_stop():
+                return RuleExecutionResult(
+                    rule_guid=self.rule.guid,
+                    rule_name=self.rule.rule_name,
+                    success=False,
+                    status=RULEEXECSTATUS.RUNNER_STOPPED_ERROR,
+                    message="Stopped Requested.",
+                )
+
             self.logging(
                 "Can't Find Frame. The window was closed. Rule Failed.", "ERROR"
             )
@@ -178,6 +190,15 @@ class RuleExecutor:
                 message="Browser error.",
             )
         except Exception as e:
+            if self.should_stop():
+                return RuleExecutionResult(
+                    rule_guid=self.rule.guid,
+                    rule_name=self.rule.rule_name,
+                    success=False,
+                    status=RULEEXECSTATUS.RUNNER_STOPPED_ERROR,
+                    message="Stopped Requested.",
+                )
+
             self.logging(
                 f"Something went wrong in RuleWorker. Rule Failed.: {e}", "ERROR"
             )
@@ -193,7 +214,9 @@ class RuleExecutor:
         """
         Starts processing the triggers for the rule by initializing the TriggerWorker.
         """
-        self.trigger = TriggerExecutor(self.browser_port, self.rule, self.logger)
+        self.trigger = TriggerExecutor(
+            self.browser_port, self.rule, self.logger, self.should_stop
+        )
         self.trigger.execute()
 
     def execute_conditions(self) -> None:
@@ -203,7 +226,7 @@ class RuleExecutor:
 
         if self.rule.conditions:
             self.conditions = ConditionsExecutor(
-                self.browser_port, self.rule, self.logger
+                self.browser_port, self.rule, self.logger, self.should_stop
             )
             self.conditions.execute()
 
@@ -213,7 +236,9 @@ class RuleExecutor:
         """
 
         if self.rule.actions:
-            executor = ActionsExecutor(self.browser_port, self.rule, self.logger)
+            executor = ActionsExecutor(
+                self.browser_port, self.rule, self.logger, self.should_stop
+            )
             executor.execute()
 
     def switch_to_rule_module(self) -> None:
@@ -298,7 +323,7 @@ class RuleExecutor:
                     f"Rule '{self.rule_name}' could not be submitted after multiple retries.",
                     "ERROR",
                 )
-                raise DuplicateRuleName
+                raise DuplicateRuleNameException
 
         self.browser_port.switch_to_main_frame()
         self.success_message()
