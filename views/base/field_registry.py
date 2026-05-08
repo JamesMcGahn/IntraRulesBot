@@ -11,6 +11,9 @@ class FieldRegistry(QObject):
     def register_field(self, key, value):
         self.fields[key] = value
 
+    def get_all(self):
+        return self.fields
+
     def get_field(self, key):
         if key not in self.fields:
             raise ValueError("No such key in registry.")

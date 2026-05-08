@@ -17,7 +17,9 @@ def setting(
     folder_icon: bool = False,
     combo_box: list[str] | None = None,
     verify: Optional[Callable] = None,
-    hide_secure_text: bool = False
+    hide_secure_text: bool = False,
+    tied_fields: list[str] | None = None,
+    async_verify_group: str | None = None
 ):
     return field(
         default=default,
@@ -33,6 +35,8 @@ def setting(
                 combo_box=combo_box,
                 verify=verify,
                 hide_secure_text=hide_secure_text,
+                tied_fields=tied_fields,
+                async_verify_group=async_verify_group,
             )
         },
     )

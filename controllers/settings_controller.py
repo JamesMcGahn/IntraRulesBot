@@ -28,6 +28,8 @@ from services.validation.models import (
     SettingsValidatePayload,
     ValidationRequest,
     ValidationResponse,
+    ValidationBatchRequest,
+    ValidationBatchResponse,
 )
 
 
@@ -77,9 +79,34 @@ class SettingsController(QObjectBase):
         self._active_jobs[job_id] = payload
         self.validation_service.validate(job)
 
+    def on_batch_verify(self, batch: list[tuple]):
+        job_id = str(uuid4())
+        payloads = []
+        for item in batch:
+            category, field, value = item
+            payload = SettingsValidatePayload(
+                category=category, field=field, value=value
+            )
+            payloads.append(payload)
+
+        job = JobRequest(
+            id=job_id,
+            task=None,
+            payload=ValidationBatchRequest(
+                kind=VALIDATEJOBTYPE.SETTINGS, data=payloads
+            ),
+        )
+
+        self._active_jobs[job_id] = payload
+        self.validation_service.validate_batch(job)
+
     @Slot(object)
     def on_validation_complete(
-        self, job_res: JobResponse[ValidationResponse[SettingsValidateResponse]]
+        self,
+        job_res: JobResponse[
+            ValidationResponse[SettingsValidateResponse]
+            | ValidationBatchResponse[SettingsValidateResponse]
+        ],
     ):
         print("received")
         job_id = job_res.job_ref.id
@@ -87,36 +114,42 @@ class SettingsController(QObjectBase):
             return
 
         payload = job_res.payload.data
-        category = payload.category
-        field = payload.field
-        value = payload.value
-        status = payload.status
-        message = payload.message
 
-        if status == FIELDSTATESTATUS.VALID:
-            is_valid = True
+        items = []
+        if not isinstance(payload, list):
+            items.append(payload)
         else:
-            is_valid = False
+            items = payload
+        for item in items:
+            category = item.category
+            field = item.field
+            value = item.value
+            status = item.status
+            message = item.message
 
-        settings_validate_payload = SettingValidatedPayload(
-            category=category, field=field, is_valid=is_valid
-        )
+            if status == FIELDSTATESTATUS.VALID:
+                is_valid = True
+            else:
+                is_valid = False
 
-        ui_event = UIEvent(
-            event_type=UIEVENTTYPE.UPDATE,
-            payload=FieldStateEvent(
-                category=category, field=field, status=status, message=message
-            ),
-        )
-
-        if job_res.job_ref.status == JOBSTATUS.COMPLETE:
-            self._active_jobs.pop(job_id)
-            self.settings_service.set_validated(settings_validate_payload)
-            self.setting_updated.emit(
-                SettingUpdatedEvent(category=category, field=field, value=value)
+            settings_validate_payload = SettingValidatedPayload(
+                category=category, field=field, is_valid=is_valid
             )
-            self.verify_response_update.emit(ui_event)
-        elif job_res.job_ref.status in (JOBSTATUS.ERROR, JOBSTATUS.PARTIAL_ERROR):
-            self._active_jobs.pop(job_id)
-            self.settings_service.set_validated(settings_validate_payload)
-            self.verify_response_update.emit(ui_event)
+
+            ui_event = UIEvent(
+                event_type=UIEVENTTYPE.UPDATE,
+                payload=FieldStateEvent(
+                    category=category, field=field, status=status, message=message
+                ),
+            )
+
+            if job_res.job_ref.status == JOBSTATUS.COMPLETE:
+                self.settings_service.set_validated(settings_validate_payload)
+                self.setting_updated.emit(
+                    SettingUpdatedEvent(category=category, field=field, value=value)
+                )
+                self.verify_response_update.emit(ui_event)
+            elif job_res.job_ref.status in (JOBSTATUS.ERROR, JOBSTATUS.PARTIAL_ERROR):
+                self.settings_service.set_validated(settings_validate_payload)
+                self.verify_response_update.emit(ui_event)
+        self._active_jobs.pop(job_id)

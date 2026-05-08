@@ -26,13 +26,13 @@ from ....base.field_registry import FieldRegistry
 class SettingsUIHelper(QObject):
     send_to_verify = Signal(str, str, str)
     settings_field_updated = Signal(str, str, object)
+    send_batch_to_verify = Signal(object)
 
     def __init__(self, settings_verify, field_registery: FieldRegistry):
         super().__init__()
         self.field_registery = field_registery
         self.settings_verify = settings_verify
         self.timers = {}
-
         self.x_icon = QIcon()
         self.x_icon.addFile(
             ":/images/red_xmark.png",
@@ -79,11 +79,26 @@ class SettingsUIHelper(QObject):
         verify_btn = self.field_registery.get_field(f"{tab}/btn_{key}_verify")
         verify_btn.setDisabled(disable)
 
-    def handle_verify(self, tab, key, widget_type, value=None):
-        if not value:
+    def handle_verify(self, tab, key, widget_type, value=None, tied_fields=None):
+        if value is None:
             value = self.field_registery.get_text_value(f"{tab}/{widget_type}_{key}")
-        self.set_verify_btn_disable(tab, key, True)
-        self.send_to_verify.emit(tab, key, value)
+            self.set_verify_btn_disable(tab, key, True)
+        if tied_fields:
+            tied_validation = []
+            tied_validation.append((tab, key, value))
+            for tie in tied_fields:
+                tied_key, tied_widget = tie
+                # value =
+                print(f"{tab}/{tied_widget.value}_{tied_key}")
+                tied_value = self.field_registery.get_text_value(
+                    f"{tab}/{tied_widget.value}_{tied_key}"
+                )
+                print(tied_value)
+                tied_validation.append((tab, tied_key, tied_value))
+                self.set_verify_btn_disable(tab, tied_key, True)
+            self.send_batch_to_verify.emit(tied_validation)
+        else:
+            self.send_to_verify.emit(tab, key, value)
 
     def create_input_fields(self, tab, key, value, meta: SettingsFieldMeta, layout):
         secure_setting = meta.secure
@@ -141,9 +156,10 @@ class SettingsUIHelper(QObject):
             )
         else:
             widget_type = meta.widget_type
+            tied_fields = meta.tied_fields
             verify_button.clicked.connect(
                 lambda _, widget_type=widget_type: self.handle_verify(
-                    tab, key, widget_type=widget_type
+                    tab, key, widget_type=widget_type, tied_fields=tied_fields
                 )
             )
 
@@ -258,23 +274,25 @@ class SettingsUIHelper(QObject):
         # self.handle_setting_change_update(tab, key)
 
     def handle_text_change_timer(self, tab, key, text, field_type, secure=False):
-        if key in self.timers:
+        timer_key = f"{tab}/{key}"
+        if timer_key in self.timers:
             self.timers[f"{tab}/{key}"].stop()
 
-        self.timers[f"{tab}/{key}"] = QTimer(self)
-        self.timers[f"{tab}/{key}"].setSingleShot(True)
-        if secure:
-            self.timers[f"{tab}/{key}"].timeout.connect(
-                lambda: self.handle_secure_user_done_typing(tab, key, text)
-            )
-        else:
-            self.timers[f"{tab}/{key}"].timeout.connect(
-                lambda: self.handle_setting_change(tab, key, text, field_type)
-            )
+        self.timers[timer_key] = QTimer(self)
+        self.timers[timer_key].setSingleShot(True)
+        # if secure:
+        #     self.timers[timer_key].timeout.connect(
+        #         lambda: self.handle_secure_user_done_typing(tab, key, text)
+        #     )
+        # else:
+        self.timers[timer_key].timeout.connect(
+            lambda: self.handle_setting_change(tab, key, text, field_type)
+        )
 
-        self.timers[f"{tab}/{key}"].start(500)
+        self.timers[timer_key].start(500)
 
     def handle_secure_user_done_typing(self, tab, key, field):
+        print(tab, key, field)
         text = field.text()
         self.handle_secure_setting_change(tab, key, text)
 

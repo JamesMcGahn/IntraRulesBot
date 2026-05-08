@@ -16,3 +16,5 @@ class SettingsFieldMeta:
     combo_box: list[str] | None = None
     verify: Optional[Callable] = None
     hide_secure_text: bool = False
+    tied_fields: list[str] | None = None
+    async_verify_group: str | None = None

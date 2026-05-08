@@ -41,7 +41,7 @@ class SettingsPage(QWidgetBase):
             category_settings = getattr(app_settings, category.name, None)
             if category_settings is None:
                 return
-            attr_name = f"{category_settings}_tab"
+            attr_name = f"{category_settings.schema_name}_tab"
             setattr(
                 self,
                 attr_name,
@@ -64,6 +64,10 @@ class SettingsPage(QWidgetBase):
             getattr(self, attr_name).send_to_verify.connect(
                 self.settings_controller.on_field_verify
             )
+            getattr(self, attr_name).send_batch_to_verify.connect(
+                self.settings_controller.on_batch_verify
+            )
             self.settings_controller.verify_response_update.connect(
                 getattr(self, attr_name).on_verify_response
             )
+        self.tabs_loaded = True

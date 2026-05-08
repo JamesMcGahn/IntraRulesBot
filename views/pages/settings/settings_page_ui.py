@@ -1,13 +1,9 @@
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
-    QHBoxLayout,
     QVBoxLayout,
     QWidget,
     QTabWidget,
 )
-
-from __version__ import __version__
-from views.components.helpers import WidgetFactory
 
 
 class PageSettingsUI(QWidget):

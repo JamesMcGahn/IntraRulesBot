@@ -23,6 +23,7 @@ from .tab_ui_helper import SettingsUIHelper
 class TabSettingsBase(QWidgetBase):
     settings_field_updated = Signal(str, str, object)
     send_to_verify = Signal(str, str, str)
+    send_batch_to_verify = Signal(object)
     verify_response_update = Signal(str, str, bool)
     change_verify_btn_disable = Signal(str, str, bool)
 
@@ -36,13 +37,13 @@ class TabSettingsBase(QWidgetBase):
         super().__init__()
         self.tab_id = tab_id
         self.field_registry = field_registry
-
         self.sui = SettingsUIHelper(settings_verify, field_registry)
         self.view = TabSettingsBaseUI(self.tab_id, settings, self.sui)
         self.layout.addWidget(self.view)
 
         # SIGNAL CONNECTIONS
         self.sui.send_to_verify.connect(self.send_to_verify)
+        self.sui.send_batch_to_verify.connect(self.send_batch_to_verify)
         self.verify_response_update.connect(self.sui.verify_response_update)
         self.sui.settings_field_updated.connect(self.settings_field_updated)
 

@@ -16,7 +16,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from views.components.helpers import WidgetFactory
-from ....base.field_registry import FieldRegistry
 
 
 class TabSettingsBaseUI(QWidget):
@@ -27,7 +26,6 @@ class TabSettingsBaseUI(QWidget):
         super().__init__()
         self.tab_id = tab_id
         self.settings_page_layout = QHBoxLayout(self)
-        self.field_registery = FieldRegistry()
         self.settings = settings
         self.uih = ui_helper
 
