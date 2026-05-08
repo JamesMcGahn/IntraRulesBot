@@ -58,7 +58,6 @@ class AppContext(QObject, metaclass=QSingleton):
             settings_service=self.settings_manager
         )
         self.rule_runner_service = RuleRunnerService(
-            settings_provider=self.rule_settings_provider,
             session=self.session_registry.for_provider(PROVIDERS.INTRA),
             auth_service=self.auth_service,
             logger=self.log_adapter,
@@ -78,6 +77,7 @@ class AppContext(QObject, metaclass=QSingleton):
             rule_store=self.rule_store,
             rule_builder=self.rule_builder,
             rule_runner_service=self.rule_runner_service,
+            settings_provider=self.rule_settings_provider,
         )
 
         folder = PathManager.create_folder_in_app_data("playwright")

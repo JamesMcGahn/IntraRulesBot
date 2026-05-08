@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from services.rules import RuleRegistry, RuleStore, RuleBuilder
     from services.validation.models import SchemaError
     from services.rule_runner import RuleRunnerService
+    from services.rule_runner.interfaces import RuleRunnerConfigProvider
 
 from uuid import uuid4
 from pathlib import Path
@@ -26,6 +27,11 @@ from services.validation.models import (
     ValidationRequest,
     ValidationResponse,
 )
+from services.rule_runner.models import (
+    RuleRunnerResponse,
+    RuleRunnerRequestPayload,
+    RuleRunItem,
+)
 from services.rules.models import RuleSet
 from .models import ValidationBatch, ValidationRulesResult
 from .enums import VALIDATIONBATCHTYPE
@@ -37,6 +43,7 @@ class RulesController(QObjectBase):
     runtime_validation_result = Signal(object)
     # TODO convert to ui_event
     runner_progress = Signal(int, int)
+    stop_runner_service = Signal()
 
     def __init__(
         self,
@@ -45,6 +52,7 @@ class RulesController(QObjectBase):
         rule_builder: RuleBuilder,
         rule_store: RuleStore,
         rule_runner_service: RuleRunnerService,
+        settings_provider: RuleRunnerConfigProvider,
     ):
         super().__init__()
         self.validation_service = validation_service
@@ -52,14 +60,16 @@ class RulesController(QObjectBase):
         self.rule_builder = rule_builder
         self.rules_store = rule_store
         self.rule_runner_service = rule_runner_service
+        self._settings_provider = settings_provider
 
         self._active_jobs: dict[str, SchemaValidatePayload] = {}
         self._active_batches: dict[str, ValidationBatch] = {}
-
+        self._active_runners: dict[str, RuleRunnerRequestPayload] = {}
         # CONNECTIONS
         self.validation_service.task_complete.connect(self.on_validation_complete)
         # TODO convert to ui_event
         self.rule_runner_service.progress.connect(self.runner_progress)
+        self.stop_runner_service.connect(self.rule_runner_service.stop_current_run)
 
     def hydrate_rules_page(self):
         self._emit_rules_updated()
@@ -105,7 +115,6 @@ class RulesController(QObjectBase):
 
     def validate_json(self, data, batch_type: VALIDATIONBATCHTYPE, file_path: str = ""):
         rules = data.get("rules")
-        print(rules)
         batch_id = str(uuid4())
         rule_batch_name = data.get("rule_set_name", f"Rule Batch - {batch_id}")
         rule_batch_description = data.get("description", "")
@@ -245,7 +254,12 @@ class RulesController(QObjectBase):
 
     def handle_run_rules(self, batch: ValidationBatch):
         rules = self.rule_builder.build_rules(batch.valid_rules)
-        self.rule_runner_service.start_run(rules)
+        rule_items = [RuleRunItem(rule.guid, rule) for rule in rules]
+        login_config = self._settings_provider.get_rule_run_config()
+        payload = RuleRunnerRequestPayload(login_config, rule_items)
+        job_ref_id = uuid4()
+        self._active_runners[job_ref_id] = RuleRunnerRequestPayload
+        self.rule_runner_service.start_run(JobRequest(job_ref_id, None, payload))
 
     def handle_sys_save(self, batch: ValidationBatch):
         if batch.rule_errors:
@@ -323,3 +337,6 @@ class RulesController(QObjectBase):
                 payload=RulesLoadedEvent(rules=self.rules_registry.get_all()),
             )
         )
+
+    def handle_stop_runner(self):
+        self.stop_runner_service.emit()

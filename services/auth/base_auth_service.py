@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from .session.session_registry import SessionRegistry
@@ -32,7 +32,13 @@ class BaseAuthService:
     def validate(self) -> AuthValidationResponse:
         raise NotImplementedError
 
-    def ensure_auth(self, creds, browser_port: BrowserPort | None = None) -> AuthResult:
+    def ensure_auth(
+        self,
+        creds,
+        browser_port: BrowserPort | None = None,
+        force_login: bool = True,
+        should_stop_cb: Callable[[], bool] | None = None,
+    ) -> AuthResult:
         raise NotImplementedError
 
     def can_attempt_login(self) -> bool:

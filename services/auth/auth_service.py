@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from .session.session_registry import SessionRegistry
@@ -34,12 +34,17 @@ class AuthService:
         return service.validate()
 
     def ensure_auth(
-        self, provider: PROVIDERS, creds, browser_port: BrowserPort | None = None
+        self,
+        provider: PROVIDERS,
+        creds,
+        browser_port: BrowserPort | None = None,
+        force_login: bool = True,
+        should_stop_cb: Callable[[], bool] | None = None,
     ) -> AuthResult:
         service = self._providers.get(provider)
         if not service:
             raise NotImplementedError(f"{provider} not implemented")
-        return service.ensure_auth(creds, browser_port)
+        return service.ensure_auth(creds, browser_port, force_login, should_stop_cb)
 
     def can_attempt_login(self, provider) -> bool:
         service = self._providers.get(provider)

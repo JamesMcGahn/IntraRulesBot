@@ -7,5 +7,5 @@ from services.rules.models import Rule
 class RuleRunItem:
     rule_guid: str
     rule: Rule
-    status: RULERUNSTATUS
+    status: RULERUNSTATUS = RULERUNSTATUS.PENDING
     retry_count: int = 0

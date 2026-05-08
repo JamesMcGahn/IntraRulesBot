@@ -59,3 +59,17 @@ class WebDriverManager(QWorkerBase):
                 self.driver.quit()
             except Exception as e:
                 self.logging(f"There was an error in WebDriverManager: {e}")
+
+    def get_cookies(self) -> list[dict]:
+        if not self.driver:
+            return []
+        return self.driver.get_cookies()
+
+    def load_cookies(self, cookies: list[dict]) -> None:
+        if not cookies or not self.driver:
+            return
+        for cookie in cookies:
+            try:
+                self.driver.add_cookie(cookie)
+            except Exception as e:
+                self.logging(f"Failed to load cookie to driver: {e}", "ERROR")

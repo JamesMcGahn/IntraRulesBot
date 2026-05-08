@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from ..auth.session.session_registry import SessionRegistry
@@ -40,17 +40,23 @@ class IntraAuthService(BaseAuthService):
             token_valid=False,
         )
 
-    def ensure_auth(self, creds: IntraLogin, browser_port: BrowserPort) -> AuthResult:
+    def ensure_auth(
+        self,
+        creds: IntraLogin,
+        browser_port: BrowserPort,
+        force_login=True,
+        should_stop_cb: Callable[[], bool] | None = None,
+    ) -> AuthResult:
 
         result = self.validate()
-        if result.cookies_valid:
+        if not force_login and result.cookies_valid:
             return AuthResult(
                 success=True,
                 status=AUTHSTATUS.ALREADY_AUTHENTICATED,
                 message=f"{self.provider_name} is authenticated.",
             )
 
-        if not self.can_attempt_login():
+        if not force_login and not self.can_attempt_login():
             self.logging("Login cooldown active", "WARN")
             return AuthResult(
                 success=False,
@@ -58,15 +64,19 @@ class IntraAuthService(BaseAuthService):
                 message="Login cooldown active",
             )
 
-        return self.login(creds, browser_port)
+        return self.login(creds, browser_port, should_stop_cb)
 
-    def login(self, creds: IntraLogin, browser_port: BrowserPort) -> AuthResult:
-        result = self._perform_login(creds, browser_port)
+    def login(
+        self, creds: IntraLogin, browser_port: BrowserPort, should_stop_cb
+    ) -> AuthResult:
+        result = self._perform_login(creds, browser_port, should_stop_cb)
         self.last_login_attempt = time.time()
 
         return result
 
-    def _perform_login(self, creds: IntraLogin, browser_port: BrowserPort):
+    def _perform_login(
+        self, creds: IntraLogin, browser_port: BrowserPort, should_stop_cb
+    ):
         try:
             browser_port.go_to_page(
                 f"https://{creds.tenant}.intradiem.com/?loginoverride=manual"
@@ -77,6 +87,13 @@ class IntraAuthService(BaseAuthService):
             browser_port.wait_for_page_ready()
             return self._wait_for_success(browser_port)
         except NoSuchWindowException:
+            if should_stop_cb():
+                self.logging("Stop Requested. Stopping Auth.")
+                return AuthResult(
+                    success=False,
+                    status=AUTHSTATUS.STOPPED_REQUESTED,
+                    message="Stop Requested",
+                )
             msg = "Error Occurred while logging in. The browser was closed"
             self.logging(msg, "ERROR")
             return AuthResult(
@@ -84,6 +101,13 @@ class IntraAuthService(BaseAuthService):
             )
 
         except Exception as e:
+            if should_stop_cb():
+                self.logging("Stop Requested. Stopping Auth.")
+                return AuthResult(
+                    success=False,
+                    status=AUTHSTATUS.STOPPED_REQUESTED,
+                    message="Stop Requested",
+                )
             self.logging(f"Error: {str(e)}", "ERROR")
             return AuthResult(
                 success=False,

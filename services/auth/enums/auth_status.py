@@ -8,3 +8,4 @@ class AUTHSTATUS(StrEnum):
     COOLDOWN = "cooldown"
     BROWSER_ERROR = "browser_error"
     UNKNOWN_ERROR = "unknown_error"
+    STOPPED_REQUESTED = "stopped_requested"

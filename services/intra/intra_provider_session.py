@@ -12,6 +12,6 @@ class IntraProviderSession(BaseProviderSession):
         provider_name = PROVIDERS.INTRA
         has_token = False
         has_cookies = True
-        has_auth_cookies = True
-        auth_cookies = {"KnowlagentAccessMT", ".Knowlagent", "ASP.NET_SessionId"}
+        has_auth_cookies = False
+        auth_cookies = {}
         domains = {"intradiem.com"}

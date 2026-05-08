@@ -3,12 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Deque
 
 if TYPE_CHECKING:
-    from ..rules.models import Rule
     from ..auth.auth_service import AuthService
-    from ..auth.models.auth_result import AuthResult
+
     from ..intra.intra_provider_session import IntraProviderSession
     from services.logger.adapters import LogAdapter
-from PySide6.QtCore import Signal, Slot, QObject
+    from ..base.models import JobRequest
+    from .models import RuleRunnerRequestPayload
+from PySide6.QtCore import Signal, QObject
 import threading
 from collections import deque
 
@@ -22,6 +23,7 @@ from .enums import RULERUNSTATUS, RULEEXECSTATUS
 from services.selenium import WebDriverManager
 from services.selenium.adapters import SeleniumBrowserAdapter
 from ..auth.enums import AUTHSTATUS
+from ..auth.models.auth_result import AuthResult
 
 
 class RuleRunnerWorker(QObject):
@@ -30,32 +32,27 @@ class RuleRunnerWorker(QObject):
 
     def __init__(
         self,
-        rules: list[Rule],
-        config: RuleRunnerConfig,
+        job: JobRequest[RuleRunnerRequestPayload],
         session: IntraProviderSession,
         auth_service: AuthService,
         logger: LogAdapter,
     ):
         super().__init__()
-        self.rule_queue: Deque[RuleRunItem] = deque()
-        self.config = config
+        self.rule_queue: Deque[RuleRunItem] = deque(job.payload.rules)
         self.logger = logger
-
         self.session = session
         self.auth_service = auth_service
 
-        for rule in rules:
-            self.rule_queue.append(
-                RuleRunItem(
-                    rule_guid=rule.guid, rule=rule, status=RULERUNSTATUS.PENDING
-                )
-            )
         # TODO Remove Later: ONLY FOR TESTING
+
         # self.tenant = ""
         # self.username = ""
         # self.password = ""
         # self.url = ""
         # self.platform_version = "v10"
+        self.creds = RuleRunnerConfig(
+            self.username, self.password, self.tenant, self.platform_version
+        )
 
         self.driver = None
         self.driver_adapter = None
@@ -65,6 +62,9 @@ class RuleRunnerWorker(QObject):
         self.completed_count = 0
         self.total_count = len(self.rule_queue)
         self.shut_down = False
+
+    def should_stop(self) -> bool:
+        return self.shut_down
 
     def logging(self, msg, level="INFO", print_msg=True) -> None:
         msg = f"{self.__class__.__name__}: {msg}"
@@ -76,14 +76,14 @@ class RuleRunnerWorker(QObject):
             "INFO",
         )
         try:
-            self._init_driver()
+            self._init_driver(True)
             self.run_queue()
 
         except Exception as e:
             print(e)
             self.logging("Fatal Error", "ERROR")
 
-    def _init_driver(self) -> None:
+    def _init_driver(self, load_session_cookies=False) -> None:
         """
         Initializes the Selenium WebDriver through the WebDriverManager.
         """
@@ -91,29 +91,60 @@ class RuleRunnerWorker(QObject):
         self.driver_manager.init_driver()
         self.driver = self.driver_manager.get_driver()
         self.driver_adapter = SeleniumBrowserAdapter(self.driver, self.logger)
+        self.driver.get(self.url)
+        if load_session_cookies:
+            self.load_cookies()
+
+    def load_cookies(self) -> None:
+        cookies = self.session.convert_jar_to_cookie_list()
+        self.driver_manager.load_cookies(cookies)
+
+    def save_cookies(self) -> None:
+        cookies = self.driver_manager.get_cookies()
+        self.session.update_cookies_from_list(cookies)
+        self.session.save_session()
 
     def _close_down_driver(self):
-        """
-        Closes and cleans up the Selenium WebDriver instance.
-        """
-        if self.driver_manager:
-            self.driver = None
+        if not self.driver_manager:
+            return
+
+        try:
+            self.save_cookies()
+        except Exception as e:
+            if self.shut_down:
+                return
+            self.logging(f"Skipping cookie save during driver shutdown: {e}", "WARN")
+
+        try:
             self.driver_manager.close()
-            self.driver_manager.deleteLater()
+        except Exception as e:
+            if self.shut_down:
+                return
+            self.logging(f"Error closing driver: {e}", "WARN")
+
+        self.driver = None
+        self.driver_adapter = None
+        self.driver_manager = None
 
     def _rebuild_browser(self):
         self._close_down_driver()
-        self._init_driver()
+        self._init_driver(load_session_cookies=False)
 
     def _authenticate(self) -> AuthResult:
         auth_attempts = 0
         max_attempts = 2
+
         while auth_attempts < max_attempts:
+            if self.shut_down:
+                return AuthResult(success=False, status=AUTHSTATUS.STOPPED_REQUESTED)
             self.logging(
                 f"Attempting to authenticate: {auth_attempts} / {max_attempts-1}"
             )
             result = self.auth_service.ensure_auth(
-                PROVIDERS.INTRA, self.creds, self.driver_adapter
+                PROVIDERS.INTRA,
+                self.creds,
+                self.driver_adapter,
+                should_stop_cb=self.should_stop,
             )
 
             if result.success:
@@ -130,6 +161,11 @@ class RuleRunnerWorker(QObject):
 
     def run_queue(self):
         auth_result = self._authenticate()
+        if auth_result.status == AUTHSTATUS.STOPPED_REQUESTED:
+            self.create_rule_summary()
+            self.close()
+            return
+
         if not auth_result.success:
             self.shut_down = True
             self._drain_remaining_rules(RULERUNSTATUS.FAILED, "Failed to Authenticate")
@@ -140,7 +176,11 @@ class RuleRunnerWorker(QObject):
                 item = self.rule_queue.popleft()
                 item.status = RULERUNSTATUS.RUNNING
                 self.current_executor = RuleExecutor(
-                    self.url, self.driver_adapter, item.rule, self.logger
+                    self.url,
+                    self.driver_adapter,
+                    item.rule,
+                    self.logger,
+                    self.should_stop,
                 )
                 result = self.current_executor.execute()
                 self._handle_result(item, result)
@@ -164,6 +204,12 @@ class RuleRunnerWorker(QObject):
             self.success_rules.append(item)
             self.completed_count += 1
         else:
+            if result.status == RULEEXECSTATUS.RUNNER_STOPPED_ERROR:
+                self.errored_rules.append(item)
+                self.completed_count = self.total_count
+                self.logging("Rule Executor stopped.", "WARN")
+                return
+
             self.logging(f"{result.rule_name} - failed.")
             if item.retry_count < 2:
                 item.retry_count += 1
@@ -186,6 +232,7 @@ class RuleRunnerWorker(QObject):
                         self._drain_remaining_rules(
                             RULERUNSTATUS.FAILED, "Authentication failed during retry"
                         )
+                        return
             else:
                 self.logging(f"{result.rule_name} - not retrying running rule.")
                 item.status = RULERUNSTATUS.FAILED
@@ -214,7 +261,6 @@ class RuleRunnerWorker(QObject):
 
         self.logging(f"Removing remaining rules from queue: {reason}", "WARN")
 
-    @Slot()
     def stop(self) -> None:
         """
         Stops the thread execution.
@@ -222,12 +268,11 @@ class RuleRunnerWorker(QObject):
         self.logging("Stop Button Pressed", "INFO")
         self.logging("Shutting down", "INFO")
         self.shut_down = True
-        if self.current_executor:
-            self.current_executor.stop_requested = True
         self._drain_remaining_rules(
             RULERUNSTATUS.STOPPED, "Rule runner manually stopped."
         )
-        self.close()
+        self.progress.emit(self.total_count, self.total_count)
+        self._close_down_driver()
 
     def close(self) -> None:
         """

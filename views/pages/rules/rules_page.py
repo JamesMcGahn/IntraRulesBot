@@ -15,9 +15,8 @@ from PySide6.QtWidgets import QFileDialog, QLineEdit, QTextEdit
 
 from base import QWidgetBase
 from views.components.dialogs import SchemaErrorDialog, RuleSetDialog
-from models import LoginModel
+from views.components.toasts.qtoast.enums import QTOASTSTATUS
 from services.event_filter import EventFilter
-from services.validator import SchemaValidator
 
 from .rules_page_css import STYLES
 from .rules_page_ui import RulesPageView
@@ -29,10 +28,6 @@ class RulesPage(QWidgetBase):
     Rules page is responsible for managing the rules displayed in the UI. It handles
     loading, validating, saving, and copying rule fields. The UI interactions are handled
     through the connected view and model components.
-
-    Signals:
-        send_rules (list): Emits the list of rules to the view.
-        send_rule_sets (object): Emits rule sets to rule set model
     """
 
     send_rules = Signal(list)
@@ -57,40 +52,30 @@ class RulesPage(QWidgetBase):
         self.rule_set_data = None
         self.setGraphicsEffect(None)
 
-        self.loginModel = LoginModel()
-        self.loginModel.creds_changed.connect(self.update_credentials)
-        username, password, url, login_url = self.loginModel.get_creds()
-        self.username = username
-        self.password = password
-        self.url = url
-        self.login_url = login_url
-
         ##
         self.rules_controller.ui_event.connect(self.receive_ui_event)
         self.rules_controller.runtime_validation_result.connect(
             self.ui.update_form_validation
         )
+        self.rules_controller.runner_progress.connect(self.ui.set_progress_bar)
         self.ui.delete_rule.connect(self.handle_delete_rule)
         self.ui.delete_all_rules.connect(self.handle_delete_all_rules)
         self.ui.clone_rule.connect(self.handle_clone_rule)
 
         # Signal / Slot Connections
-        # self.send_rule_sets.connect(self.ruleSetModel.add_rule_set)
-        # self.rulesModel.data_changed.connect(self.ui.rules_changed)
         self.ui.user_save_rules.connect(self.handle_user_rules_save)
         self.ui.validate_rules.connect(self.handle_validate_rules)
         self.ui.sys_save_rules.connect(self.handle_sys_rules_save)
         self.ui.start_runner.connect(self.handle_start_runner)
+        self.ui.stop_runner.connect(self.handle_stop_runner)
         self.send_rules.connect(self.ui.rules_changed)
         self.ui.validate_open_dialog.clicked.connect(self.display_errors_dialog)
         self.ui.copy_field.clicked.connect(self.on_copy_fields)
-        # self.ui.start.clicked.connect(self.start_rule_runner)
         self.ui.rules_form_updated.connect(self.apply_event_filter)
         self.ui.bookmark.clicked.connect(self.on_bookmark_click)
 
         self.dialog = RuleSetDialog()
         self.dialog.send_form.connect(self.save_rule_set)
-        self.val = SchemaValidator("/schemas/main")
         self.check_for_saved_rules()
 
         self.event_filter.event_changed.connect(self.focus_changed)
@@ -127,6 +112,15 @@ class RulesPage(QWidgetBase):
             rules, batch_type=VALIDATIONBATCHTYPE.RULE_RUNNER
         )
 
+    def handle_stop_runner(self):
+        self.log_with_toast(
+            "Stop Runner Requested",
+            "Stopping Rule Runner.",
+            "INFO",
+            QTOASTSTATUS.WARNING,
+        )
+        self.controllers.rules.handle_stop_runner()
+
     @Slot()
     def apply_event_filter(self):
         for child in self.findChildren(QLineEdit):
@@ -138,14 +132,6 @@ class RulesPage(QWidgetBase):
         """
         Slot to handle when focus changes between form fields. Updates the current focused
         object's name and text.
-
-        Args:
-            obj_name (str): The name of the focused object.
-            object_text (str): The text value of the focused object.
-
-        Returns:
-            None: This function does not return a value.
-
         """
         field_name = obj_name.split("**")[0]
         self.focus_object_name = field_name
@@ -155,9 +141,6 @@ class RulesPage(QWidgetBase):
     def on_copy_fields(self) -> None:
         """
         Copy the value from the currently focused field across all rules in the form.
-
-        Returns:
-            None: This function does not return a value.
         """
         if self.focus_object_name is not None and self.focus_object_text is not None:
             rules = self.ui.get_forms()
@@ -171,12 +154,6 @@ class RulesPage(QWidgetBase):
         """
         Traverse through the rule structure to find the field corresponding to the currently
         focused field, and set its value accordingly.
-
-        Args:
-            rule (dict): A dictionary representing the rule structure with form fields.
-
-        Returns:
-            None: This function does not return a value.
         """
         for key, value in rule.items():
             if key == self.focus_object_name:
@@ -187,34 +164,9 @@ class RulesPage(QWidgetBase):
             elif isinstance(value, list):
                 [self.find_field_set_field(item) for item in value]
 
-    # TODO: needs to go
-    @Slot(str, str, str, str)
-    def update_credentials(
-        self, username: str, password: str, url: str, login_url: str
-    ) -> None:
-        """
-        Slot to receive the user credentials used for rule processing and validation.
-
-        Args:
-            username (str): The username for login.
-            password (str): The password for login.
-            url (str): The base URL.
-            login_url (str): The URL used for login.
-
-        Returns:
-            None: This function does not return a value.
-        """
-        self.username = username
-        self.password = password
-        self.url = url
-        self.login_url = login_url
-
     def display_errors_dialog(self) -> None:
         """
         Display the error dialog if validation errors are found in the form fields.
-
-        Returns:
-            None: This function does not return a value.
         """
         add = SchemaErrorDialog(self.forms_errors)
         self.ui.set_hidden_errors_dialog_btn(False)
@@ -223,73 +175,13 @@ class RulesPage(QWidgetBase):
     def check_for_saved_rules(self) -> None:
         """
         Check if there are any saved rules and emit them to the view.
-
-        Returns:
-            None: This function does not return a value.
         """
         self.rules_controller.hydrate_rules_page()
-
-    # TODO No longer Used - Remove from Page
-    def start_rule_runner(self) -> None:
-        """
-        Start the rule processing thread if the forms are valid and all credentials are provided.
-
-        Returns:
-            None: This function does not return a value.
-        """
-        if self.ui.get_forms():
-
-            if None in (
-                self.username,
-                self.password,
-                self.url,
-                self.login_url,
-            ):
-                self.log_with_toast(
-                    "Missing Login Information",
-                    "Please enter the login information in the Login Information Page.",
-                    "WARN",
-                    "WARN",
-                    True,
-                    self,
-                )
-
-                return
-
-            data, _ = self.validate_rules()
-
-            if data:
-                self.rule_runner_thread = RuleRunnerThread(
-                    self.username,
-                    self.password,
-                    self.login_url,
-                    self.url,
-                    data["rules"],
-                )
-                self.rule_runner_thread.send_insert_logs.connect(self.logging)
-                self.appshutdown.connect(self.rule_runner_thread.close)
-                self.ui.stop.clicked.connect(self.rule_runner_thread.stop)
-                self.rule_runner_thread.progress.connect(self.ui.set_progress_bar)
-                self.rule_runner_thread.finished.connect(self.rule_runner_finished)
-                self.ui.start.setDisabled(True)
-                self.rule_runner_thread.start()
-
-    @Slot()
-    def rule_runner_finished(self):
-        """Reset Start Button to disabled False and hide the Progress Bar
-        Returns:
-            None: This function does not return a value.
-        """
-        self.ui.progress_bar.setHidden(True)
-        self.ui.start.setDisabled(False)
 
     def handle_user_rules_save(self, rules) -> None:
         """
         Save the validated rules to a JSON file selected by the user. It ensures the file has
         a `.json` extension.
-
-        Returns:
-            None: This function does not return a value.
         """
         if not rules:
             return
@@ -311,9 +203,6 @@ class RulesPage(QWidgetBase):
     def handle_sys_rules_save(self, rules) -> None:
         """
         Save the validated rules to the internal system storage.
-
-        Returns:
-            None: This function does not return a value.
         """
         self.controllers.rules.validate_json(
             rules, batch_type=VALIDATIONBATCHTYPE.SYS_SAVE
