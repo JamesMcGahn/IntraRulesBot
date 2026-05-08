@@ -10,6 +10,8 @@ if TYPE_CHECKING:
     from .base_validator import BaseValidator
     from .interfaces.settings_meta_provider import SettingsMetaProvider
     from .interfaces.schema_meta_provider import SchemaMetaProvider
+    from ..auth.auth_service import AuthService
+    from ..intra.intra_provider_session import IntraProviderSession
 
 from PySide6.QtCore import Signal
 
@@ -25,11 +27,15 @@ class ValidationService(QObjectBase):
         self,
         settings_meta_provider: SettingsMetaProvider,
         schema_meta_provider: SchemaMetaProvider,
+        session: IntraProviderSession,
+        auth_service: AuthService,
     ):
         super().__init__()
 
         self.settings_validation = SettingsValidationService(
-            settings_meta_provider=settings_meta_provider
+            settings_meta_provider=settings_meta_provider,
+            session=session,
+            auth_service=auth_service,
         )
         self.schema_validation = SchemaValidationService(
             schema_meta_provider=schema_meta_provider
@@ -51,3 +57,12 @@ class ValidationService(QObjectBase):
             self.logging(msg, "ERROR")
             raise ValueError(msg)
         validator.validate(job)
+
+    def validate_batch(self, job: JobRequest[ValidationRequest]) -> None:
+        validator = self._validators.get(job.payload.kind)
+
+        if not validator:
+            msg = f"There is not a validator registered for {job.payload.kind}"
+            self.logging(msg, "ERROR")
+            raise ValueError(msg)
+        validator.validate_batch(job)

@@ -87,7 +87,7 @@ class IntraAuthService(BaseAuthService):
             browser_port.wait_for_page_ready()
             return self._wait_for_success(browser_port)
         except NoSuchWindowException:
-            if should_stop_cb():
+            if should_stop_cb is not None and should_stop_cb():
                 self.logging("Stop Requested. Stopping Auth.")
                 return AuthResult(
                     success=False,
@@ -101,7 +101,7 @@ class IntraAuthService(BaseAuthService):
             )
 
         except Exception as e:
-            if should_stop_cb():
+            if should_stop_cb is not None and should_stop_cb():
                 self.logging("Stop Requested. Stopping Auth.")
                 return AuthResult(
                     success=False,

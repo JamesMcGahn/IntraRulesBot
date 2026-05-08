@@ -19,3 +19,8 @@ class BaseValidator(QObjectBase):
         self, job: JobRequest[ValidationRequest]
     ) -> JobResponse[ValidationResponse]:
         raise NotImplementedError
+
+    def validate_batch(
+        self, job: JobRequest[ValidationRequest]
+    ) -> JobResponse[ValidationResponse]:
+        raise NotImplementedError

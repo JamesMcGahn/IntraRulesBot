@@ -155,6 +155,8 @@ class BaseProviderSession:
             return cookies
 
         filtered_cookies = []
+        if not cookies:
+            return []
         for cookie in cookies:
             domain = cookie.get("domain")
             if not domain:
@@ -286,6 +288,8 @@ class BaseProviderSession:
         )
 
     def get_auth_cookies(self):
+        if not self.Config.auth_cookies:
+            return []
         return [
             cookie
             for cookie in self.cookie_jar

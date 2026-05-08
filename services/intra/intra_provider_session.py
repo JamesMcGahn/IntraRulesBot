@@ -13,5 +13,5 @@ class IntraProviderSession(BaseProviderSession):
         has_token = False
         has_cookies = True
         has_auth_cookies = False
-        auth_cookies = {}
+        auth_cookies = set()
         domains = {"intradiem.com"}

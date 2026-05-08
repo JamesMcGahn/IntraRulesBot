@@ -53,6 +53,8 @@ class AppContext(QObject, metaclass=QSingleton):
         self.validation_service = ValidationService(
             settings_meta_provider=self.settings_manager,
             schema_meta_provider=self.schema_registry,
+            session=self.session_registry.for_provider(PROVIDERS.INTRA),
+            auth_service=self.auth_service,
         )
         self.rule_settings_provider = SettingsRuleRunnerConfigProvider(
             settings_service=self.settings_manager
