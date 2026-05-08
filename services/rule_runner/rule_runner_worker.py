@@ -18,7 +18,7 @@ from services.auth.enums import PROVIDERS
 
 # from rulerunner.rule_worker import RuleWorker
 from .executors import RuleExecutor
-from .models import RuleRunnerConfig, RuleRunItem, RuleExecutionResult
+from .models import RuleRunItem, RuleExecutionResult
 from .enums import RULERUNSTATUS, RULEEXECSTATUS
 from services.selenium import WebDriverManager
 from services.selenium.adapters import SeleniumBrowserAdapter
@@ -43,16 +43,9 @@ class RuleRunnerWorker(QObject):
         self.session = session
         self.auth_service = auth_service
 
-        # TODO Remove Later: ONLY FOR TESTING
-
-        # self.tenant = ""
-        # self.username = ""
-        # self.password = ""
-        # self.url = ""
-        # self.platform_version = "v10"
-        self.creds = RuleRunnerConfig(
-            self.username, self.password, self.tenant, self.platform_version
-        )
+        self.creds = job.payload.config
+        self.url = f"https://{self.creds.tenant}.intradiem.com/"
+        self.platform_version = "v10"
 
         self.driver = None
         self.driver_adapter = None
