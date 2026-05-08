@@ -4,9 +4,11 @@ from typing import ClassVar
 from ..enums import SETTINGSCATEGORIES, SETTINGSWIDGETTYPE
 
 # TODO add validators
-from ..validators.log_validators import (
-    validate_log_file_max_mbs,
-    validate_log_level,
+from ..validators.login_validators import (
+    validate_password,
+    validate_platform_version,
+    validate_tenant,
+    validate_user_name,
 )
 from .base_category_map import SettingsCategoryBase
 from .settings_field_helper import setting
@@ -25,7 +27,12 @@ class LoginSettings(SettingsCategoryBase):
         verify_btn_text="Verify Username",
         secure=False,
         folder_icon=False,
-        verify=validate_log_file_max_mbs,
+        verify=validate_user_name,
+        tied_fields=[
+            ("password", SETTINGSWIDGETTYPE.LINE_EDIT),
+            ("tenant", SETTINGSWIDGETTYPE.LINE_EDIT),
+        ],
+        async_verify_group="validate_intra_login",
     )
     password: str = setting(
         key="login_password",
@@ -34,10 +41,15 @@ class LoginSettings(SettingsCategoryBase):
         widget_type=SETTINGSWIDGETTYPE.LINE_EDIT,
         label_text="Password:",
         verify_btn_text="Verify Password",
-        secure=False,
+        secure=True,
         folder_icon=False,
-        verify=validate_log_file_max_mbs,
+        verify=validate_password,
         hide_secure_text=True,
+        tied_fields=[
+            ("user_name", SETTINGSWIDGETTYPE.LINE_EDIT),
+            ("tenant", SETTINGSWIDGETTYPE.LINE_EDIT),
+        ],
+        async_verify_group="validate_intra_login",
     )
     tenant: str = setting(
         key="login_tenant",
@@ -48,7 +60,12 @@ class LoginSettings(SettingsCategoryBase):
         verify_btn_text="Save Tenant",
         secure=False,
         folder_icon=False,
-        verify=validate_log_file_max_mbs,
+        verify=validate_tenant,
+        tied_fields=[
+            ("user_name", SETTINGSWIDGETTYPE.LINE_EDIT),
+            ("password", SETTINGSWIDGETTYPE.LINE_EDIT),
+        ],
+        async_verify_group="validate_intra_login",
     )
     platform_version: str = setting(
         key="login_platform_version",
@@ -59,5 +76,5 @@ class LoginSettings(SettingsCategoryBase):
         verify_btn_text="Save Tenant Version",
         secure=False,
         combo_box=["V10", "V11"],
-        verify=validate_log_level,
+        verify=validate_platform_version,
     )

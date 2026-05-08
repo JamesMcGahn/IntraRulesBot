@@ -26,3 +26,6 @@ class ValidatorHelper:
             return True
         except ValueError:
             return False
+
+    def not_blank(self, value):
+        return value is not None and value.strip()
