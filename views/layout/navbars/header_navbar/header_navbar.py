@@ -10,7 +10,6 @@ from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import QFileDialog
 
 from base import QWidgetBase
-from views.components.dialogs import SchemaErrorDialog
 
 
 from .header_navbar_css import STYLES
@@ -58,7 +57,6 @@ class HeaderNavBar(QWidgetBase):
         self.top_nav_controllers = self.controller_factory.create_top_nav_bar()
         self.rule_controller = self.top_nav_controllers.rules
         # Connect signals
-        self.rule_controller.ui_event.connect(self.handle_ui_event)
         self.ui.hamburger_icon_btn.toggled.connect(self.hamburger_icon_btn_toggled)
         self.ui.open_file_btn.clicked.connect(self.open_json_file)
 
@@ -88,12 +86,3 @@ class HeaderNavBar(QWidgetBase):
 
         if file_name:
             self.rule_controller.import_from_file(file_name)
-
-    @Slot(object)
-    def handle_ui_event(self, event: UIEvent):
-        e = event.payload
-        if isinstance(e, ToastEvent):
-
-            self.log_with_toast(e.title, e.message, e.log_level, e.toast_level)
-        elif isinstance(e, SchemaErrorDialogEvent):
-            SchemaErrorDialog(errors=e.errors, parent=self).show()

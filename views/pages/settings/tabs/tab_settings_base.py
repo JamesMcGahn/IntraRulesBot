@@ -56,25 +56,11 @@ class TabSettingsBase(QWidgetBase):
                 tab = event.payload.category
                 field = event.payload.field
                 status = event.payload.status
-                message = event.payload.message
-                log_level = LOGLEVEL.INFO
                 if status == FIELDSTATESTATUS.VALID:
-                    is_valid = True
-                    toast_level = QTOASTSTATUS.SUCCESS
                     self.change_verify_btn_disable.emit(tab, field, False)
                 elif status == FIELDSTATESTATUS.INVALID:
                     is_valid = False
-                    log_level = LOGLEVEL.ERROR
-                    toast_level = QTOASTSTATUS.ERROR
                     self.change_verify_btn_disable.emit(tab, field, False)
                 elif status == FIELDSTATESTATUS.LOADING:
                     is_valid = False
-                    toast_level = QTOASTSTATUS.INFORMATION
-                self.verify_response_update.emit(tab, field, is_valid)
-                self.log_with_toast(
-                    "Field Validation Update",
-                    msg=message,
-                    log_level=log_level,
-                    toast_level=toast_level,
-                    parent=self,
-                )
+                    self.verify_response_update.emit(tab, field, is_valid)

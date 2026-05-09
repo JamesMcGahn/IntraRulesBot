@@ -15,10 +15,10 @@ from uuid import uuid4
 from PySide6.QtCore import Signal, Slot
 
 from base import QObjectBase
-from base.enums import UIEVENTTYPE
+from base.enums import UIEVENTTYPE, LOGLEVEL
 from services.base.enums import JOBSTATUS
 
-from base.events import UIEvent
+from base.events import UIEvent, ToastEvent
 from services.base.models import JobRequest
 from services.settings.enums import FIELDSTATESTATUS
 from services.settings.events import FieldStateEvent, SettingUpdatedEvent
@@ -31,11 +31,13 @@ from services.validation.models import (
     ValidationBatchRequest,
     ValidationBatchResponse,
 )
+from views.components.toasts.qtoast.enums import QTOASTSTATUS
 
 
 class SettingsController(QObjectBase):
     verify_response_update = Signal(object)
     setting_updated = Signal(object)
+    ui_event = Signal(object)
 
     def __init__(
         self,
@@ -149,7 +151,28 @@ class SettingsController(QObjectBase):
                     SettingUpdatedEvent(category=category, field=field, value=value)
                 )
                 self.verify_response_update.emit(ui_event)
+                self.create_toast_event(status, message)
             elif job_res.job_ref.status in (JOBSTATUS.ERROR, JOBSTATUS.PARTIAL_ERROR):
                 self.settings_service.set_validated(settings_validate_payload)
                 self.verify_response_update.emit(ui_event)
+                self.create_toast_event(status, message)
         self._active_jobs.pop(job_id)
+
+    def create_toast_event(self, status: FIELDSTATESTATUS, msg: str):
+        log_level = LOGLEVEL.INFO
+        if status == FIELDSTATESTATUS.VALID:
+            toast_level = QTOASTSTATUS.SUCCESS
+        elif status == FIELDSTATESTATUS.INVALID:
+            log_level = LOGLEVEL.ERROR
+            toast_level = QTOASTSTATUS.ERROR
+        elif status == FIELDSTATESTATUS.LOADING:
+            toast_level = QTOASTSTATUS.INFORMATION
+
+        toast = ToastEvent(
+            message="Field Validation Update",
+            title=msg,
+            toast_level=toast_level,
+            log_level=log_level,
+        )
+        event = UIEvent(UIEVENTTYPE.DISPLAY, payload=toast)
+        self.ui_event.emit(event)

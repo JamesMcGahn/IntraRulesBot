@@ -29,6 +29,20 @@ class CentralWidget(QWidgetBase):
         self.icon_only_widget = IconOnlyNavBar()
         self.icon_text_widget = IconTextNavBar()
 
+        self.central_widget_controller = controller_factory.create_central_widget()
+        self.ui_controller = self.central_widget_controller.ui
+        self.ui_controller.set_parent_widget(self)
+
+        self.central_widget_controller.rules.ui_event.connect(
+            self.ui_controller.handle_ui_event
+        )
+        self.central_widget_controller.rule_sets.ui_event.connect(
+            self.ui_controller.handle_ui_event
+        )
+        self.central_widget_controller.settings.ui_event.connect(
+            self.ui_controller.handle_ui_event
+        )
+
         self.header_widget = HeaderNavBar(controller_factory=controller_factory)
         self.main_screen_widget = MainScreen(controller_factory=controller_factory)
         self.ui.add_widget_to_grid(self.main_screen_widget, 2, 3, 1, 1)
