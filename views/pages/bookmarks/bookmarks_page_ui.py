@@ -1,3 +1,11 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from controllers.rules.models import ValidationRulesResult
+    from services.rule_sets.models import RuleSet
+
 import json
 import uuid
 
@@ -36,10 +44,13 @@ class BookMarksPageView(QWidget):
     edit_rule_set = Signal(str, object)
     load_rules = Signal(list)
 
+    rule_set_editted = Signal(object)
+    rule_set_saved = Signal(object, str)
+
     def __init__(self):
         super().__init__()
         self.init_ui()
-        self.rule_sets = []
+        self.rule_sets: list[RuleSet] = []
 
     def init_ui(self) -> None:
         """
@@ -118,16 +129,18 @@ class BookMarksPageView(QWidget):
         details_layout.setFieldGrowthPolicy(
             QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
         )
-        self.rule_set_name = QLineEdit()
-        self.rule_set_description = QTextEdit()
-        self.rule_set_name_label = QLabel("Name:")
-        self.rule_set_name_label.setAlignment(Qt.AlignLeft)
-        self.rule_set_description_label = QLabel("Description:")
-        self.rule_set_description_label.setAlignment(Qt.AlignLeft)
+        self.selected_rule_set_name = QLineEdit()
+        self.selected_rule_set_description = QTextEdit()
+        self.selected_rule_set_name_label = QLabel("Name:")
+        self.selected_rule_set_name_label.setAlignment(Qt.AlignLeft)
+        self.selected_rule_set_description_label = QLabel("Description:")
+        self.selected_rule_set_description_label.setAlignment(Qt.AlignLeft)
 
-        details_layout.addRow(self.rule_set_name_label, self.rule_set_name)
         details_layout.addRow(
-            self.rule_set_description_label, self.rule_set_description
+            self.selected_rule_set_name_label, self.selected_rule_set_name
+        )
+        details_layout.addRow(
+            self.selected_rule_set_description_label, self.selected_rule_set_description
         )
 
         rule_set_layout.addLayout(details_layout)
@@ -185,7 +198,7 @@ class BookMarksPageView(QWidget):
         self.list_widget.itemSelectionChanged.connect(self.on_selection_changed)
         self.arrow_up.clicked.connect(self.navigate_up)
         self.arrow_down.clicked.connect(self.navigate_down)
-        self.load_button.clicked.connect(self.load_set_to_editor)
+        # self.load_button.clicked.connect(self.load_set_to_editor)
         self.save_to_file_button.clicked.connect(self.save_rule_sets_to_file)
         self.edit_details_button.clicked.connect(self.update_rule_set_detail)
 
@@ -193,9 +206,6 @@ class BookMarksPageView(QWidget):
         """
         Moves the selection up in the rule set list.
         If at the top, it moves selection to the last item in the list
-
-        Returns:
-            None: This function does not return a value.
         """
         if self.list_widget.currentRow() > 0:
             self.list_widget.setCurrentRow(self.list_widget.currentRow() - 1)
@@ -206,96 +216,48 @@ class BookMarksPageView(QWidget):
         """
         Moves the selection down in the rule set list.
         If at the bottom, it moves selection to the first item in the list
-
-        Returns:
-            None: This function does not return a value.
         """
         if self.list_widget.currentRow() != self.list_widget.count() - 1:
             self.list_widget.setCurrentRow(self.list_widget.currentRow() + 1)
         else:
             self.list_widget.setCurrentRow(0)
 
-    def load_set_to_editor(self):
-        """
-        Loads the selected rule set to the rule editor.
-
-        Returns:
-            None: This function does not return a value.
-        """
-        if self.rule_sets:
-            index = self.list_widget.currentRow()
-            rules = self.rule_sets[index]["rules"]
-            rule_set_name = self.rule_sets[index]["name"]
-            for rule in rules:
-                rule["guid"] = str(uuid.uuid4())
-            self.load_rules.emit(rules)
-            # self.log_with_toast(
-            #     "Rules Loaded to Editor",
-            #     f"Rule Set: {rule_set_name} has been loaded to the editor.",
-            #     "INFO",
-            #     "SUCCESS",
-            # )
-
-    def init_rule_set(self, rule_sets: list) -> None:
-        """
-        Initializes the rule sets list and populates the list widget with the provided rule sets.
-
-        Args:
-            rule_sets (list): A list of rule sets to be displayed in the list widget.
-                Each rule set should be a dictionary with the following structure:
-                "guid": A unique identifier for the rule set,
-                "name": The name of the rule set,
-                "description": A brief description of the rule set,
-                "rules": A list of rules following the rules schema in the rule set.
-        Returns:
-            None: This function does not return a value.
-
-        """
+    def rule_sets_changed(self, rule_sets: list[RuleSet]):
+        self.clear_rule_sets()
         for rule_set in rule_sets:
-            self.add_rule_set(rule_set)
+            self._add_rule_set(rule_set)
 
         if self.list_widget.count() > 0:
             self.list_widget.setCurrentRow(0)
+
+    def clear_rule_sets(self):
+        self.list_widget.clear()
+        self.rule_sets.clear()
 
     @Slot()
     def on_selection_changed(self):
         """
         Slot for handling the selection change in the rule set list.
         Updates the rule set details UI elements based on the selected rule set.
-
-        Returns:
-            None: This function does not return a value.
         """
-        list_item = self.list_widget.currentItem()
-        list_item_id = list_item.data(Qt.UserRole)
         index = self.list_widget.currentRow()
 
-        self.rule_set_name.setText(self.rule_sets[index]["name"])
-        self.rule_set_description.setText(self.rule_sets[index]["description"])
-        if list_item_id == "default":
-            self.rule_set_name.setReadOnly(True)
-            self.rule_set_description.setReadOnly(True)
+        rule_set = self.rule_sets[index]
+        self.selected_rule_set_name.setText(rule_set.rule_set_name)
+        self.selected_rule_set_description.setText(rule_set.description)
+        if rule_set.default:
+            self.selected_rule_set_name.setReadOnly(True)
+            self.selected_rule_set_description.setReadOnly(True)
         else:
-            self.rule_set_name.setReadOnly(False)
-            self.rule_set_description.setReadOnly(False)
+            self.selected_rule_set_name.setReadOnly(False)
+            self.selected_rule_set_description.setReadOnly(False)
 
-    @Slot(object)
-    def add_rule_set(self, rule_set: object) -> None:
+    def _add_rule_set(self, rule_set: RuleSet) -> None:
         """
-        Slot for adding a rule set to the list of rules
-        Args:
-            rule_set (object): A rule set to be added to the list.
-                The rule set should be a dictionary with the following structure:
-                "guid": A unique identifier for the rule set,
-                "name": The name of the rule set,
-                "description": A brief description of the rule set,
-                "rules": A list of rules following the rules schema in the rule set.
-        Returns:
-            None: This function does not return a value.
-
+        adding a rule set to the list of rules
         """
-        list_item = QListWidgetItem(rule_set["name"])
-        list_item.setData(Qt.UserRole, rule_set["guid"])
+        list_item = QListWidgetItem(rule_set.rule_set_name)
+        list_item.setData(Qt.UserRole, rule_set.guid)
         self.list_widget.addItem(list_item)
         self.rule_sets.append(rule_set)
 
@@ -304,9 +266,6 @@ class BookMarksPageView(QWidget):
         """
         Slot for removing a rule set from the list of rule sets in the GUI and emits signal to remove from model
         If rule set is a default rule set, rule set is not removed
-        Returns:
-            None: This function does not return a value.
-
         """
         selected_item = self.list_widget.currentItem()
         if selected_item:
@@ -336,39 +295,21 @@ class BookMarksPageView(QWidget):
         """
         Update the rule set details in the GUI and emits signal to update rule set in the model.
         If rule set is a default rule set, rule set details are not updated
-
-        Returns:
-            None: This function does not return a value.
         """
 
-        selected_item = self.list_widget.currentItem()
-        if selected_item:
-            id_selected = selected_item.data(Qt.UserRole)
-            if id_selected == "default":
-                pass
-                # self.log_with_toast(
-                #     "Rules Set Cannot Be Edited",
-                #     "Default Rule Sets cannot be edited.",
-                #     "INFO",
-                #     "WARN",
-                # )
+        index = self.list_widget.currentRow()
+        rule_set = self.rule_sets[index]
 
-            else:
-                index = self.list_widget.currentRow()
-                self.rule_sets[index]["name"] = self.rule_set_name.text()
-                self.rule_sets[index][
-                    "description"
-                ] = self.rule_set_description.toPlainText()
-                self.edit_rule_set.emit(
-                    self.rule_sets[index]["guid"], self.rule_sets[index]
-                )
-                rule_set_name = self.rule_sets[index]["name"]
-                # self.log_with_toast(
-                #     "Rules Set Details Updated",
-                #     f"Rule Set: {rule_set_name} has been updated.",
-                #     "INFO",
-                #     "SUCCESS",
-                # )
+        if not rule_set.default:
+            index = self.list_widget.currentRow()
+            rule_set = self.rule_sets[index]
+
+            self.rule_sets[index].rule_set_name = self.selected_rule_set_name.text()
+            self.rule_sets[index].description = (
+                self.selected_rule_set_description.toPlainText()
+            )
+
+        self.rule_set_editted.emit(rule_set)
 
     def save_rule_sets_to_file(self) -> None:
         """
@@ -379,28 +320,21 @@ class BookMarksPageView(QWidget):
             None: This function does not return a value.
         """
 
-        if self.rule_sets:
-            index = self.list_widget.currentRow()
-            data = self.rule_sets[index]["rules"]
-            name = self.rule_sets[index]["name"]
-            file_path, _ = QFileDialog.getSaveFileName(
-                self,
-                "Save JSON File",
-                f"{name}.json",
-                "JSON Files (*.json);;All Files (*)",
-            )
-            if file_path:
-                # Ensure the file has a .json extension
-                if not file_path.endswith(".json"):
-                    file_path += ".json"
+        if not self.rule_sets:
+            return
 
-                with open(file_path, "w") as f:
-                    json.dump(data, f, indent=4)
-                    # self.log_with_toast(
-                    #     "File Saved",
-                    #     "Rule Sets JSON File Saved Successfully.",
-                    #     "INFO",
-                    #     "SUCCESS",
-                    #     True,
-                    #     self,
-                    # )
+        index = self.list_widget.currentRow()
+        rule_set = self.rule_sets[index]
+
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save JSON File",
+            f"{rule_set.rule_set_name}.json",
+            "JSON Files (*.json);;All Files (*)",
+        )
+        if not file_path:
+            return
+            # Ensure the file has a .json extension
+        if not file_path.endswith(".json"):
+            file_path += ".json"
+        self.rule_set_saved.emit(rule_set.guid, file_path)
