@@ -17,6 +17,7 @@ from .enums import ACTIONDETAILTYPE, CONDITIONDETAILTYPE, ACTIONTRIGGERDETAILTYP
 
 from base import QObjectBase
 from base.enums import LOGLEVEL
+from uuid import uuid4
 
 
 class RuleBuilder(QObjectBase):
@@ -35,7 +36,7 @@ class RuleBuilder(QObjectBase):
 
     def build_rule(self, data):
         rule_name = data["rule_name"]
-        guid = data["guid"]
+        guid = data.get("guid", uuid4())
         rule_category = data["rule_category"]
 
         if "frequency_based" in data:

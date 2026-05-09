@@ -32,7 +32,6 @@ from services.rule_runner.models import (
     RuleRunnerRequestPayload,
     RuleRunItem,
 )
-from services.rules.models import RuleSet
 from .models import ValidationBatch, ValidationRulesResult
 from .enums import VALIDATIONBATCHTYPE
 from utils.files import PathManager
@@ -83,19 +82,11 @@ class RulesController(QObjectBase):
             return
 
         raw_rules = data.get("rules", None)
-        raw_rule_set = data
         if not raw_rules:
             return
 
         import_rules = self.rule_builder.build_rules(raw_rules)
-        import_rule_set = RuleSet(
-            rule_set_name=raw_rule_set.get("rule_set_name", "Editor Rules"),
-            description=raw_rule_set.get("description", "Editor Saved State"),
-            guid=str(uuid4()),
-            rules_guids=[rule.guid for rule in import_rules],
-        )
         self.rules_registry.add_rules(import_rules)
-        self.rules_registry.add_rule_set(import_rule_set)
 
     # FEATURE Add an Import File Type - Right now active guids will overwrite.
     def import_from_file(self, file_path):
@@ -204,14 +195,7 @@ class RulesController(QObjectBase):
                 self.ui_event.emit(event)
 
                 rules = self.rule_builder.build_rules(batch.valid_rules)
-                rule_set = RuleSet(
-                    rule_set_name=batch.rule_batch_name,
-                    description=batch.rule_batch_description,
-                    guid=str(uuid4()),
-                    rules_guids=[rule.guid for rule in rules],
-                )
                 self.rules_registry.add_rules(rules)
-                self.rules_registry.add_rule_set(rule_set)
                 self._emit_rules_updated()
         elif batch.batch_type == VALIDATIONBATCHTYPE.RUNTIME:
             errors_grouped_dict = self._group_batch_errors(batch)
