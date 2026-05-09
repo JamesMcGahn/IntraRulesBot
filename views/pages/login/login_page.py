@@ -1,7 +1,7 @@
 from PySide6.QtCore import Signal, Slot
 
 from base import QWidgetBase
-from models.login import LoginModel
+
 
 from .login_page_css import STYLES
 from .login_page_ui import LoginPageView
@@ -35,12 +35,12 @@ class LoginPage(QWidgetBase):
 
         self.ui.save_btn.clicked.connect(self.save_creds)
         # Initialize the login model to handle credentials
-        login_model = LoginModel()
-        login_model.success.connect(self.success_save)
-        self.send_creds.connect(login_model.save_creds)
+        # login_model = LoginModel()
+        # login_model.success.connect(self.success_save)
+        # self.send_creds.connect(login_model.save_creds)
         # Load and set the current credentials from the model
-        username, password, url, login_url = login_model.get_creds()
-        self.ui.set_credentials(username, password, url, login_url)
+        # username, password, url, login_url = login_model.get_creds()
+        # self.ui.set_credentials(username, password, url, login_url)
 
     def save_creds(self) -> None:
         """
