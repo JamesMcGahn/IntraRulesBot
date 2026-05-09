@@ -42,6 +42,7 @@ class MainScreen(QWidgetBase):
         self.controller_factory = controller_factory
         self.settings_page_controllers = self.controller_factory.create_settings_page()
         self.rules_page_controllers = self.controller_factory.create_rules_page()
+        self.rule_sets_controllers = self.controller_factory.create_bookmarks_page()
         # self.appshutdown.connect(self.ui.rules_page.notified_app_shutting)
 
         # Pages
@@ -49,7 +50,7 @@ class MainScreen(QWidgetBase):
         self.login_page = LoginPage()
         self.settings_page = SettingsPage(controllers=self.settings_page_controllers)
         self.logs_page = LogsPage()
-        self.bookmarks_page = BookMarksPage()
+        self.bookmarks_page = BookMarksPage(controllers=self.rule_sets_controllers)
 
         # Add pages to stacked widget
         self.ui.add_page_to_stacked_widget(self.login_page)

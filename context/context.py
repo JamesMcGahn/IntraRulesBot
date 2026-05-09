@@ -18,8 +18,19 @@ from services.settings import (
 from services.settings.providers import SettingsRuleRunnerConfigProvider
 from services.settings.enums import SETTINGSCATEGORIES
 from services.validation import ValidationService
-from controllers import SettingsController, RulesController
-from services.rules import RuleRegistry, RuleStore, RuleBuilder
+from controllers import (
+    SettingsController,
+    RulesController,
+    RuleSetsController,
+    UIController,
+)
+from services.rules import RuleRegistry, RuleStore, RuleBuilder, RuleSerializer
+from services.rule_sets import (
+    RuleSetRegistry,
+    RuleSetStore,
+    RuleSetBuilder,
+    RuleSetSerializer,
+)
 from schemas.registry import SchemaRegistry
 from services.rule_runner import RuleRunnerService
 from services.auth.session import SessionRegistry
@@ -46,9 +57,18 @@ class AppContext(QObject, metaclass=QSingleton):
         self.auth_service = AuthService(self.session_registry, self.log_adapter)
 
         self.schema_registry = SchemaRegistry()
+
         self.rules_registry = RuleRegistry()
         self.rule_store = RuleStore()
         self.rule_builder = RuleBuilder()
+        self.rule_serializer = RuleSerializer()
+
+        self.rule_set_registry = RuleSetRegistry()
+        self.rule_set_store = RuleSetStore()
+        self.rule_set_builder = RuleSetBuilder(rule_builder=self.rule_builder)
+        self.rule_set_serializer = RuleSetSerializer(
+            rule_serializer=self.rule_serializer
+        )
 
         self.validation_service = ValidationService(
             settings_meta_provider=self.settings_manager,
@@ -69,9 +89,16 @@ class AppContext(QObject, metaclass=QSingleton):
         self.logger.start_up()
 
         ## Controllers
+        self.ui_controller = UIController(logger=self.log_adapter)
         self.settings_controller = SettingsController(
             settings_service=self.settings_manager,
             validation_service=self.validation_service,
+        )
+        self.rule_sets_controller = RuleSetsController(
+            rules_set_registry=self.rule_set_registry,
+            rule_set_builder=self.rule_set_builder,
+            rule_set_store=self.rule_set_store,
+            rule_set_serializer=self.rule_set_serializer,
         )
         self.rules_controller = RulesController(
             validation_service=self.validation_service,
@@ -84,6 +111,7 @@ class AppContext(QObject, metaclass=QSingleton):
 
         folder = PathManager.create_folder_in_app_data("playwright")
         self.rules_controller.load_editor_state()
+        self.rule_sets_controller.load_editor_state()
         self.ensure_playwright_browsers(folder)
         self.session_registry.pre_load_providers([PROVIDERS.INTRA])
 
