@@ -6,18 +6,19 @@ if TYPE_CHECKING:
     from services.rule_sets import RuleSetRegistry, RuleSetStore, RuleSetSerializer
     from services.rule_sets import RuleSetBuilder
     from services.rule_sets.models import RuleSet
-    from services.rules import RuleSerializer
-from PySide6.QtCore import Signal, Slot
+
+from PySide6.QtCore import Signal
 from base import QObjectBase
 from utils.files import PathManager
 from pathlib import Path
 from base.enums import UIEVENTTYPE, LOGLEVEL
-from base.events import ToastEvent, UIEvent, SchemaErrorDialogEvent, RuleSetsLoadedEvent
+from base.events import ToastEvent, UIEvent, RuleSetsLoadedEvent
 from views.components.toasts.qtoast.enums import QTOASTSTATUS
 
 
 class RuleSetsController(QObjectBase):
     ui_event = Signal(object)
+    load_rule_set_from_bookmark = Signal(object)
 
     def __init__(
         self,
@@ -80,3 +81,35 @@ class RuleSetsController(QObjectBase):
         rule_set = self.rule_set_registry.get(guid)
         dict_rule_set = self.rule_serializer.to_schema_dict(rule_set)
         self.rule_set_store.save(dict_rule_set, file_path)
+
+    def rule_set_delete(self, rule_set: RuleSet):
+
+        if rule_set.default:
+            title = "Cannot Delete Ruleset"
+            message = "Default Rule Sets cannot be deleted."
+            level = QTOASTSTATUS.INFORMATION
+
+        else:
+            self.rule_set_registry.delete(rule_set.guid)
+            title = "Ruleset Deleted"
+            message = f"Rule Set: {rule_set.rule_set_name} successfully deleted."
+            level = QTOASTSTATUS.INFORMATION
+            self._emit_rule_sets_updated()
+
+        toast = ToastEvent(
+            message=message,
+            title=title,
+            toast_level=level,
+            log_level=LOGLEVEL.INFO,
+        )
+        event = UIEvent(UIEVENTTYPE.DISPLAY, payload=toast)
+        self.ui_event.emit(event)
+
+    def rule_set_added(self, rule_set: dict):
+        built_rule_set = self.rule_set_builder.build_rule_sets([rule_set])
+        self.rule_set_registry.add_rule_sets(built_rule_set)
+        self._emit_rule_sets_updated()
+
+    def load_to_editor(self, guid: str):
+        rule_set = self.rule_set_registry.get(guid)
+        self.load_rule_set_from_bookmark.emit(rule_set)

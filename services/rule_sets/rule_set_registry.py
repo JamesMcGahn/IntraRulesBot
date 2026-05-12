@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..rules.models import Rule
     from .models import RuleSet
 
 from base import QObjectBase
@@ -37,7 +36,7 @@ class RuleSetRegistry(QObjectBase):
         for guid in guids_to_delete:
             self.rule_sets.pop(guid)
 
-    def get(self, guid: str) -> Rule | None:
+    def get(self, guid: str) -> RuleSet | None:
         return self.rule_sets.get(guid)
 
     def get_all(self):

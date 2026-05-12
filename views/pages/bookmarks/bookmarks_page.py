@@ -11,8 +11,7 @@ from base import QWidgetBase
 from base.events import RuleSetsLoadedEvent
 
 
-from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtWidgets import QWidget
+from PySide6.QtCore import Slot
 from .bookmarks_page_css import STYLES
 from .bookmarks_page_ui import BookMarksPageView
 
@@ -20,9 +19,6 @@ from .bookmarks_page_ui import BookMarksPageView
 class BookMarksPage(QWidgetBase):
     """
     A controller class for managing the BookMarks page, which allows users to load and view default rulesets or rulesets they saved.
-    Attributes:
-        ui (BookMarksPageView): The view class responsible for displaying the logs.
-        layout (QVBoxLayout): The layout containing the UI components for the logs page.
     """
 
     def __init__(self, controllers: BookmarksPageControllers):
@@ -41,6 +37,8 @@ class BookMarksPage(QWidgetBase):
 
         self.ui.rule_set_editted.connect(self.handle_rule_set_editted)
         self.ui.rule_set_saved.connect(self.handle_rule_set_saved)
+        self.ui.rule_set_delete.connect(self.handle_rule_set_deleted)
+        self.ui.rule_set_load_editor.connect(self.handle_load_to_editor)
 
         self.check_for_saved_rule_sets()
 
@@ -62,3 +60,11 @@ class BookMarksPage(QWidgetBase):
     @Slot(object, str)
     def handle_rule_set_saved(self, guid: str, file_path: str):
         self.rule_sets_controller.rule_set_to_file(guid, file_path)
+
+    @Slot(object)
+    def handle_rule_set_deleted(self, rule_set: RuleSet):
+        self.rule_sets_controller.rule_set_delete(rule_set)
+
+    @Slot()
+    def handle_load_to_editor(self, guid: str):
+        self.rule_sets_controller.load_to_editor(guid)

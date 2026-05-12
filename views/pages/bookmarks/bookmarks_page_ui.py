@@ -3,11 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from controllers.rules.models import ValidationRulesResult
     from services.rule_sets.models import RuleSet
 
-import json
-import uuid
 
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtWidgets import (
@@ -28,29 +25,21 @@ from views.components.buttons import EditorActionButton, GradientButton
 from views.components.helpers import WidgetFactory
 
 
-# TODO : UI doing too much -> move to controller & page controller
 class BookMarksPageView(QWidget):
     """
     A UI component that represents the Bookmarks display page.
-
-    Signals:
-        delete_rule_set (str): Emitted when a rule set is deleted, sending the rule set ID.
-        edit_rule_set (str, object): Emitted when a rule set is edited, sending the rule set ID and the edited rule set.
-        load_rules (list): Emitted when rules are to be loaded, sending a list of rule objects.
-
     """
-
-    delete_rule_set = Signal(str)
-    edit_rule_set = Signal(str, object)
-    load_rules = Signal(list)
 
     rule_set_editted = Signal(object)
     rule_set_saved = Signal(object, str)
+    rule_set_delete = Signal(object)
+    rule_set_load_editor = Signal(str)
 
     def __init__(self):
         super().__init__()
         self.init_ui()
         self.rule_sets: list[RuleSet] = []
+        self.current_index = 0
 
     def init_ui(self) -> None:
         """
@@ -194,40 +183,53 @@ class BookMarksPageView(QWidget):
 
         # SLOTS / SIGNALS
 
-        self.delete_button.clicked.connect(self.remove_item)
         self.list_widget.itemSelectionChanged.connect(self.on_selection_changed)
-        self.arrow_up.clicked.connect(self.navigate_up)
-        self.arrow_down.clicked.connect(self.navigate_down)
-        # self.load_button.clicked.connect(self.load_set_to_editor)
-        self.save_to_file_button.clicked.connect(self.save_rule_sets_to_file)
-        self.edit_details_button.clicked.connect(self.update_rule_set_detail)
+        self.arrow_up.clicked.connect(self.on_navigate_up)
+        self.arrow_down.clicked.connect(self.on_navigate_down)
+        self.delete_button.clicked.connect(self.handle_remove_rule_set)
+        self.load_button.clicked.connect(self.handle_load_to_editor)
+        self.save_to_file_button.clicked.connect(self.handle_save_rule_set_to_file)
+        self.edit_details_button.clicked.connect(self.handle_update_rule_set_detail)
 
-    def navigate_up(self):
+    def on_navigate_up(self):
         """
         Moves the selection up in the rule set list.
         If at the top, it moves selection to the last item in the list
         """
-        if self.list_widget.currentRow() > 0:
-            self.list_widget.setCurrentRow(self.list_widget.currentRow() - 1)
-        else:
-            self.list_widget.setCurrentRow(self.list_widget.count() - 1)
 
-    def navigate_down(self):
+        if self.list_widget.currentRow() > 0:
+            self.current_index = self.list_widget.currentRow() - 1
+            self.list_widget.setCurrentRow(self.current_index)
+        else:
+            self.current_index = self.list_widget.count() - 1
+            self.list_widget.setCurrentRow(self.current_index)
+
+    def on_navigate_down(self):
         """
         Moves the selection down in the rule set list.
         If at the bottom, it moves selection to the first item in the list
         """
         if self.list_widget.currentRow() != self.list_widget.count() - 1:
-            self.list_widget.setCurrentRow(self.list_widget.currentRow() + 1)
+            self.current_index = self.list_widget.currentRow() + 1
+            self.list_widget.setCurrentRow(self.current_index)
         else:
-            self.list_widget.setCurrentRow(0)
+            self.current_index = 0
+            self.list_widget.setCurrentRow(self.current_index)
 
     def rule_sets_changed(self, rule_sets: list[RuleSet]):
+        self.list_widget.blockSignals(True)
         self.clear_rule_sets()
+
         for rule_set in rule_sets:
             self._add_rule_set(rule_set)
+        self.list_widget.blockSignals(False)
+        if not len(rule_sets) > 0:
+            return
 
-        if self.list_widget.count() > 0:
+        if self.current_index < len(rule_sets):
+
+            self.list_widget.setCurrentRow(self.current_index)
+        else:
             self.list_widget.setCurrentRow(0)
 
     def clear_rule_sets(self):
@@ -240,9 +242,11 @@ class BookMarksPageView(QWidget):
         Slot for handling the selection change in the rule set list.
         Updates the rule set details UI elements based on the selected rule set.
         """
-        index = self.list_widget.currentRow()
 
-        rule_set = self.rule_sets[index]
+        if not self.rule_sets:
+            return
+        self.current_index = self.list_widget.currentRow()
+        rule_set = self.rule_sets[self.current_index]
         self.selected_rule_set_name.setText(rule_set.rule_set_name)
         self.selected_rule_set_description.setText(rule_set.description)
         if rule_set.default:
@@ -261,37 +265,21 @@ class BookMarksPageView(QWidget):
         self.list_widget.addItem(list_item)
         self.rule_sets.append(rule_set)
 
-    @Slot()
-    def remove_item(self):
+    def handle_load_to_editor(self):
+        index = self.list_widget.currentRow()
+        rule_set = self.rule_sets[index]
+        self.rule_set_load_editor.emit(rule_set.guid)
+
+    def handle_remove_rule_set(self):
         """
         Slot for removing a rule set from the list of rule sets in the GUI and emits signal to remove from model
         If rule set is a default rule set, rule set is not removed
         """
-        selected_item = self.list_widget.currentItem()
-        if selected_item:
-            id_selected = selected_item.data(Qt.UserRole)
-            if id_selected == "default":
-                pass
-                # self.log_with_toast(
-                #     "Rules Set Cannot Be Removed",
-                #     "Default Rule Sets cannot be removed.",
-                #     "INFO",
-                #     "WARN",
-                # )
-            else:
-                index = self.list_widget.currentRow()
-                self.delete_rule_set.emit(id_selected)
-                self.list_widget.takeItem(self.list_widget.row(selected_item))
-                rule_set_name = self.rule_sets[index]["name"]
-                # self.log_with_toast(
-                #     "Rules Set Removed",
-                #     f"Rule Set: {rule_set_name} has been removed.",
-                #     "INFO",
-                #     "SUCCESS",
-                # )
-                self.rule_sets.pop(index)
+        index = self.list_widget.currentRow()
+        rule_set = self.rule_sets[index]
+        self.rule_set_delete.emit(rule_set)
 
-    def update_rule_set_detail(self) -> None:
+    def handle_update_rule_set_detail(self) -> None:
         """
         Update the rule set details in the GUI and emits signal to update rule set in the model.
         If rule set is a default rule set, rule set details are not updated
@@ -311,13 +299,10 @@ class BookMarksPageView(QWidget):
 
         self.rule_set_editted.emit(rule_set)
 
-    def save_rule_sets_to_file(self) -> None:
+    def handle_save_rule_set_to_file(self) -> None:
         """
         Save the selected rule set to a JSON file selected by the user. It ensures the file has
         a `.json` extension.
-
-        Returns:
-            None: This function does not return a value.
         """
 
         if not self.rule_sets:

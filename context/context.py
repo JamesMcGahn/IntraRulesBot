@@ -119,7 +119,18 @@ class AppContext(QObject, metaclass=QSingleton):
         ## SETTINGS
         self.settings_controller.setting_updated.connect(self.setting_updated)
         self.setting_updated.connect(self.logger.received_settings_change)
-        self.session_registry.save_all()
+
+        ## Ruleset Bookmarked
+        self.rules_controller.rule_set_bookmarked.connect(
+            self.rule_sets_controller.rule_set_added
+        )
+        self.rule_sets_controller.load_rule_set_from_bookmark.connect(
+            self.rules_controller.load_from_bookmarks
+        )
+        # UI EVENTS
+        self.rules_controller.ui_event.connect(self.ui_controller.handle_ui_event)
+        self.rule_sets_controller.ui_event.connect(self.ui_controller.handle_ui_event)
+        self.settings_controller.ui_event.connect(self.ui_controller.handle_ui_event)
 
     def ensure_playwright_browsers(self, app_data_path):
         env = os.environ.copy()

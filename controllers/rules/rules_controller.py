@@ -10,7 +10,8 @@ if TYPE_CHECKING:
     from services.validation.models import SchemaError
     from services.rule_runner import RuleRunnerService
     from services.rule_runner.interfaces import RuleRunnerConfigProvider
-
+    from services.rule_sets.models import RuleSet
+from datetime import datetime
 from uuid import uuid4
 from pathlib import Path
 from PySide6.QtCore import Signal, Slot
@@ -27,6 +28,8 @@ from services.validation.models import (
     ValidationRequest,
     ValidationResponse,
 )
+
+# TODO Create Rule Runner Response
 from services.rule_runner.models import (
     RuleRunnerResponse,
     RuleRunnerRequestPayload,
@@ -40,6 +43,7 @@ from utils.files import PathManager
 class RulesController(QObjectBase):
     ui_event = Signal(object)
     runtime_validation_result = Signal(object)
+    rule_set_bookmarked = Signal(object)
     # TODO convert to ui_event
     runner_progress = Signal(int, int)
     stop_runner_service = Signal()
@@ -174,6 +178,7 @@ class RulesController(QObjectBase):
         if batch.batch_total == batch.validation_total:
             self._finalize_batch(job_id)
 
+    # TODO NEED TO SPLIT INTO HANDLERS
     def _finalize_batch(self, batch_id: str):
         batch = self._active_batches.pop(batch_id)
         if batch.batch_type == VALIDATIONBATCHTYPE.IMPORT:
@@ -204,37 +209,71 @@ class RulesController(QObjectBase):
                 ValidationRulesResult(errors_grouped_dict)
             )
         elif batch.batch_type == VALIDATIONBATCHTYPE.USER_SAVE:
+            # TODO MAKE HELPER METHOD
+            errors_grouped_dict = self._group_batch_errors(batch)
             if batch.rule_errors:
-                errors_grouped_dict = self._group_batch_errors(batch)
 
-                self.runtime_validation_result.emit(
-                    ValidationRulesResult(errors_grouped_dict)
+                message = f"""Saved Failed. {batch.total_errors} errors found in rule set. View Errors Dialog for more details"""
+                title = "Saved Failed"
+                error = SchemaErrorDialogEvent(errors=batch.rule_errors)
+                error_event = UIEvent(UIEVENTTYPE.DISPLAY, payload=error)
+                self.send_toast_failure(title=title, message=message)
+                self.ui_event.emit(error_event)
+
+            self.runtime_validation_result.emit(
+                ValidationRulesResult(errors_grouped_dict)
+            )
+
+            if batch.rule_errors or not batch.file_path:
+                return
+
+            path = PathManager.regex_path(batch.file_path)
+            rules = {
+                "rule_set_name": path["filename"],
+                "description": "Saved Rules From Editor",
+                "rules": batch.valid_rules,
+            }
+
+            is_saved, error = self.rules_store.save(rules, batch.file_path)
+            if is_saved:
+                toast = ToastEvent(
+                    message="File Saved",
+                    title=f"File Saved to {batch.file_path}",
+                    toast_level=QTOASTSTATUS.SUCCESS,
+                    log_level=LOGLEVEL.INFO,
                 )
-            else:
-                if not batch.file_path:
-                    return
-                path = PathManager.regex_path(batch.file_path)
-                rules = {
-                    "rule_set_name": path["filename"],
-                    "description": "Saved Rules From Editor",
-                    "rules": batch.valid_rules,
-                }
-
-                is_saved, error = self.rules_store.save(rules, batch.file_path)
-                if is_saved:
-                    toast = ToastEvent(
-                        message="File Saved",
-                        title=f"File Saved to {batch.file_path}",
-                        toast_level=QTOASTSTATUS.SUCCESS,
-                        log_level=LOGLEVEL.INFO,
-                    )
-                    event = UIEvent(UIEVENTTYPE.DISPLAY, payload=toast)
-                    self.ui_event.emit(event)
+                event = UIEvent(UIEVENTTYPE.DISPLAY, payload=toast)
+                self.ui_event.emit(event)
         elif batch.batch_type == VALIDATIONBATCHTYPE.SYS_SAVE:
             self.handle_sys_save(batch)
 
         elif batch.batch_type == VALIDATIONBATCHTYPE.RULE_RUNNER:
+            # TODO CHECK FOR ERRORS ETC
             self.handle_run_rules(batch)
+        elif batch.batch_type == VALIDATIONBATCHTYPE.BOOKMARK:
+            errors_grouped_dict = self._group_batch_errors(batch)
+            if batch.rule_errors:
+                message = f"""Saved Failed. {batch.total_errors} errors found in rule set. View Errors Dialog for more details"""
+                title = "Saved Failed"
+                error = SchemaErrorDialogEvent(errors=batch.rule_errors)
+                error_event = UIEvent(UIEVENTTYPE.DISPLAY, payload=error)
+                self.send_toast_failure(title=title, message=message)
+                self.ui_event.emit(error_event)
+
+            self.runtime_validation_result.emit(
+                ValidationRulesResult(errors_grouped_dict)
+            )
+
+            if batch.rule_errors:
+                return
+
+            data = {
+                "rule_set_name": batch.rule_batch_name,
+                "description": batch.rule_batch_description,
+                "default": False,
+                "rules": batch.valid_rules,
+            }
+            self.rule_set_bookmarked.emit(data)
 
     def handle_run_rules(self, batch: ValidationBatch):
         rules = self.rule_builder.build_rules(batch.valid_rules)
@@ -324,3 +363,29 @@ class RulesController(QObjectBase):
 
     def handle_stop_runner(self):
         self.stop_runner_service.emit()
+
+    def handle_user_book_mark(
+        self, rule_set_name: str, rule_set_desc: str, rules: dict
+    ):
+        user_set_name = rule_set_name
+
+        if not rule_set_name:
+            today_date_text = datetime.now().strftime("%Y-%m-%d::%I:%M:%S %p")
+            user_set_name = f"User Saved - {today_date_text}"
+
+        data = {
+            "rule_set_name": user_set_name,
+            "description": rule_set_desc,
+            "default": False,
+            **rules,
+        }
+        self.validate_json(data, VALIDATIONBATCHTYPE.BOOKMARK)
+
+    def load_from_bookmarks(self, rule_set: RuleSet):
+        rules = rule_set.rules
+        new_rules = []
+        for rule in rules:
+            rule.guid = str(uuid4())
+            new_rules.append(rule)
+        self.rules_registry.add_rules(new_rules)
+        self._emit_rules_updated()

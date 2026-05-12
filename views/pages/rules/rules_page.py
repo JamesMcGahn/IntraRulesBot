@@ -61,6 +61,7 @@ class RulesPage(QWidgetBase):
         self.ui.delete_rule.connect(self.handle_delete_rule)
         self.ui.delete_all_rules.connect(self.handle_delete_all_rules)
         self.ui.clone_rule.connect(self.handle_clone_rule)
+        self.ui.bookmark_rules.connect(self.handle_bookmark_rules)
 
         # Signal / Slot Connections
         self.ui.user_save_rules.connect(self.handle_user_rules_save)
@@ -72,7 +73,6 @@ class RulesPage(QWidgetBase):
         self.ui.validate_open_dialog.clicked.connect(self.display_errors_dialog)
         self.ui.copy_field.clicked.connect(self.on_copy_fields)
         self.ui.rules_form_updated.connect(self.apply_event_filter)
-        self.ui.bookmark.clicked.connect(self.on_bookmark_click)
 
         self.dialog = RuleSetDialog()
         self.dialog.send_form.connect(self.save_rule_set)
@@ -112,6 +112,14 @@ class RulesPage(QWidgetBase):
             rules, batch_type=VALIDATIONBATCHTYPE.RULE_RUNNER
         )
 
+    @Slot(list)
+    def handle_bookmark_rules(
+        self, rule_set_name: str, rule_set_desc: str, rules: dict
+    ):
+        self.controllers.rules.handle_user_book_mark(
+            rule_set_name, rule_set_desc, rules
+        )
+
     def handle_stop_runner(self):
         self.log_with_toast(
             "Stop Runner Requested",
@@ -134,8 +142,11 @@ class RulesPage(QWidgetBase):
         object's name and text.
         """
         field_name = obj_name.split("**")[0]
+        # path = obj_name.split("**")[1]
+
         self.focus_object_name = field_name
         self.focus_object_text = object_text
+        # print(path, field_name, object_text)
 
     # TODO: move to controller
     def on_copy_fields(self) -> None:
@@ -192,6 +203,8 @@ class RulesPage(QWidgetBase):
             "",
             "JSON Files (*.json);;All Files (*)",
         )
+        if not file_path:
+            return
         if file_path:
             # Ensure the file has a .json extension
             if not file_path.endswith(".json"):

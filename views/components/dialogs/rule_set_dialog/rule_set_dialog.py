@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (
 )
 
 from ...helpers import WidgetFactory
-from ...toasts import QToast
 from ..gradient_dialog import GradientDialog
 from .rule_set_css import STYLES
 
@@ -22,12 +21,6 @@ from .rule_set_css import STYLES
 class RuleSetDialog(GradientDialog):
     """
     A custom dialog for displaying a message with a gradient background.
-
-    Args:
-        parent (Optional[QWidget]): The parent widget of the dialog, defaults to None.
-
-    Signal:
-        send_form (Signal): Sends rule sets name and description
     """
 
     send_form = Signal(str, str)
@@ -96,25 +89,26 @@ class RuleSetDialog(GradientDialog):
         self.cancel_btn.setCursor(Qt.PointingHandCursor)
         self.close_btn.clicked.connect(self.send_form_data)
 
-        self.cancel_btn.clicked.connect(self.reject)
+        self.cancel_btn.clicked.connect(self.handle_cancel_clicked)
+
+    def handle_cancel_clicked(self):
+        self.clear_form()
+        self.reject()
+
+    def clear_form(self):
+        self.rule_set_input.setText("")
+        self.rule_set_desc_input.setText("")
 
     def send_form_data(self):
         validated = True
         if not self.rule_set_input.text().strip():
             self.rule_set_input.setStyleSheet("border: 1px solid red")
-            QToast(self, "ERROR", "Field Blank", "Rule Set Name Field cannot be blank.")
             validated = False
         else:
             self.rule_set_input.setStyleSheet("border: 1px solid green")
 
         if not self.rule_set_desc_input.toPlainText().strip():
             self.rule_set_desc_input.setStyleSheet("border: 1px solid red")
-            QToast(
-                self,
-                "ERROR",
-                "Field Blank",
-                "Rule Set Description Field cannot be blank.",
-            )
             validated = False
         else:
             self.rule_set_desc_input.setStyleSheet("border: 1px solid green")
@@ -123,6 +117,5 @@ class RuleSetDialog(GradientDialog):
             self.send_form.emit(
                 self.rule_set_input.text(), self.rule_set_desc_input.toPlainText()
             )
-            self.rule_set_input.setText("")
-            self.rule_set_desc_input.setText("")
+            self.clear_form()
             self.accept()

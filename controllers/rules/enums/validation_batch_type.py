@@ -7,3 +7,4 @@ class VALIDATIONBATCHTYPE(StrEnum):
     USER_SAVE = "user_save"
     SYS_SAVE = "sys_save"
     RULE_RUNNER = "rule_runner"
+    BOOKMARK = "bookmark"
