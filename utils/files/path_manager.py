@@ -6,6 +6,8 @@ import platform
 class PathManager:
     @staticmethod
     def path_exists(path, makepath, raiseError=False):
+        if not path:
+            return False
         if os.path.exists(path):
             return True
         elif not os.path.exists(path) and makepath:

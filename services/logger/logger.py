@@ -180,6 +180,7 @@ class Logger(QObject, metaclass=QSingleton):
                     self.log_print_logs,
                 )
             )
+            return
         current_time = time.time()
         self.logs_queue_before_start.append(
             (
