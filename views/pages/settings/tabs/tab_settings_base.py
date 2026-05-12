@@ -9,13 +9,12 @@ if TYPE_CHECKING:
 from PySide6.QtCore import Signal, Slot
 
 from base import QWidgetBase
-from base.enums import LOGLEVEL, UIEVENTTYPE
+from base.enums import UIEVENTTYPE
 
 # from components.toasts.qtoast.enums import QTOASTSTATUS
 from services.settings.enums import FIELDSTATESTATUS, SETTINGSCATEGORIES
 from services.settings.events import FieldStateEvent
 from services.settings.models import LogSettings
-from views.components.toasts.qtoast.enums import QTOASTSTATUS
 from .tab_settings_ui import TabSettingsBaseUI
 from .tab_ui_helper import SettingsUIHelper
 
@@ -56,11 +55,12 @@ class TabSettingsBase(QWidgetBase):
                 tab = event.payload.category
                 field = event.payload.field
                 status = event.payload.status
+                print(tab, field, status)
                 if status == FIELDSTATESTATUS.VALID:
                     self.change_verify_btn_disable.emit(tab, field, False)
+                    self.verify_response_update.emit(tab, field, True)
                 elif status == FIELDSTATESTATUS.INVALID:
-                    is_valid = False
                     self.change_verify_btn_disable.emit(tab, field, False)
+                    self.verify_response_update.emit(tab, field, False)
                 elif status == FIELDSTATESTATUS.LOADING:
-                    is_valid = False
-                    self.verify_response_update.emit(tab, field, is_valid)
+                    self.verify_response_update.emit(tab, field, False)
