@@ -10,7 +10,7 @@ from PySide6.QtCore import Signal
 from base import QWidgetBase
 from services.settings.enums import SETTINGSCATEGORIES
 
-from ...base import FieldRegistry
+from .settings_field_registry import SettingsFieldRegistry
 from .settings_page_ui import PageSettingsUI
 from .tabs import TabSettingsBase
 
@@ -25,7 +25,7 @@ class SettingsPage(QWidgetBase):
         self.view = PageSettingsUI()
         self.layout.addWidget(self.view)
 
-        self.field_registery = FieldRegistry()
+        self.field_registery = SettingsFieldRegistry()
         self.controllers = controllers
         self.settings_controller = self.controllers.settings
         self.app_settings = self.settings_controller.get_settings()

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, get_args
 
 if TYPE_CHECKING:
     from services.settings.models import SettingsFieldMeta
+    from ..settings_field_registry import SettingsFieldRegistry
 
 from PySide6.QtCore import QObject, QSize, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QIcon
@@ -19,8 +20,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from ....base.field_registry import FieldRegistry
-
 
 # TODO Combine with tab settings UI
 class SettingsUIHelper(QObject):
@@ -28,7 +27,7 @@ class SettingsUIHelper(QObject):
     settings_field_updated = Signal(str, str, object)
     send_batch_to_verify = Signal(object)
 
-    def __init__(self, settings_verify, field_registery: FieldRegistry):
+    def __init__(self, settings_verify, field_registery: SettingsFieldRegistry):
         super().__init__()
         self.field_registery = field_registery
         self.settings_verify = settings_verify
@@ -144,15 +143,13 @@ class SettingsUIHelper(QObject):
             folder_icon_button.setCursor(Qt.PointingHandCursor)
 
             folder_icon_button.setIcon(self.folder_icon)
+            widget_type = meta.widget_type
             folder_icon_button.clicked.connect(
-                lambda: self.open_folder_dialog(tab, key)
+                lambda: self.open_folder_dialog(tab, key, widget_type)
             )
 
-            widget_type = meta.widget_type
             verify_button.clicked.connect(
-                lambda _, widget_type=widget_type: self.open_folder_dialog(
-                    tab, key, widget_type=widget_type
-                )
+                lambda: self.open_folder_dialog(tab, key, widget_type)
             )
         else:
             widget_type = meta.widget_type
@@ -319,10 +316,12 @@ class SettingsUIHelper(QObject):
         path = line_edit.text() or "./"
 
         folder = QFileDialog.getExistingDirectory(caption="Select Folder", dir=path)
-
+        print(folder, widget_type)
         if folder:
             folder = folder if folder[-1] == "/" else folder + "/"
+
             line_edit.blockSignals(True)
             line_edit.setText(folder)
             line_edit.blockSignals(False)
+            self.settings_field_updated.emit(tab, key, folder)
             self.handle_verify(tab, key, widget_type, folder)
