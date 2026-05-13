@@ -33,7 +33,6 @@ class RuleFieldRegistry(FieldRegistry):
         current = self._field_map
 
         for i, token in enumerate(parts[:-1]):
-            print(current, token)
             next_token = parts[i + 1]
 
             if isinstance(current, dict):
@@ -57,7 +56,6 @@ class RuleFieldRegistry(FieldRegistry):
                     current.append(container)
 
                 current = current[index]
-            print(current, token)
         leaf = parts[-1]
         current[leaf] = widget
 

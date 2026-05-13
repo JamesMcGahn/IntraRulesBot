@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from services.validation.models import SchemaError
+    from .rule_registry import RuleFieldRegistry
 
 from typing import Tuple
 
@@ -22,16 +23,16 @@ class RuleAdapter:
     def __init__(
         self,
         guid: str,
-        field_map: dict,
         widget: QWidget,
+        field_registry: RuleFieldRegistry,
         int_keys: Tuple[str] = ("time_interval", "equality_threshold"),
     ):
         super().__init__()
 
         self._guid = guid
-        self._field_map = field_map
-        self._widget = widget
 
+        self._widget = widget
+        self._field_registry = field_registry
         self.int_keys = int_keys
 
     @property
@@ -57,7 +58,7 @@ class RuleAdapter:
         Returns:
             dict: A dictionary mapping input fields to their corresponding form fields.
         """
-        return self._field_map
+        return self._field_registry.field_map
 
     def highlight_errors(self, rule_errors: list[SchemaError]) -> None:
         """
@@ -69,7 +70,7 @@ class RuleAdapter:
         Returns:
             None: This function does not return a value.
         """
-        rule_imports = self._field_map
+        rule_imports = self.field_map
 
         def set_sheet(el, status=False):
             if status:

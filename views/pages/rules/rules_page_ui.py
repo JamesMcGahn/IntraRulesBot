@@ -28,6 +28,7 @@ from views.components.layouts import ScrollArea, StackedFormWidget
 from ...components.rules import RuleAdapter, RuleFactory
 
 from ...components.dialogs import RuleSetDialog
+from ...components.rules.rule_registry import RuleFieldRegistry
 
 
 class RulesPageView(QWidget):
@@ -52,7 +53,6 @@ class RulesPageView(QWidget):
     def __init__(self):
         super().__init__()
         self.current_rule_index = 0
-
         self.init_ui()
 
     def init_ui(self) -> None:
@@ -491,11 +491,14 @@ class RulesPageView(QWidget):
         if rules:
             self.stacked_widget.remove_by_name("No-Rules-Widget")
             for rule in rules:
-                widget, field_map = RuleFactory().build(
+                registry = RuleFieldRegistry()
+                widget = RuleFactory(registry).build(
                     rule, "margin-top: 0px; padding-left: 0px;padding-top: 0px;"
                 )
                 adapter = RuleAdapter(
-                    guid=rule.guid, field_map=field_map, widget=widget
+                    guid=rule.guid,
+                    widget=widget,
+                    field_registry=registry,
                 )
                 self.stacked_widget.add_form(adapter)
             if self.previous_guid:

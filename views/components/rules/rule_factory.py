@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from services.rules.models import Rule
+    from .rule_registry import RuleFieldRegistry
 
 from typing import Optional
 
@@ -21,10 +22,15 @@ from .rule_widget import RuleWidget
 
 class RuleFactory:
 
+    def __init__(self, field_registry: RuleFieldRegistry):
+        self._field_index = {}
+        self._rule_guid = None
+        self._field_registry = field_registry
+
     def build(self, rule: Rule, style=""):
-        layout, field_map = self.create_rule_form(rule)
+        layout = self.create_rule_form(rule)
         widget = RuleWidget().add_inner_layout(layout, style)
-        return widget, field_map
+        return widget
 
     def create_rule_form(self, rule: Rule) -> None:
         """
@@ -36,13 +42,14 @@ class RuleFactory:
         Returns:
             None: This function does not return a value.
         """
-        rule_inputs = {}
+
         rules_name = rule.rule_name
         rule_guid = rule.guid
         self._rule_guid = rule.guid
-        rule_inputs["guid"] = QLineEdit(rule_guid)
+        guid_widget = QLineEdit(rule_guid)
         rule_outter_layout = QFormLayout()
 
+        self.register_field(guid_widget, "guid")
         rule_layout = WidgetFactory.create_form_box(
             f"Rule Configuration - {rules_name}",
             rule_outter_layout,
@@ -54,21 +61,28 @@ class RuleFactory:
         )
         rule_layout.setContentsMargins(12, 25, 12, 5)
 
-        self.rf_add_general_settings(rule, rule_inputs, rule_layout)
-        self.rf_add_trigger_settings(rule, rule_inputs, rule_layout)
-        self.rf_add_action_based_settings(rule, rule_inputs, rule_layout)
-        self.rf_add_conditions_settings(rule, rule_inputs, rule_layout)
-        self.rf_add_actions_settings(rule, rule_inputs, rule_layout)
+        self.rf_add_general_settings(rule, rule_layout)
+        self.rf_add_trigger_settings(rule, rule_layout)
+        self.rf_add_action_based_settings(rule, rule_layout)
+        self.rf_add_conditions_settings(rule, rule_layout)
+        self.rf_add_actions_settings(rule, rule_layout)
 
-        return rule_outter_layout, rule_inputs
+        return rule_outter_layout
+
+    def register_field(self, widget, full_path: str):
+        widget.setProperty("field_path", full_path)
+        widget.setProperty("rule_guid", self._rule_guid)
+        self._field_registry.register_field(full_path, widget)
+
+    def build_path(self, *parts) -> str:
+        return ".".join(str(p) for p in parts)
 
     def create_text_input_row(
         self,
         line_edit_value: str,
         label_text: str,
         parent_layout: QFormLayout,
-        rule_input: Optional[dict] = None,
-        rule_input_path: Optional[str] = None,
+        full_path: Optional[str] = None,
     ) -> QLineEdit:
         """
         Creates a text input row in the form and optionally updates the rule input dictionary.
@@ -87,27 +101,15 @@ class RuleFactory:
             line_edit_value,
             label_text,
             parent_layout,
-            rule_input_path=rule_input_path,
-            guid=self._rule_guid,
         )
 
-        if rule_input_path is not None and rule_input is not None:
-            rule_input[rule_input_path] = el
+        self.register_field(el, full_path)
+
         return el
 
-    def rf_add_general_settings(
-        self, rule: Rule, rule_input: dict, rule_layout: QFormLayout
-    ) -> None:
+    def rf_add_general_settings(self, rule: Rule, rule_layout: QFormLayout) -> None:
         """
         Adds general settings fields to the form layout.
-
-        Args:
-            rule (dict): The rule data containing general settings.
-            rule_input (dict): The input fields for the rule.
-            rule_layout (QFormLayout): The layout for the form.
-
-        Returns:
-            None: This function does not return a value.
         """
         general_settings_layout = WidgetFactory.create_form_box(
             "General Settings",
@@ -120,33 +122,22 @@ class RuleFactory:
         )
 
         self.create_text_input_row(
-            rule.rule_name,
-            "Rule Name:",
-            general_settings_layout,
-            rule_input,
-            "rule_name",
-        )
-        self.create_text_input_row(
-            rule.rule_category,
-            "Rule Category:",
-            general_settings_layout,
-            rule_input,
-            "rule_category",
+            line_edit_value=rule.rule_name,
+            label_text="Rule Name:",
+            parent_layout=general_settings_layout,
+            full_path="rule_name",
         )
 
-    def rf_add_trigger_settings(
-        self, rule: Rule, rule_input: dict, rule_layout: QFormLayout
-    ) -> None:
+        self.create_text_input_row(
+            line_edit_value=rule.rule_category,
+            label_text="Rule Category:",
+            parent_layout=general_settings_layout,
+            full_path="rule_category",
+        )
+
+    def rf_add_trigger_settings(self, rule: Rule, rule_layout: QFormLayout) -> None:
         """
         Adds trigger settings fields to the form layout.
-
-        Args:
-            rule (dict): The rule data containing trigger settings.
-            rule_input (dict): The input fields for the rule.
-            rule_layout (QFormLayout): The layout for the form.
-
-        Returns:
-            None: This function does not return a value.
         """
         if isinstance(rule.trigger, FrequencyTrigger):
             frequency_settings_layout = WidgetFactory.create_form_box(
@@ -159,31 +150,22 @@ class RuleFactory:
                 title_color="#fcfcfc",
             )
             freq_int = str(rule.trigger.time_interval)
-            frequency_based_set = {}
 
             self.create_text_input_row(
-                freq_int,
-                "Time Interval:",
-                frequency_settings_layout,
-                frequency_based_set,
-                "time_interval",
+                line_edit_value=freq_int,
+                label_text="Time Interval:",
+                parent_layout=frequency_settings_layout,
+                full_path=self.build_path(
+                    "frequency_based",
+                    "time_interval",
+                ),
             )
 
-            rule_input["frequency_based"] = frequency_based_set
-
     def rf_add_action_based_settings(
-        self, rule: Rule, rule_input: dict, rule_layout: QFormLayout
+        self, rule: Rule, rule_layout: QFormLayout
     ) -> None:
         """
         Adds condition settings fields to the form layout.
-
-        Args:
-            rule (dict): The rule data containing condition settings.
-            rule_input (dict): The input fields for the rule.
-            rule_layout (QFormLayout): The layout for the form.
-
-        Returns:
-            None: This function does not return a value.
         """
 
         if isinstance(rule.trigger, ActionTrigger):
@@ -197,25 +179,13 @@ class RuleFactory:
                 title_color="#fcfcfc",
             )
 
-            rule_input["action_based"] = self.create_action_based_fields(
-                action_based_settings_layout, rule.trigger
-            )
+            self.create_action_based_fields(action_based_settings_layout, rule.trigger)
 
-    def rf_add_conditions_settings(
-        self, rule: Rule, rule_input: dict, rule_layout: QFormLayout
-    ) -> None:
+    def rf_add_conditions_settings(self, rule: Rule, rule_layout: QFormLayout) -> None:
         """
         Adds condition settings fields to the form layout.
-
-        Args:
-            rule (dict): The rule data containing condition settings.
-            rule_input (dict): The input fields for the rule.
-            rule_layout (QFormLayout): The layout for the form.
-
-        Returns:
-            None: This function does not return a value.
         """
-        rule_input["conditions"] = []
+
         for i, condition in enumerate(rule.conditions):
             title = condition.details.condition_type.title()
 
@@ -228,24 +198,14 @@ class RuleFactory:
                 title_font_size=13,
                 title_color="#fcfcfc",
             )
-            inputs = self.create_condition_fields(condition_layout, condition)
-            rule_input["conditions"].append(inputs)
 
-    def rf_add_actions_settings(
-        self, rule: Rule, rule_input: dict, rule_layout: QFormLayout
-    ) -> None:
+            self.create_condition_fields(condition_layout, condition, i)
+
+    def rf_add_actions_settings(self, rule: Rule, rule_layout: QFormLayout) -> None:
         """
         Adds action settings fields to the form layout.
-
-        Args:
-            rule (dict): The rule data containing action settings.
-            rule_input (dict): The input fields for the rule.
-            rule_layout (QFormLayout): The layout for the form.
-
-        Returns:
-            None: This function does not return a value.
         """
-        rule_input["actions"] = []
+
         for i, action in enumerate(rule.actions):
             title = action.details.action_type.title()
 
@@ -259,24 +219,14 @@ class RuleFactory:
                 title_color="#fcfcfc",
             )
 
-            inputs = self.create_action_fields(action_layout, action)
-            rule_input["actions"].append(inputs)
+            self.create_action_fields(action_layout, action, i)
 
     def create_action_based_fields(
         self, parent_layout: QFormLayout, trigger: ActionTrigger
-    ) -> dict:
+    ) -> None:
         """
         Creates form fields for the given condition.
-
-        Args:
-            parent_layout (QFormLayout): The parent layout for the condition fields.
-            condition (dict): The condition data used to generate the form fields.
-
-        Returns:
-            dict: A dictionary of form fields for the condition.
         """
-        # Common fields
-        action_based_data = {}
 
         action_based_general_settings_layout = WidgetFactory.create_form_box(
             "Action Trigger Provider Settings",
@@ -306,15 +256,16 @@ class RuleFactory:
         ]
 
         for initial_value, label_text, rule_input_path in action_based_fields:
-            self.create_text_input_row(
-                initial_value,
-                label_text,
-                action_based_general_settings_layout,
-                action_based_data,
-                rule_input_path,
-            )
 
-        details_data = {}
+            self.create_text_input_row(
+                line_edit_value=initial_value,
+                label_text=label_text,
+                parent_layout=action_based_general_settings_layout,
+                full_path=self.build_path(
+                    "action_based",
+                    rule_input_path,
+                ),
+            )
 
         # Check details for condition type
         details = trigger.details
@@ -337,16 +288,32 @@ class RuleFactory:
                 title_font_size=11,
             )
 
-            state_data = []
-            for state in details.state:
-                state_obj = {}
+            for index, state in enumerate(details.state):
+
                 self.create_text_input_row(
-                    state.state, "State", state_layout, state_obj, "state"
+                    line_edit_value=state.state,
+                    label_text="State",
+                    parent_layout=state_layout,
+                    full_path=self.build_path(
+                        "action_based",
+                        "details",
+                        "state",
+                        index,
+                        "state",
+                    ),
                 )
                 self.create_text_input_row(
-                    state.aux, "Aux", state_layout, state_obj, "aux"
+                    line_edit_value=state.aux,
+                    label_text="Aux",
+                    parent_layout=state_layout,
+                    full_path=self.build_path(
+                        "action_based",
+                        "details",
+                        "state",
+                        index,
+                        "aux",
+                    ),
                 )
-                state_data.append(state_obj)
 
             detail_fields = [
                 (
@@ -367,33 +334,25 @@ class RuleFactory:
             ]
 
             for initial_value, label_text, rule_input_path in detail_fields:
+
                 self.create_text_input_row(
-                    initial_value,
-                    label_text,
-                    details_layout,
-                    details_data,
-                    rule_input_path,
+                    line_edit_value=initial_value,
+                    label_text=label_text,
+                    parent_layout=details_layout,
+                    full_path=self.build_path(
+                        "action_based",
+                        "details",
+                        rule_input_path,
+                    ),
                 )
 
-        action_based_data["details"] = details_data
-        action_based_data["details"]["state"] = state_data
-        return action_based_data
-
     def create_condition_fields(
-        self, parent_layout: QFormLayout, condition: Condition
-    ) -> dict:
+        self, parent_layout: QFormLayout, condition: Condition, condition_index: int
+    ) -> None:
         """
         Creates form fields for the given condition.
-
-        Args:
-            parent_layout (QFormLayout): The parent layout for the condition fields.
-            condition (dict): The condition data used to generate the form fields.
-
-        Returns:
-            dict: A dictionary of form fields for the condition.
         """
         # Common fields
-        condition_data = {}
 
         condition_general_settings_layout = WidgetFactory.create_form_box(
             "Condition Provider Settings",
@@ -424,14 +383,15 @@ class RuleFactory:
 
         for initial_value, label_text, rule_input_path in condition_fields:
             self.create_text_input_row(
-                initial_value,
-                label_text,
-                condition_general_settings_layout,
-                condition_data,
-                rule_input_path,
+                line_edit_value=initial_value,
+                label_text=label_text,
+                parent_layout=condition_general_settings_layout,
+                full_path=self.build_path(
+                    "conditions",
+                    condition_index,
+                    rule_input_path,
+                ),
             )
-
-        details_data = {}
 
         # Check details for condition type
         details = condition.details
@@ -470,29 +430,28 @@ class RuleFactory:
             ]
 
             for initial_value, label_text, rule_input_path in detail_fields:
+
                 self.create_text_input_row(
-                    initial_value,
-                    label_text,
-                    details_layout,
-                    details_data,
-                    rule_input_path,
+                    line_edit_value=initial_value,
+                    label_text=label_text,
+                    parent_layout=details_layout,
+                    full_path=self.build_path(
+                        "conditions",
+                        condition_index,
+                        "details",
+                        rule_input_path,
+                    ),
                 )
 
-        condition_data["details"] = details_data
-        return condition_data
-
-    def create_action_fields(self, parent_layout: QFormLayout, action: Action) -> dict:
+    def create_action_fields(
+        self,
+        parent_layout: QFormLayout,
+        action: Action,
+        action_index: int,
+    ) -> None:
         """
         Creates form fields for the given action.
-
-        Args:
-            parent_layout (QFormLayout): The parent layout for the action fields.
-            action (dict): The action data used to generate the form fields.
-
-        Returns:
-            dict: A dictionary of form fields for the action.
         """
-        action_data = {}
         action_general_settings_layout = WidgetFactory.create_form_box(
             "Action Provider Settings",
             parent_layout,
@@ -509,15 +468,17 @@ class RuleFactory:
         ]
         for initial_value, label_text, rule_input_path in action_fields:
             self.create_text_input_row(
-                initial_value,
-                label_text,
-                action_general_settings_layout,
-                action_data,
-                rule_input_path,
+                line_edit_value=initial_value,
+                label_text=label_text,
+                parent_layout=action_general_settings_layout,
+                full_path=self.build_path(
+                    "actions",
+                    action_index,
+                    rule_input_path,
+                ),
             )
 
         details = action.details
-        details_data = {}
 
         if details.action_type == "email":
             title = action.provider_condition
@@ -537,11 +498,15 @@ class RuleFactory:
 
             for initial_value, label_text, rule_input_path in detail_fields:
                 self.create_text_input_row(
-                    initial_value,
-                    label_text,
-                    details_layout,
-                    details_data,
-                    rule_input_path,
+                    line_edit_value=initial_value,
+                    label_text=label_text,
+                    parent_layout=details_layout,
+                    full_path=self.build_path(
+                        "actions",
+                        action_index,
+                        "details",
+                        rule_input_path,
+                    ),
                 )
 
             email_body_input = QTextEdit(str(details.email_body))
@@ -549,7 +514,13 @@ class RuleFactory:
             email_body_label.setStyleSheet("background-color: transparent")
             email_body_input.setStyleSheet("background-color: #FCFCFC")
             details_layout.addRow(email_body_label, email_body_input)
-            details_data["email_body"] = email_body_input
 
-        action_data["details"] = details_data
-        return action_data
+            self.register_field(
+                email_body_input,
+                self.build_path(
+                    "actions",
+                    action_index,
+                    "details",
+                    "email_body",
+                ),
+            )
