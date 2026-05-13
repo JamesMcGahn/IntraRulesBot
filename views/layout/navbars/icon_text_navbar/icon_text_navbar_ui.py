@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
+from ....base.enums import PAGE
 from views.components.helpers import StyleHelper, WidgetFactory
 
 
@@ -50,20 +50,17 @@ class IconTextNavBarView(QWidget):
         self.icon_btn_layout = QVBoxLayout()
         self.icon_btn_layout.setObjectName("icon_btn_layout_ict")
         # Create the buttons with text and icons
-        self.keys_btn_ict = QPushButton(" Login Creds")
-        self.keys_btn_ict.setObjectName("keys_btn_ict")
-        self.icon_btn_layout.addWidget(self.keys_btn_ict)
 
         self.rules_btn_ict = QPushButton(" Rules")
-        self.rules_btn_ict.setObjectName("rules_btn_ict")
+        self.rules_btn_ict.setObjectName(PAGE.EDITOR)
         self.icon_btn_layout.addWidget(self.rules_btn_ict)
 
         self.logs_btn_ict = QPushButton(" Logs")
-        self.logs_btn_ict.setObjectName("logs_btn_ict")
+        self.logs_btn_ict.setObjectName(PAGE.LOG)
         self.icon_btn_layout.addWidget(self.logs_btn_ict)
 
         self.bookmarks_btn_ict = QPushButton(" Rule Sets")
-        self.bookmarks_btn_ict.setObjectName("bookmarks_btn_ict")
+        self.bookmarks_btn_ict.setObjectName(PAGE.BOOKMARK)
         self.icon_btn_layout.addWidget(self.bookmarks_btn_ict)
 
         self.icon_text_nav_vlayout.addLayout(self.icon_btn_layout)
@@ -75,15 +72,14 @@ class IconTextNavBarView(QWidget):
         self.icon_text_nav_vlayout.addItem(self.verticalSpacer_3)
         # Settings and sign-out buttons
         self.settings_btn_ict = QPushButton("Settings")
-        self.settings_btn_ict.setObjectName("settings_btn_ict")
+        self.settings_btn_ict.setObjectName(PAGE.SETTINGS)
         self.icon_text_nav_vlayout.addWidget(self.settings_btn_ict)
 
         self.signout_btn_ict = QPushButton("Exit")
-        self.signout_btn_ict.setObjectName("signout_btn_ict")
+        self.signout_btn_ict.setObjectName(PAGE.EXIT)
         self.icon_text_nav_vlayout.addWidget(self.signout_btn_ict)
 
         icons = [
-            (self.keys_btn_ict, ":/images/key_off.png", ":/images/key_on.png"),
             (self.rules_btn_ict, ":/images/edit_off.png", ":/images/edit_on.png"),
             (self.logs_btn_ict, ":/images/log_off.png", ":/images/log_on.png"),
             (

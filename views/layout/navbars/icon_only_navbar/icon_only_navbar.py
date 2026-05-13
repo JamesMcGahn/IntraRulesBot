@@ -5,6 +5,7 @@ from views.components.helpers import StyleHelper
 
 from .icon_only_navbar_css import STYLES
 from .icon_only_navbar_ui import IconOnlyNavBarView
+from ....base.enums import PAGE
 
 
 class IconOnlyNavBar(QWidget):
@@ -42,8 +43,6 @@ class IconOnlyNavBar(QWidget):
 
         StyleHelper.drop_shadow(self)
         # Connect buttons to toggle and click events
-        self.ui.keys_btn_ico.toggled.connect(self.btn_checked)
-        self.ui.keys_btn_ico.clicked.connect(self.btn_clicked)
 
         self.ui.rules_btn_ico.toggled.connect(self.btn_checked)
         self.ui.rules_btn_ico.clicked.connect(self.btn_clicked)
@@ -97,27 +96,18 @@ class IconOnlyNavBar(QWidget):
         self.btn_clicked_page.emit(self.sender())
 
     @Slot(bool, QPushButton)
-    def btns_set_checked(self, checked, btn) -> None:
+    def btns_set_checked(self, checked: bool, btn: QPushButton) -> None:
         """
         Slot that sets the checked state of a button based on its object name.
-
-        Args:
-            checked (bool): The checked state to set for the button.
-            btn (QPushButton): The button to be checked.
-
-        Returns:
-            None: This function does not return a value.
         """
         match btn.objectName():
-            case "keys_btn_ict":
-                self.ui.keys_btn_ico.setChecked(checked)
-            case "rules_btn_ict":
+            case PAGE.EDITOR:
                 self.ui.rules_btn_ico.setChecked(checked)
-            case "logs_btn_ict":
+            case PAGE.LOG:
                 self.ui.logs_btn_ico.setChecked(checked)
-            case "bookmarks_btn_ict":
+            case PAGE.BOOKMARK:
                 self.ui.bookmarks_btn_ico.setChecked(checked)
-            case "settings_btn_ict":
+            case PAGE.SETTINGS:
                 self.ui.settings_btn_ico.setChecked(checked)
-            case "signout_btn_ict":
+            case PAGE.EXIT:
                 self.ui.signout_btn_ico.setChecked(checked)

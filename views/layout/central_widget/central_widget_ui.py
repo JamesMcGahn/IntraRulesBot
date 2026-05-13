@@ -1,7 +1,6 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QGridLayout, QWidget
 
-from ..navbars import HeaderNavBar, IconOnlyNavBar, IconTextNavBar
 from PySide6.QtGui import QLinearGradient, QPainter, QPaintEvent
 
 
@@ -22,13 +21,6 @@ class CentralWidgetView(QWidget):
     def paintEvent(self, event: QPaintEvent) -> None:
         """
         Custom paint event to draw a linear gradient background on the central widget.
-
-        Args:
-            event (QPaintEvent): The paint event.
-
-        Returns:
-            None: This function does not return a value.
-
         """
         painter = QPainter(self)
         gradient = QLinearGradient(self.width() / 2, 0, self.width() / 2, self.height())

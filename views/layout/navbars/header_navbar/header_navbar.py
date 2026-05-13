@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from controllers import ControllerFactory
 
 
-from PySide6.QtCore import QSize, Qt, Signal, Slot
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import QFileDialog
 
 from base import QWidgetBase
@@ -14,26 +14,12 @@ from base import QWidgetBase
 
 from .header_navbar_css import STYLES
 from .header_navbar_ui import HeaderNavBarView
-from base.events import UIEvent, ToastEvent, SchemaErrorDialogEvent
 
 
 class HeaderNavBar(QWidgetBase):
     """
     HeaderNavBar is the controller for the header navigation bar, managing user interactions such as
     toggling the hamburger menu and loading JSON files to validate rules.
-
-    Signals:
-        hamburger_signal (Signal[bool]): Emitted when the hamburger menu button is toggled.
-        load_rules (Signal[list]): Emitted to load rules into the RulesModel.
-
-    Attributes:
-        ui (HeaderNavBarView): The view component that defines the layout and widgets.
-        val (SchemaValidator): Validator used to validate the JSON file against the rules schema.
-        total_errors (int): Total count of errors found during JSON validation.
-        rules_errors (list): List of rule validation errors.
-        json_decode_error (str): Error message when JSON decoding fails.
-        file_failed (bool): Flag indicating if loading the file failed.
-        rules (RulesModel): Model for managing rules.
     """
 
     hamburger_signal = Signal(bool)
@@ -63,9 +49,6 @@ class HeaderNavBar(QWidgetBase):
     def hamburger_icon_btn_toggled(self) -> None:
         """
         Slot for handling hamburger button toggle events. Emits the hamburger_signal.
-
-        Returns:
-            None: This function does not return a value.
         """
         self.hamburger_signal.emit(self.ui.hamburger_icon_btn.isChecked())
 
@@ -73,9 +56,6 @@ class HeaderNavBar(QWidgetBase):
         """
         Opens a file dialog to select a JSON file, validates its content against the rules schema,
         and emits the valid data to the RulesModel. Displays errors if validation fails.
-
-        Returns:
-            None: This function does not return a value.
         """
         file_name, _ = QFileDialog.getOpenFileName(
             self,
