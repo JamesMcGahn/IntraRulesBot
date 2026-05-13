@@ -36,6 +36,10 @@ class RuleAdapter:
         self.int_keys = int_keys
 
     @property
+    def field_registry(self) -> RuleFieldRegistry:
+        return self._field_registry
+
+    @property
     def widget(self) -> QWidget:
 
         return self._widget

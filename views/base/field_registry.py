@@ -36,3 +36,22 @@ class FieldRegistry:
         raise TypeError(
             f"Widget type {type(widget)} is not supported by get_text_value()"
         )
+
+    def set_text_value(self, key, value):
+        if key not in self._registry:
+            raise ValueError("No such key in registry.")
+
+        widget = self.get_field(key)
+
+        if isinstance(widget, QLineEdit):
+            return widget.setText(value)
+
+        if isinstance(widget, QTextEdit):
+            return widget.setPlainText(value)
+
+        if isinstance(widget, QComboBox):
+            return widget.setCurrentText(value)
+
+        raise TypeError(
+            f"Widget type {type(widget)} is not supported by get_text_value()"
+        )

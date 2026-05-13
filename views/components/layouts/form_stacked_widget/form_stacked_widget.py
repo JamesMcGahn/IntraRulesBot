@@ -57,7 +57,7 @@ class StackedFormWidget(StackedWidget):
     def get_widget_index_by_guid(self, guid: str) -> int:
         return self.widget_map.get(guid, -1)
 
-    def get_form_by_guid(self, guid: str):
+    def get_form_by_guid(self, guid: str) -> RuleAdapter:
         index = self.get_widget_index_by_guid(guid)
         if index > -1:
             return self.get_form_by_index(index)

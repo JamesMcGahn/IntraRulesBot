@@ -10,13 +10,13 @@ from controllers.rules.enums import VALIDATIONBATCHTYPE
 from base.events import RulesLoadedEvent
 import uuid
 
-from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtWidgets import QFileDialog, QLineEdit, QTextEdit
+from PySide6.QtCore import Signal, Slot
+from PySide6.QtWidgets import QFileDialog
 
 from base import QWidgetBase
 from views.components.dialogs import SchemaErrorDialog, RuleSetDialog
 from views.components.toasts.qtoast.enums import QTOASTSTATUS
-from services.event_filter import EventFilter
+
 
 from .rules_page_css import STYLES
 from .rules_page_ui import RulesPageView
@@ -41,7 +41,7 @@ class RulesPage(QWidgetBase):
         super().__init__()
         self.controllers = controllers
         self.rules_controller = controllers.rules
-        self.event_filter = EventFilter()
+
         self.setStyleSheet(STYLES)
 
         self.ui = RulesPageView()
@@ -71,15 +71,11 @@ class RulesPage(QWidgetBase):
         self.ui.stop_runner.connect(self.handle_stop_runner)
         self.send_rules.connect(self.ui.rules_changed)
         self.ui.validate_open_dialog.clicked.connect(self.display_errors_dialog)
-        self.ui.copy_field.clicked.connect(self.on_copy_fields)
-        self.ui.rules_form_updated.connect(self.apply_event_filter)
 
         self.dialog = RuleSetDialog()
         self.dialog.send_form.connect(self.save_rule_set)
         self.check_for_saved_rules()
 
-        self.event_filter.event_changed.connect(self.focus_changed)
-        self.apply_event_filter()
         self.focus_object_name = None
         self.focus_object_text = None
 
@@ -129,51 +125,12 @@ class RulesPage(QWidgetBase):
         )
         self.controllers.rules.handle_stop_runner()
 
-    @Slot()
-    def apply_event_filter(self):
-        for child in self.findChildren(QLineEdit):
-            child.setFocusPolicy(Qt.StrongFocus)
-            child.installEventFilter(self.event_filter)
-
-    @Slot(str, str)
-    def focus_changed(self, obj_name: str, object_text: str) -> None:
-        """
-        Slot to handle when focus changes between form fields. Updates the current focused
-        object's name and text.
-        """
-        field_name = obj_name.split("**")[0]
+        # field_name = obj_name.split("**")[0]
         # path = obj_name.split("**")[1]
 
-        self.focus_object_name = field_name
-        self.focus_object_text = object_text
+        # self.focus_object_name = field_name
+        # self.focus_object_text = object_text
         # print(path, field_name, object_text)
-
-    # TODO: move to controller
-    def on_copy_fields(self) -> None:
-        """
-        Copy the value from the currently focused field across all rules in the form.
-        """
-        if self.focus_object_name is not None and self.focus_object_text is not None:
-            rules = self.ui.get_forms()
-
-            rule_inputs = [rule.rule_inputs for rule in rules]
-            for rule in rule_inputs:
-                self.find_field_set_field(rule)
-
-    # TODO: move out of here
-    def find_field_set_field(self, rule: dict) -> None:
-        """
-        Traverse through the rule structure to find the field corresponding to the currently
-        focused field, and set its value accordingly.
-        """
-        for key, value in rule.items():
-            if key == self.focus_object_name:
-                if isinstance(value, QLineEdit) or isinstance(value, QTextEdit):
-                    value.setText(self.focus_object_text)
-            elif isinstance(value, dict):
-                self.find_field_set_field(value)
-            elif isinstance(value, list):
-                [self.find_field_set_field(item) for item in value]
 
     def display_errors_dialog(self) -> None:
         """

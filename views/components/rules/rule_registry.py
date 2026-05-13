@@ -7,6 +7,14 @@ class RuleFieldRegistry(FieldRegistry):
         super().__init__()
         self._field_map = {}
 
+    def has_field(self, key):
+        return key in self._registry
+
+    def set_value(self, key, value):
+        if not self.has_field(key):
+            return
+        self.set_text_value(key, value)
+
     def register_field(self, full_path, widget):
         self._registry[full_path] = widget
         self._register_nested_field(full_path, widget)

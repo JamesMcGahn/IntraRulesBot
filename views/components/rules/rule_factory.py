@@ -5,10 +5,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from services.rules.models import Rule
     from .rule_registry import RuleFieldRegistry
-
+    from .rule_event_filter import RuleEventFilter
 from typing import Optional
 
 from PySide6.QtWidgets import QFormLayout, QLabel, QLineEdit, QTextEdit
+from PySide6.QtCore import Qt
 
 from views.components.helpers.widget_factory import WidgetFactory
 
@@ -22,10 +23,13 @@ from .rule_widget import RuleWidget
 
 class RuleFactory:
 
-    def __init__(self, field_registry: RuleFieldRegistry):
+    def __init__(
+        self, field_registry: RuleFieldRegistry, event_filter: RuleEventFilter
+    ):
         self._field_index = {}
         self._rule_guid = None
         self._field_registry = field_registry
+        self._event_filter = event_filter
 
     def build(self, rule: Rule, style=""):
         layout = self.create_rule_form(rule)
@@ -70,9 +74,14 @@ class RuleFactory:
         return rule_outter_layout
 
     def register_field(self, widget, full_path: str):
+        self._configure_event_registration(full_path, widget)
+        self._field_registry.register_field(full_path, widget)
+
+    def _configure_event_registration(self, full_path, widget):
         widget.setProperty("field_path", full_path)
         widget.setProperty("rule_guid", self._rule_guid)
-        self._field_registry.register_field(full_path, widget)
+        widget.setFocusPolicy(Qt.StrongFocus)
+        widget.installEventFilter(self._event_filter)
 
     def build_path(self, *parts) -> str:
         return ".".join(str(p) for p in parts)

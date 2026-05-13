@@ -25,7 +25,7 @@ from views.components.buttons import EditorActionButton, GradientButton
 from views.components.helpers import StyleHelper, WidgetFactory
 from views.components.layouts import ScrollArea, StackedFormWidget
 
-from ...components.rules import RuleAdapter, RuleFactory
+from ...components.rules import RuleAdapter, RuleFactory, RuleEventFilter
 
 from ...components.dialogs import RuleSetDialog
 from ...components.rules.rule_registry import RuleFieldRegistry
@@ -53,6 +53,9 @@ class RulesPageView(QWidget):
     def __init__(self):
         super().__init__()
         self.current_rule_index = 0
+        self.event_filter = RuleEventFilter()
+        self._event_guid = None
+        self._event_path = None
         self.init_ui()
 
     def init_ui(self) -> None:
@@ -194,6 +197,7 @@ class RulesPageView(QWidget):
         self.next_button.clicked.connect(self.show_next_rule)
         self.delete_all.clicked.connect(self.handle_delete_all)
         self.bookmark.clicked.connect(self.handle_bookmark_click)
+        self.copy_field.clicked.connect(self.handle_copy_fields)
 
         self.clone.clicked.connect(self.handle_clone_rule)
         self.validate.clicked.connect(self.handle_validate_rules)
@@ -202,6 +206,7 @@ class RulesPageView(QWidget):
         self.start.clicked.connect(self.handle_start_runner)
         self.stop.clicked.connect(self.handle_stop_runner)
         self.rule_set_dialog.send_form.connect(self.handle_bookmark_rules)
+        self.event_filter.event_changed.connect(self.focus_changed)
 
         # Setup
         self.update_navigation_buttons()
@@ -412,6 +417,31 @@ class RulesPageView(QWidget):
             rule_set_name, rule_set_desc, self.extract_forms_to_dict()
         )
 
+    @Slot(str, str)
+    def focus_changed(self, rule_guid: str, full_path: str) -> None:
+        """
+        Slot to handle when focus changes between form fields. Updates the current focused
+        object's name and text.
+        """
+        self._event_guid = rule_guid
+        self._event_path = full_path
+
+    def handle_copy_fields(self) -> None:
+        """
+        Copy the value from the currently focused field across all rules in the form.
+        """
+        if self._event_guid is None or self._event_path is None:
+            return
+
+        to_copy_adapter = self.stacked_widget.get_form_by_guid(self._event_guid)
+        value = to_copy_adapter.field_registry.get_text_value(self._event_path)
+
+        rule_adapters = self.stacked_widget.get_form_factories()
+        for adapter in rule_adapters:
+            if adapter.guid == self._event_guid:
+                continue
+            adapter.field_registry.set_text_value(self._event_path, value)
+
     def extract_forms_to_dict(self):
         rule_forms = self.get_forms()
         return {"rules": [form.to_validation_dict() for form in rule_forms]}
@@ -492,7 +522,7 @@ class RulesPageView(QWidget):
             self.stacked_widget.remove_by_name("No-Rules-Widget")
             for rule in rules:
                 registry = RuleFieldRegistry()
-                widget = RuleFactory(registry).build(
+                widget = RuleFactory(registry, self.event_filter).build(
                     rule, "margin-top: 0px; padding-left: 0px;padding-top: 0px;"
                 )
                 adapter = RuleAdapter(
