@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
     from settings.models import SettingsFieldMeta
     from .interfaces.settings_meta_provider import SettingsMetaProvider
+    from ..browser import BrowserSessionFactory
 
 from PySide6.QtCore import Signal, QThread
 
@@ -39,11 +40,13 @@ class SettingsValidationService(QObjectBase):
         settings_meta_provider: SettingsMetaProvider,
         session: IntraProviderSession,
         auth_service: AuthService,
+        browser_session_factory: BrowserSessionFactory,
     ):
         super().__init__()
         self.settings_meta_provider = settings_meta_provider
         self._session = session
         self._auth_service = auth_service
+        self._browser_session_factory = browser_session_factory
 
         self._pending_jobs = {}
         self._intra_login_thread = None
@@ -157,7 +160,12 @@ class SettingsValidationService(QObjectBase):
 
         self._intra_login_thread = QThread()
         self._intra_worker = IntraLoginWorker(
-            job_id, batch_object, self._session, self._auth_service, self.logger.insert
+            job_id,
+            batch_object,
+            self._browser_session_factory,
+            self._session,
+            self._auth_service,
+            self.logger.insert,
         )
 
         self._intra_worker.moveToThread(self._intra_login_thread)

@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from .interfaces.schema_meta_provider import SchemaMetaProvider
     from ..auth.auth_service import AuthService
     from ..intra.intra_provider_session import IntraProviderSession
+    from ..browser import BrowserSessionFactory
 
 from PySide6.QtCore import Signal
 
@@ -29,6 +30,7 @@ class ValidationService(QObjectBase):
         schema_meta_provider: SchemaMetaProvider,
         session: IntraProviderSession,
         auth_service: AuthService,
+        browser_session_factory: BrowserSessionFactory,
     ):
         super().__init__()
 
@@ -36,6 +38,7 @@ class ValidationService(QObjectBase):
             settings_meta_provider=settings_meta_provider,
             session=session,
             auth_service=auth_service,
+            browser_session_factory=browser_session_factory,
         )
         self.schema_validation = SchemaValidationService(
             schema_meta_provider=schema_meta_provider

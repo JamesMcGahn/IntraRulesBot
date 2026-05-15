@@ -4,9 +4,10 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..auth.auth_service import AuthService
-
+    from ..browser import BrowserSessionFactory
     from .intra_provider_session import IntraProviderSession
     from services.logger.adapters import LogAdapter
+    from services.browser.models import PlaywrightSession
 from PySide6.QtCore import Signal, QObject
 import threading
 
@@ -14,8 +15,6 @@ import threading
 from services.auth.enums import PROVIDERS
 
 from ..rule_runner.models import RuleRunnerConfig
-from services.selenium import WebDriverManager
-from services.selenium.adapters import SeleniumBrowserAdapter
 from ..auth.enums import AUTHSTATUS
 from ..auth.models.auth_result import AuthResult
 
@@ -28,6 +27,7 @@ class IntraLoginWorker(QObject):
         self,
         job_id,
         batch,
+        browser_session_factory: BrowserSessionFactory,
         session: IntraProviderSession,
         auth_service: AuthService,
         logger: LogAdapter,
@@ -37,6 +37,7 @@ class IntraLoginWorker(QObject):
         self.logger = logger
         self.session = session
         self.auth_service = auth_service
+        self.browser_session_factory = browser_session_factory
         self.job_id = job_id
         self.tenant = batch.get("tenant")
         self.username = batch.get("user_name")
@@ -48,8 +49,8 @@ class IntraLoginWorker(QObject):
             self.username, self.password, self.tenant, self.platform_version
         )
 
-        self.driver = None
-        self.driver_adapter = None
+        self.playwright_session_manager = None
+        self.playwright_session: PlaywrightSession | None = None
         self.shut_down = False
 
     def should_stop(self) -> bool:
@@ -65,7 +66,7 @@ class IntraLoginWorker(QObject):
             "INFO",
         )
         try:
-            self._init_driver(False)
+            self._init_browser(False)
             self._authenticate()
             self.close()
 
@@ -75,48 +76,21 @@ class IntraLoginWorker(QObject):
             self.is_valid.emit(self.job_id, False)
             self.close()
 
-    def _init_driver(self, load_session_cookies=False) -> None:
+    def _init_browser(self, load_session_cookies=False) -> None:
         """
         Initializes the Selenium WebDriver through the WebDriverManager.
         """
-        self.driver_manager = WebDriverManager()
-        self.driver_manager.init_driver()
-        self.driver = self.driver_manager.get_driver()
-        self.driver_adapter = SeleniumBrowserAdapter(self.driver, self.logger)
-        self.driver.get(self.url)
-        if load_session_cookies:
-            self.load_cookies()
+        self.playwright_session_manager = self.browser_session_factory.create_session(
+            PROVIDERS.INTRA
+        )
+        self.playwright_session = self.playwright_session_manager.start()
 
-    def load_cookies(self) -> None:
-        cookies = self.session.convert_jar_to_cookie_list()
-        self.driver_manager.load_cookies(cookies)
-
-    def save_cookies(self) -> None:
-        cookies = self.driver_manager.get_cookies()
-        self.session.update_cookies_from_list(cookies)
-        self.session.save_session()
-
-    def _close_down_driver(self):
-        if not self.driver_manager:
+    def _close_down_browser(self):
+        if not self.playwright_session_manager:
             return
-
-        try:
-            self.save_cookies()
-        except Exception as e:
-            if self.shut_down:
-                return
-            self.logging(f"Skipping cookie save during driver shutdown: {e}", "WARN")
-
-        try:
-            self.driver_manager.close()
-        except Exception as e:
-            if self.shut_down:
-                return
-            self.logging(f"Error closing driver: {e}", "WARN")
-
-        self.driver = None
-        self.driver_adapter = None
-        self.driver_manager = None
+        self.playwright_session_manager.close()
+        self.playwright_session_manager = None
+        self.playwright_session = None
 
     def _authenticate(self) -> AuthResult:
         auth_attempts = 0
@@ -131,7 +105,7 @@ class IntraLoginWorker(QObject):
             result = self.auth_service.ensure_auth(
                 PROVIDERS.INTRA,
                 self.creds,
-                self.driver_adapter,
+                self.playwright_session.browser_adapter,
                 should_stop_cb=self.should_stop,
             )
 
@@ -140,7 +114,7 @@ class IntraLoginWorker(QObject):
                 return self.is_valid.emit(self.job_id, result.success)
             self.logging("Received Failure Authentication.", "WARN")
             if result.status == AUTHSTATUS.BROWSER_ERROR:
-                self._rebuild_browser()
+                self._init_browser()
             auth_attempts += 1
         self.logging(
             "Attempted to log in 2 times. Login Failed due to an error.", "ERROR"
@@ -151,5 +125,5 @@ class IntraLoginWorker(QObject):
         """
         Closes the thread and ensures proper shutdown of all resources.
         """
-        self._close_down_driver()
+        self._close_down_browser()
         self.done.emit()

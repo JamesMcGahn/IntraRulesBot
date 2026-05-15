@@ -7,17 +7,16 @@ if TYPE_CHECKING:
     from ..auth.enums import PROVIDERS
 
     from services.logger.adapters import LogAdapter
-    from services.rule_runner.interfaces import BrowserPort
+    from services.browser.ports import BrowserPort
     from .models.intra_login import IntraLogin
 
 import time
 
 from ..auth.models.auth_validation_response import AuthValidationResponse
 from ..auth.base_auth_service import BaseAuthService
-from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchWindowException
 from ..auth.enums.auth_status import AUTHSTATUS
 from ..auth.models.auth_result import AuthResult
+from playwright.sync_api import Error as PlaywrightError
 
 
 class IntraAuthService(BaseAuthService):
@@ -78,15 +77,16 @@ class IntraAuthService(BaseAuthService):
         self, creds: IntraLogin, browser_port: BrowserPort, should_stop_cb
     ):
         try:
-            browser_port.go_to_page(
+            browser_port.goto(
                 f"https://{creds.tenant}.intradiem.com/?loginoverride=manual"
             )
             browser_port.wait_for_page_ready()
+
             self._enter_login_info(creds, browser_port)
             self._wait_for_session_alert(browser_port)
             browser_port.wait_for_page_ready()
             return self._wait_for_success(browser_port)
-        except NoSuchWindowException:
+        except PlaywrightError as e:
             if should_stop_cb is not None and should_stop_cb():
                 self.logging("Stop Requested. Stopping Auth.")
                 return AuthResult(
@@ -96,6 +96,7 @@ class IntraAuthService(BaseAuthService):
                 )
             msg = "Error Occurred while logging in. The browser was closed"
             self.logging(msg, "ERROR")
+            self.logging(str(e), "DEBUG")
             return AuthResult(
                 success=False, status=AUTHSTATUS.BROWSER_ERROR, message=msg
             )
@@ -119,16 +120,10 @@ class IntraAuthService(BaseAuthService):
         """
         Enters the username and password into the login fields and clicks the login button.
         """
-        browser_port.wait_and_type(By.ID, "inputUserName", creds.user_name)
-        browser_port.wait_and_type(By.ID, "inputPassword", creds.password)
-        browser_port.wait_and_click(By.ID, "btnLogin")
-
-    def _wait_for_session_alert(self, browser_port: BrowserPort) -> None:
-        """
-        Waits for a session alert indicating that a session is open elsewhere, and accepts the alert if present.
-        """
-
-        alert = browser_port.wait_and_accept_alert(None, 5)
+        browser_port.fill("#inputUserName", creds.user_name)
+        browser_port.fill("#inputPassword", creds.password)
+        # browser_port.click("#btnLogin")
+        alert = browser_port.click_and_accept_alert_if_appears("#btnLogin")
         if alert:
             self.logging(
                 "Session open elsewhere alert was present. Accepted alert to proceed with this session.",
@@ -137,14 +132,19 @@ class IntraAuthService(BaseAuthService):
         else:
             self.logging("No session alert was present.", "INFO")
 
+    def _wait_for_session_alert(self, browser_port: BrowserPort) -> None:
+        """
+        Waits for a session alert indicating that a session is open elsewhere, and accepts the alert if present.
+        """
+        pass
+        # alert = browser_port.accept_alert_if_appears(None, 5000)
+
     def _wait_for_success(self, browser_port: BrowserPort) -> AuthResult:
         """
         Waits for the login success by checking for any error messages.
         """
-        error_toast = browser_port.wait_for_element(
-            By.XPATH, '//*[@id="loginErrorContainer"]/span', 5, 1
-        )
 
+        error_toast = browser_port.is_visible("#loginErrorContainer span", 5000)
         if error_toast:
             msg = f"Error during login: {error_toast.text}"
             self.logging(msg, "ERROR")
@@ -152,7 +152,7 @@ class IntraAuthService(BaseAuthService):
                 success=False, status=AUTHSTATUS.INVALID_CREDENTIALS, message=msg
             )
         self.logging("Login error toast not found. Verifying page loaded.", "INFO")
-        main_page_content = browser_port.wait_for_element(By.ID, "ctl00_contentWrapper")
+        main_page_content = browser_port.is_visible("#ctl00_contentWrapper", 5000)
         if main_page_content:
             msg = "Found main content on page. Login Successful."
             self.logging(msg)
