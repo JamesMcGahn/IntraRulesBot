@@ -37,6 +37,7 @@ from services.auth.session import SessionRegistry
 from services.auth.auth_service import AuthService
 from services.auth.enums import PROVIDERS
 from services.logger.adapters import LogAdapter
+from services.browser import BrowserSessionFactory
 
 
 class AppContext(QObject, metaclass=QSingleton):
@@ -70,11 +71,16 @@ class AppContext(QObject, metaclass=QSingleton):
             rule_serializer=self.rule_serializer
         )
 
+        self.browser_session_factory = BrowserSessionFactory(
+            session_registry=self.session_registry, logger=self.log_adapter
+        )
+
         self.validation_service = ValidationService(
             settings_meta_provider=self.settings_manager,
             schema_meta_provider=self.schema_registry,
             session=self.session_registry.for_provider(PROVIDERS.INTRA),
             auth_service=self.auth_service,
+            browser_session_factory=self.browser_session_factory,
         )
         self.rule_settings_provider = SettingsRuleRunnerConfigProvider(
             settings_service=self.settings_manager
@@ -82,6 +88,7 @@ class AppContext(QObject, metaclass=QSingleton):
         self.rule_runner_service = RuleRunnerService(
             session=self.session_registry.for_provider(PROVIDERS.INTRA),
             auth_service=self.auth_service,
+            browser_session_factory=self.browser_session_factory,
             logger=self.log_adapter,
         )
         log_settings = self.settings_manager.get_category(SETTINGSCATEGORIES.LOG)

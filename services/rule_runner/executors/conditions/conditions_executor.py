@@ -3,14 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
-    from ...interfaces import BrowserPort
+    from ....browser.ports import FramePort
     from ....rules.models import Rule
     from ....rules.models.conditions import Condition
     from ....logger.adapters import LogAdapter
 
 from time import sleep
 import threading
-from selenium.webdriver.common.by import By
 from ..wrappers import ExecutorWrappers
 
 from .conditions_stats_executor import ConditionsStatsExecutor
@@ -26,13 +25,13 @@ class ConditionsExecutor:
 
     def __init__(
         self,
-        browser_port: BrowserPort,
+        frame_port: FramePort,
         rule: Rule,
         logger: LogAdapter,
         should_stop: Callable,
     ):
         super().__init__()
-        self.browser_port = browser_port
+        self.frame_port = frame_port
         self.rule = rule
         self.logger = logger
         self.should_stop = should_stop
@@ -68,25 +67,20 @@ class ConditionsExecutor:
         """
         self.logging(f"Selecting provider category for Condition {index+1}...", "INFO")
 
-        self.browser_port.select_item_from_list(
-            By.XPATH,
+        self.frame_port.select_exact_item_from_list(
             '//*[contains(@id, "overlayContent_selectCondition_radMenuCategory")]/ul/li',
             condition.provider_category,
-            retries=5,
         )
-        sleep(1)
 
     def set_provider_instance(self, condition: Condition, index: int) -> None:
         """
         Selects the provider instance for the specified condition.
         """
         self.logging(f"Selecting provider instance for Condition {index+1}...", "INFO")
-        self.browser_port.select_item_from_list(
-            By.XPATH,
+        self.frame_port.select_exact_item_from_list(
             '//*[contains(@id, "overlayContent_selectCondition_radMenuProviderInstance")]/ul/li',
             condition.provider_instance,
         )
-        sleep(1)
 
     def set_provider_condition(self, condition: Condition, index: int) -> None:
         """
@@ -95,13 +89,10 @@ class ConditionsExecutor:
         self.logging(
             f"Selecting condition selection for Condition {index+1}...", "INFO"
         )
-        self.browser_port.select_item_from_list(
-            By.XPATH,
+        self.frame_port.select_exact_item_from_list(
             '//*[contains(@id, "overlayContent_selectCondition_radMenuItem")]/ul/li',
             condition.provider_condition,
-            retries=5,
         )
-        sleep(1)
 
     def execute_details_type(
         self, condition_type: CONDITIONDETAILTYPE, rule: Rule, index: int
@@ -112,9 +103,7 @@ class ConditionsExecutor:
             self.logging(msg, "ERROR")
             raise ValueError(msg)
 
-        executor(
-            self.browser_port, rule, index, self.logger, self.should_stop
-        ).execute()
+        executor(self.frame_port, rule, index, self.logger, self.should_stop).execute()
 
     def add_additional_condition(self, index: int) -> None:
         """
@@ -122,7 +111,4 @@ class ConditionsExecutor:
         """
         if index != len(self.rule.conditions) - 1 and len(self.rule.conditions) > 1:
             self.logging(f"Adding condition {index+2}...", "INFO")
-            self.browser_port.wait_and_click(
-                By.XPATH,
-                '//*[contains(@id, "overlayContent_lblAddCondition")]',
-            )
+            self.frame_port.click('[id*="overlayContent_lblAddCondition"]')

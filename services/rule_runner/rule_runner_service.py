@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from ..logger.adapters import LogAdapter
     from ..base.models import JobRequest
     from .models import RuleRunnerRequestPayload
+    from ..browser import BrowserSessionFactory
 from PySide6.QtCore import Signal, QThread, QObject
 from .rule_runner_worker import RuleRunnerWorker
 
@@ -20,6 +21,7 @@ class RuleRunnerService(QObject):
         self,
         session: IntraProviderSession,
         auth_service: AuthService,
+        browser_session_factory: BrowserSessionFactory,
         logger: LogAdapter,
     ):
         super().__init__()
@@ -28,6 +30,7 @@ class RuleRunnerService(QObject):
         self._session = session
         self._auth_service = auth_service
         self._logger = logger
+        self._browser_session_factory = browser_session_factory
 
     def start_run(self, job: JobRequest[RuleRunnerRequestPayload]) -> None:
         if self._thread and self._thread.isRunning():
@@ -35,7 +38,11 @@ class RuleRunnerService(QObject):
 
         self._thread = QThread()
         self._worker = RuleRunnerWorker(
-            job, self._session, self._auth_service, self._logger
+            job,
+            self._browser_session_factory,
+            self._session,
+            self._auth_service,
+            self._logger,
         )
 
         self._worker.moveToThread(self._thread)

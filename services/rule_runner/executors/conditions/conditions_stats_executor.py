@@ -3,14 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
-    from ...interfaces import BrowserPort
+    from ....browser.ports import FramePort
     from ....rules.models import Rule
     from ....rules.models.conditions import ConditionStatsDetails
     from ....logger.adapters import LogAdapter
 
 from ....rules.enums import QUEUESSOURCE
 
-from selenium.webdriver.common.by import By
 import threading
 from ..wrappers import ExecutorWrappers
 
@@ -24,14 +23,14 @@ class ConditionsStatsExecutor:
 
     def __init__(
         self,
-        browser_port: BrowserPort,
+        frame_port: FramePort,
         rule: Rule,
         index: int,
         logger: LogAdapter,
         should_stop: Callable,
     ):
         super().__init__()
-        self.browser_port = browser_port
+        self.frame_port = frame_port
         self.rule = rule
         self.index = index
         self.condition = None
@@ -81,14 +80,12 @@ class ConditionsStatsExecutor:
             f"Selecting stats equality comparison operator for Condition {self.index+1}...",
             "INFO",
         )
-        self.browser_port.wait_and_click(
-            By.XPATH,
-            '//*[contains(@id, "overlayContent_conditionParameters_ddExposedDataOperator_Arrow")]',
+        self.frame_port.click(
+            '[id*="overlayContent_conditionParameters_ddExposedDataOperator_Arrow"]'
         )
 
         # equality comparison operator selection
-        self.browser_port.select_item_from_list(
-            By.XPATH,
+        self.frame_port.select_exact_item_from_list(
             '//*[contains(@id, "overlayContent_conditionParameters_ddExposedDataOperator_DropDown")]/div/ul/li',
             condition_details.equality_operator,
         )
@@ -101,9 +98,8 @@ class ConditionsStatsExecutor:
             f"Selecting stats threshold for Condition {self.index+1}...",
             "INFO",
         )
-        self.browser_port.wait_and_type(
-            By.XPATH,
-            '//*[contains(@id, "overlayContent_conditionParameters_tbExposedDataValue")]',
+        self.frame_port.fill(
+            '[id*="overlayContent_conditionParameters_tbExposedDataValue"]',
             condition_details.equality_threshold,
         )
 
@@ -115,23 +111,17 @@ class ConditionsStatsExecutor:
             f"Selecting queue source as 'queues' for Condition {self.index+1}...",
             "INFO",
         )
-        self.browser_port.wait_and_click(
-            By.XPATH,
-            '//*[contains(@id, "overlayContent_conditionParameters_ctl16_1")]',
+        self.frame_port.click(
+            '[id*="overlayContent_conditionParameters_ctl16_1"]',
         )
 
         self.logging(
             f"Selecting queue all listed queues for Condition {self.index+1}...",
             "INFO",
         )
-        self.browser_port.wait_and_click(
-            By.XPATH,
-            '//*[contains(@id, "overlayContent_conditionParameters_ctl22_Arrow")]',
+        self.frame_port.click(
+            '[id*="overlayContent_conditionParameters_ctl22_Arrow"]',
         )
-
-        self.browser_port.click_all_items_in_list(
-            By.XPATH,
-            '//*[contains(@id, "overlayContent_conditionParameters_ctl22_DropDown")]/div/ul/li',
-            retries=5,
-            item_name="queues in queues list",
+        self.frame_port.click_all_items_in_list(
+            '//*[contains(@id, "overlayContent_conditionParameters_ctl22_DropDown")]/div/ul/li'
         )

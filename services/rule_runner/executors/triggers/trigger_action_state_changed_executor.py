@@ -3,15 +3,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
-    from ...interfaces import BrowserPort
+    from ....browser.ports import FramePort
     from ....rules.models import Rule
     from ....rules.models.triggers.action_based import AgentStateChangeDetails
     from ....logger.adapters import LogAdapter
 
 from ....rules.enums import STATEEQUALITYOPERATOR
-from time import sleep
 import threading
-from selenium.webdriver.common.by import By
 
 from ..wrappers import ExecutorWrappers
 
@@ -25,13 +23,13 @@ class TriggerActionStateChangedExecutor:
 
     def __init__(
         self,
-        browser_port: BrowserPort,
+        frame_port: FramePort,
         rule: Rule,
         logger: LogAdapter,
         should_stop: Callable,
     ):
         super().__init__()
-        self.browser_port = browser_port
+        self.frame_port = frame_port
         self._rule_condition_queues_source = "queues"
         self.logger = logger
         self.should_stop = should_stop
@@ -58,12 +56,10 @@ class TriggerActionStateChangedExecutor:
         self.set_user_list()
 
     def set_state_changed_to(self, state):
-        self.browser_port.wait_and_click(
-            By.XPATH,
-            '//*[contains(@id, "overlayContent_triggerParameters_agentStateSelectValue_Arrow")]',
+        self.frame_port.click(
+            '[id*="overlayContent_triggerParameters_agentStateSelectValue_Arrow"]'
         )
-        self.browser_port.select_item_from_list(
-            By.XPATH,
+        self.frame_port.select_exact_item_from_list(
             '//*[contains(@id, "overlayContent_triggerParameters_agentStateSelectValue_DropDown")]/div/ul/li',
             state,
         )
@@ -72,9 +68,8 @@ class TriggerActionStateChangedExecutor:
         """
         Sets the the aux code for the state changed to.
         """
-        self.browser_port.wait_and_type(
-            By.XPATH,
-            '//*[contains(@id, "overlayContent_triggerParameters_agentStateAuxCodeValue")]',
+        self.frame_port.fill(
+            '[id*="overlayContent_triggerParameters_agentStateAuxCodeValue"]',
             aux,
         )
 
@@ -87,11 +82,9 @@ class TriggerActionStateChangedExecutor:
             self.set_state_changed_to(agent_changed.state)
             self.set_agent_aux(agent_changed.aux)
 
-            self.browser_port.wait_and_click(
-                By.XPATH,
-                '//*[contains(@id, "overlayContent_triggerParameters_divParameters")]/div[1]/div[1]/div[3]/img',
+            self.frame_port.click(
+                '//*[contains(@id, "overlayContent_triggerParameters_divParameters")]/div[1]/div[1]/div[3]/img'
             )
-            sleep(1)
 
     def set_equality_operator(self) -> None:
         """
@@ -104,27 +97,17 @@ class TriggerActionStateChangedExecutor:
             "INFO",
         )
         if equality_operator == STATEEQUALITYOPERATOR.EQUAL_TO:
-            self.browser_port.wait_and_click(
-                By.XPATH,
-                '//*[contains(@id, "overlayContent_triggerParameters_ctl16_0")]',
-            )
+            self.frame_port.click('[id*="overlayContent_triggerParameters_ctl16_0"]')
 
         elif equality_operator == STATEEQUALITYOPERATOR.NOT_EQUAL_TO:
-            self.browser_port.wait_and_click(
-                By.XPATH,
-                '//*[contains(@id, "overlayContent_triggerParameters_ctl16_1")]',
-            )
+            self.frame_port.click('[id*="overlayContent_triggerParameters_ctl16_1"]')
 
     def set_user_list(self) -> None:
         """
         Sets the user list for the state changed to rule.
         """
-        self.browser_port.wait_and_click(
-            By.XPATH,
-            '//*[contains(@id, "user_filter_static_id_Arrow")]',
-        )
-        self.browser_port.select_item_from_list(
-            By.XPATH,
+        self.frame_port.click('[id*="user_filter_static_id_Arrow"]')
+        self.frame_port.select_exact_item_from_list(
             '//*[contains(@id, "user_filter_static_id_DropDown")]/div/ul/li',
             self.action_based_details.user_list,
         )

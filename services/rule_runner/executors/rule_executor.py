@@ -3,21 +3,22 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
-    from ..interfaces import BrowserPort
+    from ...browser.ports import BrowserPort
     from ...rules.models import Rule
     from ...logger.adapters import LogAdapter
+    from ...browser.ports import FramePort
 
-from time import sleep
 import threading
-from selenium.common.exceptions import (
-    NoSuchFrameException,
-    WebDriverException,
-    TimeoutException,
-    NoSuchElementException,
-)
-from selenium.webdriver.common.by import By
 
-from ..errors import DuplicateRuleNameException, StoppedRequestException
+from playwright.sync_api import Error as PlaywrightError
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+
+
+from ..errors import (
+    DuplicateRuleNameException,
+    StoppedRequestException,
+    PlaywrightSessionLostException,
+)
 
 from .actions import ActionsExecutor
 from .conditions import ConditionsExecutor
@@ -66,47 +67,43 @@ class RuleExecutor:
             )
 
             self.logging("Navigating to the Rules Page...", "INFO")
-            self.browser_port.go_to_page(
-                self.url + "/ManagerConsole/Delivery/Rules.aspx"
-            )
+            self.browser_port.goto(self.url + "/ManagerConsole/Delivery/Rules.aspx")
 
-            self.browser_port.wait_and_click(
-                By.ID,
-                "ctl00_ActionBarContent_rbAction_Add",
-            )
-            self.switch_to_rule_module()
+            self.browser_port.click("#ctl00_ActionBarContent_rbAction_Add", 3000)
+            frame_port = self.switch_to_rule_module()
 
-            if self.is_tutorial_page_present():
+            if self.is_tutorial_page_present(frame_port=frame_port):
                 self.logging("Tutorial Page is present...", "INFO")
-                self.next_page()
+                self.next_page(frame_port=frame_port)
 
-            self.set_rule_name(self.rule_name)
-            self.execute_triggers()
+            self.set_rule_name(frame_port=frame_port, rule_name=self.rule_name)
+
+            self.execute_triggers(frame_port=frame_port)
             if self.should_stop():
                 return self._build_stopped_result()
 
-            self.next_page()
+            self.next_page(frame_port=frame_port)
 
-            self.execute_conditions()
+            self.execute_conditions(frame_port=frame_port)
             if self.should_stop():
                 return self._build_stopped_result()
 
-            self.next_page()
+            self.next_page(frame_port=frame_port)
 
-            self.execute_actions()
+            self.execute_actions(frame_port=frame_port)
             if self.should_stop():
                 return self._build_stopped_result()
 
-            self.set_rule_category()
+            self.set_rule_category(frame_port=frame_port)
             if self.should_stop():
                 return self._build_stopped_result()
 
-            self.switch_to_rule_module()
-            self.next_page()
+            # self.switch_to_rule_module()
+            self.next_page(frame_port=frame_port)
             if self.should_stop():
                 return self._build_stopped_result()
 
-            self.submit_rule()
+            self.submit_rule(frame_port=frame_port)
             if self.should_stop():
                 return self._build_stopped_result()
 
@@ -139,7 +136,7 @@ class RuleExecutor:
                 message="Rule name still exists after 2 renaming tries.",
             )
 
-        except NoSuchFrameException:
+        except PlaywrightSessionLostException:
             if self.should_stop():
                 return RuleExecutionResult(
                     rule_guid=self.rule.guid,
@@ -160,7 +157,7 @@ class RuleExecutor:
                 message="Browser doesnt exist.",
             )
 
-        except TimeoutException:
+        except PlaywrightTimeoutError:
             self.logging("Finding element timed out. Rule Failed.", "ERROR")
             return RuleExecutionResult(
                 rule_guid=self.rule.guid,
@@ -169,16 +166,8 @@ class RuleExecutor:
                 status=RULEEXECSTATUS.TIMEOUT_ERROR,
                 message="Element doesnt exist.",
             )
-        except NoSuchElementException:
-            self.logging("Can't Find Element. Rule Failed.", "ERROR")
-            return RuleExecutionResult(
-                rule_guid=self.rule.guid,
-                rule_name=self.rule.rule_name,
-                success=False,
-                status=RULEEXECSTATUS.BROWSER_ERROR,
-                message="Element doesnt exist.",
-            )
-        except WebDriverException as e:
+
+        except PlaywrightError as e:
             self.logging(
                 f"Something went wrong in RuleWorker. Rule Failed.: {e}", "ERROR"
             )
@@ -210,125 +199,110 @@ class RuleExecutor:
                 message="Error happened in rule execution.",
             )
 
-    def execute_triggers(self) -> None:
+    def execute_triggers(self, frame_port: FramePort) -> None:
         """
         Starts processing the triggers for the rule by initializing the TriggerWorker.
         """
         self.trigger = TriggerExecutor(
-            self.browser_port, self.rule, self.logger, self.should_stop
+            frame_port, self.rule, self.logger, self.should_stop
         )
         self.trigger.execute()
 
-    def execute_conditions(self) -> None:
+    def execute_conditions(self, frame_port: FramePort) -> None:
         """
         Starts processing the conditions for the rule by initializing the ConditionsWorker.
         """
 
         if self.rule.conditions:
             self.conditions = ConditionsExecutor(
-                self.browser_port, self.rule, self.logger, self.should_stop
+                frame_port, self.rule, self.logger, self.should_stop
             )
             self.conditions.execute()
 
-    def execute_actions(self) -> None:
+    def execute_actions(self, frame_port: FramePort) -> None:
         """
         Starts processing the actions for the rule by initializing the ActionsWorker.
         """
 
         if self.rule.actions:
             executor = ActionsExecutor(
-                self.browser_port, self.rule, self.logger, self.should_stop
+                frame_port, self.rule, self.logger, self.should_stop
             )
             executor.execute()
 
-    def switch_to_rule_module(self) -> None:
+    def switch_to_rule_module(self) -> FramePort:
         """
         Switches the WebDriver to the rule modal frame to interact with rule elements.
         """
         self.logging("Switching to the Rule Modal...", "INFO")
-        self.browser_port.switch_to_frame(By.NAME, "RadWindowAddEditRule")
+        return self.browser_port.frame_locator('iframe[name="RadWindowAddEditRule"]')
 
-    def set_rule_name(self, rule_name: str) -> None:
+    def set_rule_name(self, frame_port: FramePort, rule_name: str) -> None:
         """
         Sets the rule name in the rule creation form.
         """
         self.logging("Setting the Rule Name...", "INFO")
-        self.browser_port.wait_and_type(
-            By.XPATH,
-            '//*[contains(@id, "overlayRuleProgressArea_tbRuleName")]',
-            rule_name,
-        )
 
-    def next_page(self) -> None:
+        frame_port.fill('[id*="overlayRuleProgressArea_tbRuleName"]', rule_name)
+
+    def next_page(self, frame_port: FramePort) -> None:
         """
         Navigates to the next page in the rule creation form.
         """
         self.logging("Navigating to the Next Page...", "INFO")
-        self.browser_port.wait_and_click(
-            By.XPATH,
-            '//*[contains(@id, "overlayButtons_rbContinue_input")]',
-            wait_time=35,
-        )
 
-    def is_tutorial_page_present(self) -> bool:
+        frame_port.click('[id*="overlayButtons_rbContinue_input"]')
+
+    def is_tutorial_page_present(self, frame_port: FramePort) -> bool:
         """
         Checks if the tutorial page is present and can be skipped.
 
         Returns:
             bool: True if the tutorial page is present, False otherwise.
         """
-        return self.browser_port.wait_for_element(
-            By.XPATH,
-            '//*[contains(@id, "overlayButtonsLeft_cbDontAskLead")]',
-            wait_time=5,
-            retries=1,
-            raise_exception=False,
-        )
+        return frame_port.is_visible('[id*="overlayButtonsLeft_cbDontAskLead"]')
 
-    def submit_rule(self) -> None:
+    def submit_rule(self, frame_port: FramePort) -> None:
         """
         Submits the rule form, handling duplicate rule alerts by renaming the rule and retrying.
         """
 
         self.logging(f"Submitting Rule - {self.rule_name }...", "INFO")
 
-        def handle_duplicate_alert():
+        def submit_rule_succeed():
             for _ in range(2):
 
                 # Retry twice before giving up
-                alert = self.wait_for_dup_rule_alert(10)
+
+                alert = self.browser_port.frame_click_and_accept_alert_if_appears(
+                    frame_port,
+                    '[id*="overlayButtons_rbSubmit_input"]',
+                    "A Rule with this name already exists",
+                    10000,
+                )
                 if alert:
-                    self.rename_rule()
+                    self.rename_rule(frame_port)
                     self.logging(
                         f"Retrying Rule Submission for renamed rule - {self.rule_name }...",
                         "INFO",
                     )
-                    self.browser_port.wait_and_click(
-                        By.XPATH,
-                        '//*[contains(@id, "overlayButtons_rbSubmit_input")]',
-                        15,
-                    )
+                    continue
+
                 else:
-                    return False  # No alert found, submission is successful
-            return True
+                    return True  # No alert found, submission is successful
+            return False
 
-        self.browser_port.wait_and_click(
-            By.XPATH,
-            '//*[contains(@id, "overlayButtons_rbSubmit_input")]',
-            15,
-        )
-        if handle_duplicate_alert():
-            if self.wait_for_dup_rule_alert(5):
-                self.logging(
-                    f"Rule '{self.rule_name}' could not be submitted after multiple retries.",
-                    "ERROR",
-                )
-                raise DuplicateRuleNameException
+        if not submit_rule_succeed():
+            self.logging(
+                f"Rule '{self.rule_name}' could not be submitted after multiple retries.",
+                "ERROR",
+            )
+            raise DuplicateRuleNameException
 
-        self.browser_port.switch_to_main_frame()
+        # self.browser_port.switch_to_main_frame()
         self.success_message()
 
-    def rename_rule(self) -> None:
+    def rename_rule(self, frame_port: FramePort) -> None:
         """
         Renames the rule in case of a duplicate name error.
         """
@@ -339,44 +313,38 @@ class RuleExecutor:
             f"Trying to rename rule: {old_rule_name} as {self.rule_name}",
             "WARN",
         )
-        self.set_rule_name(self.rule_name)
+        self.set_rule_name(frame_port, self.rule_name)
 
     def success_message(self) -> None:
         """
         Logs a success message after the rule has been successfully created.
         """
-        self.browser_port.wait_for_element(
-            By.ID,
-            "ctl00_ActionBarContent_rbAction_Add",
-            raise_exception=True,
+        success = self.browser_port.is_visible(
+            "#ctl00_ActionBarContent_rbAction_Add", 10000
         )
+        print(success, "*******************")
+        if not success:
+            raise RuntimeError("No Success Message")
         self.logging(f"Rule: {self.rule_name} has been created.", "INFO")
 
-    def set_rule_category(self) -> None:
+    def set_rule_category(self, frame_port: FramePort) -> None:
         """
         Sets the rule category in the rule creation form.
         """
         self.logging("Setting the rule category", "INFO")
-        self.browser_port.wait_and_click(
-            By.XPATH,
-            '//*[contains(@id, "overlayContent_divAddEditAction")]/div[3]/a',
+        frame_port.click(
+            '//*[contains(@id, "overlayContent_divAddEditAction")]/div[3]/a'
         )
-        sleep(1)
-        self.browser_port.switch_to_main_frame()
-        self.browser_port.switch_to_frame(By.NAME, "RadWindowAddEditRuleSettings")
-        self.browser_port.wait_and_click(
-            By.XPATH,
-            '//*[contains(@id, "ddRuleCategory_Arrow")]',
+
+        category_frame = self.browser_port.frame_locator(
+            'iframe[name="RadWindowAddEditRuleSettings"]'
         )
-        self.browser_port.select_item_from_list(
-            By.XPATH,
+        category_frame.click('[id*="ddRuleCategory_Arrow"]')
+        category_frame.select_exact_item_from_list(
             '//*[contains(@id, "ddRuleCategory_DropDown")]/div/ul/li',
             self.rule.rule_category,
         )
-
-        sleep(1)
         self.logging("Switching the main frame", "INFO")
-        self.browser_port.switch_to_main_frame()
 
     def wait_for_dup_rule_alert(self, wait_time: int) -> bool:
         """
@@ -384,6 +352,7 @@ class RuleExecutor:
         Returns:
             bool: True if the alert is found and accepted, False otherwise.
         """
+        alert_present = self.browser_port.click_and_accept_alert_if_appears()
         alert_present = self.browser_port.wait_and_accept_alert(
             "A Rule with this name already exists", wait_time
         )

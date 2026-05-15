@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
-    from ...interfaces import BrowserPort
+    from ....browser.ports import FramePort
     from ....rules.models import Rule
     from ....rules.models.triggers import ActionTrigger
     from ....logger.adapters import LogAdapter
@@ -27,17 +27,13 @@ class TriggerActionBasedExectuor:
 
     def __init__(
         self,
-        browser_port: BrowserPort,
+        frame_port: FramePort,
         rule: Rule,
         logger: LogAdapter,
         should_stop: Callable,
     ):
-        """
-        Initializes the ActionsWorker with the provided driver and rule data.
-        Sets up the necessary connections for interacting with web elements.
-        """
         super().__init__()
-        self.browser_port = browser_port
+        self.frame_port = frame_port
         self.rule = rule
         self._rule_condition_queues_source = "queues"
         self.logger = logger
@@ -62,10 +58,7 @@ class TriggerActionBasedExectuor:
             "INFO",
         )
         self.logging("Choosing Trigger Event", "INFO")
-        self.browser_port.wait_and_click(
-            By.XPATH,
-            '//*[contains(@id, "overlayContent_lblAddEventSetFrequency")]',
-        )
+        self.frame_port.click('[id*="overlayContent_lblAddEventSetFrequency"]')
         action_based = self.rule.trigger
         self.set_provider_category(action_based)
         self.set_provider_instance(action_based)
@@ -79,26 +72,20 @@ class TriggerActionBasedExectuor:
         Selects the provider category for the specified action.
         """
         self.logging("Selecting provider category for Action Trigger", "INFO")
-
-        self.browser_port.select_item_from_list(
-            By.XPATH,
+        self.frame_port.select_exact_item_from_list(
             '//*[contains(@id, "overlayContent_selectTrigger_radMenuCategory")]/ul/li',
             action_trigger.provider_category,
         )
-        sleep(1)
 
     def set_provider_instance(self, action_trigger: ActionTrigger) -> None:
         """
         Selects the provider instance for the specified condition.
         """
         self.logging("Selecting provider instance for Action Trigger", "INFO")
-        self.browser_port.select_item_from_list(
-            By.XPATH,
+        self.frame_port.select_exact_item_from_list(
             '//*[contains(@id, "overlayContent_selectTrigger_radMenuProviderInstance")]/ul/li',
             action_trigger.provider_instance,
         )
-
-        sleep(1)
 
     def set_provider_condition(self, action_trigger: ActionTrigger) -> None:
         """
@@ -106,11 +93,9 @@ class TriggerActionBasedExectuor:
         """
         self.logging("Selecting condition selection for Action Trigger", "INFO")
 
-        self.browser_port.select_item_from_list(
+        self.frame_port.select_exact_item_from_list(
             By.XPATH,
             '//*[contains(@id, "overlayContent_selectTrigger_radMenuItem")]/ul/li',
-            action_trigger.provider_condition,
-            5,
         )
 
         sleep(1)
@@ -122,4 +107,4 @@ class TriggerActionBasedExectuor:
             self.logging(msg, "ERROR")
             raise ValueError(msg)
 
-        executor(self.browser_port, rule, self.logger, self.should_stop).execute()
+        executor(self.frame_port, rule, self.logger, self.should_stop).execute()

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from services.auth.session import BaseProviderSession
     from services.logger.adapters import LogAdapter
+    from .models import PlaywrightConfig
 
 import os
 
@@ -15,13 +16,19 @@ from .adapters import PlaywrightBrowserAdapter
 
 class PlaywrightSessionManager:
 
-    def __init__(self, provider_session: BaseProviderSession, logger: LogAdapter):
+    def __init__(
+        self,
+        provider_session: BaseProviderSession,
+        logger: LogAdapter,
+        config: PlaywrightConfig,
+    ):
         self.provider_session = provider_session
         self.logger = logger
         self.playwright = None
         self.browser = None
         self.context = None
         self.page = None
+        self.config = config
 
         from utils.files import PathManager
 
@@ -34,11 +41,13 @@ class PlaywrightSessionManager:
 
     def start(self) -> PlaywrightSession:
         self.playwright = sync_playwright().start()
-        self.browser = self.playwright.chromium.launch(headless=False, slow_mo=1000)
+        self.browser = self.playwright.chromium.launch(
+            headless=self.config.headless, slow_mo=self.config.slow_mo
+        )
         self.context = self.browser.new_context()
 
         cookies = self.provider_session.convert_jar_to_cookie_list()
-        if cookies:
+        if self.config.load_cookies and cookies:
             self.context.add_cookies(cookies)
 
         self.page = self.context.new_page()

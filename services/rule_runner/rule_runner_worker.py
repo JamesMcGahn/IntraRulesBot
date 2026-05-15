@@ -9,6 +9,8 @@ if TYPE_CHECKING:
     from services.logger.adapters import LogAdapter
     from ..base.models import JobRequest
     from .models import RuleRunnerRequestPayload
+    from ..browser import BrowserSessionFactory
+    from services.browser.models import PlaywrightSession
 from PySide6.QtCore import Signal, QObject
 import threading
 from collections import deque
@@ -20,8 +22,6 @@ from services.auth.enums import PROVIDERS
 from .executors import RuleExecutor
 from .models import RuleRunItem, RuleExecutionResult
 from .enums import RULERUNSTATUS, RULEEXECSTATUS
-from services.selenium import WebDriverManager
-from services.selenium.adapters import SeleniumBrowserAdapter
 from ..auth.enums import AUTHSTATUS
 from ..auth.models.auth_result import AuthResult
 
@@ -33,6 +33,7 @@ class RuleRunnerWorker(QObject):
     def __init__(
         self,
         job: JobRequest[RuleRunnerRequestPayload],
+        browser_session_factory: BrowserSessionFactory,
         session: IntraProviderSession,
         auth_service: AuthService,
         logger: LogAdapter,
@@ -42,6 +43,7 @@ class RuleRunnerWorker(QObject):
         self.logger = logger
         self.session = session
         self.auth_service = auth_service
+        self.browser_session_factory = browser_session_factory
 
         self.creds = job.payload.config
         self.url = f"https://{self.creds.tenant}.intradiem.com/"
@@ -56,6 +58,9 @@ class RuleRunnerWorker(QObject):
         self.total_count = len(self.rule_queue)
         self.shut_down = False
 
+        self.playwright_session_manager = None
+        self.playwright_session: PlaywrightSession | None = None
+
     def should_stop(self) -> bool:
         return self.shut_down
 
@@ -69,59 +74,32 @@ class RuleRunnerWorker(QObject):
             "INFO",
         )
         try:
-            self._init_driver(True)
+            self._init_browser(True)
             self.run_queue()
 
         except Exception as e:
             print(e)
             self.logging("Fatal Error", "ERROR")
 
-    def _init_driver(self, load_session_cookies=False) -> None:
+    def _init_browser(self, load_session_cookies=False) -> None:
         """
         Initializes the Selenium WebDriver through the WebDriverManager.
         """
-        self.driver_manager = WebDriverManager()
-        self.driver_manager.init_driver()
-        self.driver = self.driver_manager.get_driver()
-        self.driver_adapter = SeleniumBrowserAdapter(self.driver, self.logger)
-        self.driver.get(self.url)
-        if load_session_cookies:
-            self.load_cookies()
+        self.playwright_session_manager = self.browser_session_factory.create_session(
+            PROVIDERS.INTRA
+        )
+        self.playwright_session = self.playwright_session_manager.start()
 
-    def load_cookies(self) -> None:
-        cookies = self.session.convert_jar_to_cookie_list()
-        self.driver_manager.load_cookies(cookies)
-
-    def save_cookies(self) -> None:
-        cookies = self.driver_manager.get_cookies()
-        self.session.update_cookies_from_list(cookies)
-        self.session.save_session()
-
-    def _close_down_driver(self):
-        if not self.driver_manager:
+    def _close_down_browser(self):
+        if not self.playwright_session_manager:
             return
-
-        try:
-            self.save_cookies()
-        except Exception as e:
-            if self.shut_down:
-                return
-            self.logging(f"Skipping cookie save during driver shutdown: {e}", "WARN")
-
-        try:
-            self.driver_manager.close()
-        except Exception as e:
-            if self.shut_down:
-                return
-            self.logging(f"Error closing driver: {e}", "WARN")
-
-        self.driver = None
-        self.driver_adapter = None
-        self.driver_manager = None
+        self.playwright_session_manager.close()
+        self.playwright_session_manager = None
+        self.playwright_session = None
 
     def _rebuild_browser(self):
-        self._close_down_driver()
-        self._init_driver(load_session_cookies=False)
+        self._close_down_browser()
+        self._init_browser(load_session_cookies=False)
 
     def _authenticate(self) -> AuthResult:
         auth_attempts = 0
@@ -136,7 +114,7 @@ class RuleRunnerWorker(QObject):
             result = self.auth_service.ensure_auth(
                 PROVIDERS.INTRA,
                 self.creds,
-                self.driver_adapter,
+                self.playwright_session.browser_adapter,
                 should_stop_cb=self.should_stop,
             )
 
@@ -170,7 +148,7 @@ class RuleRunnerWorker(QObject):
                 item.status = RULERUNSTATUS.RUNNING
                 self.current_executor = RuleExecutor(
                     self.url,
-                    self.driver_adapter,
+                    self.playwright_session.browser_adapter,
                     item.rule,
                     self.logger,
                     self.should_stop,
@@ -265,11 +243,11 @@ class RuleRunnerWorker(QObject):
             RULERUNSTATUS.STOPPED, "Rule runner manually stopped."
         )
         self.progress.emit(self.total_count, self.total_count)
-        self._close_down_driver()
+        self._close_down_browser()
 
     def close(self) -> None:
         """
         Closes the thread and ensures proper shutdown of all resources.
         """
-        self._close_down_driver()
+        self._close_down_browser()
         self.done.emit()
