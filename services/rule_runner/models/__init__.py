@@ -3,6 +3,9 @@ from .rule_execution_result import RuleExecutionResult
 from .rule_rule_item import RuleRunItem
 from .rule_runner_request import RuleRunnerRequestPayload
 from .rule_runner_response import RuleRunnerResponse
+from .rule_execution_context import RuleExecutionContext
+from .rule_execution_state import RuleExecutionState
+from .executor_task_ref import ExecutorTaskRef
 
 __all__ = [
     "RuleRunnerConfig",
@@ -10,4 +13,7 @@ __all__ = [
     "RuleRunItem",
     "RuleRunnerRequestPayload",
     "RuleRunnerResponse",
+    "ExecutorTaskRef",
+    "RuleExecutionContext",
+    "RuleExecutionState",
 ]

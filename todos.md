@@ -2,28 +2,40 @@
 
 #### TO-DO NOW
 
-- [ ] :#FEATURE : Default Provider Rule Sets
-  - [ ] : #TODO : Ruleset Model
-  - [ ] : #TODO : Ruleset Page
-    - [ ] : #TODO : Display User Saved Rulesets
-    - [ ] : #TODO : Display Default Rulesets
-  - [ ] : #TODO : Allow User to Load Ruleset
-  - [ ] : #TODO : Allow User to Save Ruleset
+- [ ] : Base Executors
+  - [ ] : Standarize with Flow and Task Map
+  - [ ] : Implement context container
+  - [ ] : Implement state container
+- [ ] : Legacy and Modern Executor path
+- [ ] : load selectors from file(s)
 
 #### TO-DO LATER
 
-- [ ] :#TODO : Setting to turn off Toasts
+- [ ] :#FEATURE : Setting to turn off Toasts
 - [ ] :#TODO : switch page to rules page after open file validation
 - [ ] :#FEATURE : Action Based Triggers
-  - [ ] :#TODO : Agent State Changed
   - [ ] :#TODO : Time in Current State
   - [ ] :#TODO : Logged In
   - [ ] :#TODO : Logged out
+- [ ] : TODO : Remove implicit passing of logger to services
 - [ ] :#FEATURE : Stats Queue Selection
 - [ ] :#FEATURE : Action: Create List
 - [ ] :#FEATURE : Action: Update User
 
 ### COMPLETED
+
+#### 2.0.0
+
+- [x] : stablize app with sound architecture -> controllers, separation of services etc
+- [x] : convert to playwright
+- [x] : Default Provider Rule Sets
+- [x] : Ruleset Model
+- [x] : Ruleset Page
+- [x] : Display User Saved Rulesets
+- [x] : Display Default Rulesets
+- [x] : Allow User to Load Ruleset
+- [x] : Allow User to Save Ruleset
+- [x] : Agent Changed State Trigger
 
 #### 1.0.0
 
