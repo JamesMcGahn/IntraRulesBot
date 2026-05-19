@@ -21,7 +21,10 @@ RULES_SCHEMA = {
                 "details": {
                     "type": "object",
                     "properties": {
-                        "action_type": {"type": "string", "enum": ["state_changed"]},
+                        "action_type": {
+                            "type": "string",
+                            "enum": ["state_changed", "user_logged_in"],
+                        },
                         "state": {
                             "type": "array",
                             "minItems": 1,
@@ -55,7 +58,15 @@ RULES_SCHEMA = {
                             "then": {
                                 "required": ["state", "equality_operator", "user_list"]
                             },
-                        }
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "action_type": {"const": "user_logged_in"}
+                                }
+                            },
+                            "then": {"required": ["user_list"]},
+                        },
                     ],
                 },
             },

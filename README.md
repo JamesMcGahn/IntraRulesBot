@@ -76,3 +76,15 @@ In the spec file, update the paths to exec_directory, icon and python_path. Then
 ```bash
 pyside6-deploy
 ```
+
+## How To Add Rule Use Case
+
+- update schema
+- add scope detailed dataclass
+- update detail enum
+- update services/rules/rule_builder
+- update views/rules/rule_factory
+- update services/profiles/rules dc
+- update the profile implementation with selectors
+- add detailed executor
+- update scope executor

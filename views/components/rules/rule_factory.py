@@ -17,7 +17,11 @@ from services.rules.models.triggers import FrequencyTrigger
 from services.rules.models.triggers.action_based import ActionTrigger
 from services.rules.models.conditions import Condition
 from services.rules.models.actions import Action
-
+from services.rules.enums import (
+    ACTIONDETAILTYPE,
+    ACTIONTRIGGERDETAILTYPE,
+    CONDITIONDETAILTYPE,
+)
 from .rule_widget import RuleWidget
 
 
@@ -278,16 +282,18 @@ class RuleFactory:
 
         # Check details for condition type
         details = trigger.details
-        if details.action_type == "state_changed":
-            title = trigger.provider_condition
-            details_layout = WidgetFactory.create_form_box(
-                f"{title} Settings",
-                parent_layout,
-                False,
-                object_name="Action-Trigger-Details-State",
-                drop_shadow_effect=False,
-                title_font_size=11,
-            )
+
+        title = trigger.provider_condition
+        details_layout = WidgetFactory.create_form_box(
+            f"{title} Settings",
+            parent_layout,
+            False,
+            object_name="Action-Trigger-Details-State",
+            drop_shadow_effect=False,
+            title_font_size=11,
+        )
+        if details.action_type == ACTIONTRIGGERDETAILTYPE.STATE_CHANGED:
+
             state_layout = WidgetFactory.create_form_box(
                 "State",
                 details_layout,
@@ -341,19 +347,32 @@ class RuleFactory:
                     "user_list",
                 ),
             ]
+        elif details.action_type == ACTIONTRIGGERDETAILTYPE.USER_LOGGED_IN:
+            detail_fields = [
+                (
+                    details.action_type,
+                    "Action Type:",
+                    "action_type",
+                ),
+                (
+                    details.user_list,
+                    "User List:",
+                    "user_list",
+                ),
+            ]
 
-            for initial_value, label_text, rule_input_path in detail_fields:
+        for initial_value, label_text, rule_input_path in detail_fields:
 
-                self.create_text_input_row(
-                    line_edit_value=initial_value,
-                    label_text=label_text,
-                    parent_layout=details_layout,
-                    full_path=self.build_path(
-                        "action_based",
-                        "details",
-                        rule_input_path,
-                    ),
-                )
+            self.create_text_input_row(
+                line_edit_value=initial_value,
+                label_text=label_text,
+                parent_layout=details_layout,
+                full_path=self.build_path(
+                    "action_based",
+                    "details",
+                    rule_input_path,
+                ),
+            )
 
     def create_condition_fields(
         self, parent_layout: QFormLayout, condition: Condition, condition_index: int

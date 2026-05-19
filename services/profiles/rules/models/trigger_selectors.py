@@ -27,7 +27,13 @@ class TriggerStateChangedSelectors:
     user_list_items: str
 
 
-TriggerDetailSelectors = TriggerStateChangedSelectors
+@dataclass(frozen=True)
+class TriggerUserLoggedInSelectors:
+    user_list_arrow: str
+    user_list_items: str
+
+
+TriggerDetailSelectors = TriggerStateChangedSelectors | TriggerUserLoggedInSelectors
 
 
 @dataclass(frozen=True)

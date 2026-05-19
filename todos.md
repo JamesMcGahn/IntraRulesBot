@@ -2,10 +2,6 @@
 
 #### TO-DO NOW
 
-- [ ] : Base Executors
-  - [ ] : Standarize with Flow and Task Map
-  - [ ] : Implement context container
-  - [ ] : Implement state container
 - [ ] : Legacy and Modern Executor path
 - [ ] : load selectors from file(s)
 
@@ -15,8 +11,9 @@
 - [ ] :#TODO : switch page to rules page after open file validation
 - [ ] :#FEATURE : Action Based Triggers
   - [ ] :#TODO : Time in Current State
-  - [ ] :#TODO : Logged In
+
   - [ ] :#TODO : Logged out
+
 - [ ] : TODO : Remove implicit passing of logger to services
 - [ ] :#FEATURE : Stats Queue Selection
 - [ ] :#FEATURE : Action: Create List
@@ -35,7 +32,14 @@
 - [x] : Display Default Rulesets
 - [x] : Allow User to Load Ruleset
 - [x] : Allow User to Save Ruleset
-- [x] : Agent Changed State Trigger
+- [x] : Base Executors
+  - [x] : Standarize with Flow and Task Map
+  - [x] : Implement context container
+  - [x] : Implement state container
+  - [x] : profiles for version selectors
+- [/] : Action Based Triggers - ACD
+  - [x] : Agent Changed State Trigger
+  - [x] : Agent Logged In
 
 #### 1.0.0
 

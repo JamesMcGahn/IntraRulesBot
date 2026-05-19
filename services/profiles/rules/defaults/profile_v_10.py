@@ -5,6 +5,7 @@ from ..models import (
     TriggerSelectors,
     TriggerCommonSelectors,
     TriggerStateChangedSelectors,
+    TriggerUserLoggedInSelectors,
     ConditionSelectors,
     ConditionCommonSelectors,
     ConditionStatsSelectors,
@@ -57,7 +58,11 @@ v_10 = RulePathProfile(
                     not_equal_to_radio='[id*="overlayContent_triggerParameters_ctl16_1"]',
                     user_list_arrow='[id*="user_filter_static_id_Arrow"]',
                     user_list_items='//*[contains(@id, "user_filter_static_id_DropDown")]/div/ul/li',
-                )
+                ),
+                ACTIONTRIGGERDETAILTYPE.USER_LOGGED_IN: TriggerUserLoggedInSelectors(
+                    user_list_arrow='[id*="user_filter_static_id_Arrow"]',
+                    user_list_items='//*[contains(@id, "user_filter_static_id_DropDown")]/div/ul/li',
+                ),
             },
         ),
         conditions=ConditionSelectors(
@@ -93,7 +98,7 @@ v_10 = RulePathProfile(
                     user_settings_button='[id*="overlayButtons_rbContinue_input"]',
                     email_individual_radio='[id*="overlayContent_actionParameters_rblIntradiemUsersIndividual_Users_1"]',
                     email_address="""textarea[id*="overlayContent_actionParameters_ctl65"],textarea[id*="overlayContent_actionParameters_ctl61"]""",
-                )
+                ),
             },
         ),
     ),

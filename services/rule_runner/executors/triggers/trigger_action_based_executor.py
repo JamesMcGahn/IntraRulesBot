@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from ...models import RuleExecutionContext, RuleExecutionState
 
 from .trigger_action_state_changed_executor import TriggerActionStateChangedExecutor
+from .trigger_action_user_logged_in_executor import TriggerActionUserLoggedInExecutor
 from ....rules.enums import ACTIONTRIGGERDETAILTYPE
 from ...enums import EXECUTORSCOPE
 
@@ -22,7 +23,8 @@ class TriggerActionBasedExectuor(BaseScopeChildExecutor):
         super().__init__(EXECUTORSCOPE.TRIGGER, context, state)
 
         self._detail_type_registry = {
-            ACTIONTRIGGERDETAILTYPE.STATE_CHANGED: TriggerActionStateChangedExecutor
+            ACTIONTRIGGERDETAILTYPE.STATE_CHANGED: TriggerActionStateChangedExecutor,
+            ACTIONTRIGGERDETAILTYPE.USER_LOGGED_IN: TriggerActionUserLoggedInExecutor,
         }
 
     def set_provider_category(
