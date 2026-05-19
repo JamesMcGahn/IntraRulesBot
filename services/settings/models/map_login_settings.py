@@ -12,6 +12,7 @@ from ..validators.login_validators import (
 )
 from .base_category_map import SettingsCategoryBase
 from .settings_field_helper import setting
+from base.enums import INTRAVERSION
 
 
 @dataclass
@@ -75,6 +76,6 @@ class LoginSettings(SettingsCategoryBase):
         label_text="Tenant Version:",
         verify_btn_text="Save Tenant Version",
         secure=False,
-        combo_box=["V10", "V11"],
+        combo_box=[INTRAVERSION.V10.value, INTRAVERSION.V11.value],
         verify=validate_platform_version,
     )

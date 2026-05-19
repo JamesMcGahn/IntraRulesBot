@@ -13,6 +13,7 @@ from ..validators.log_validators import (
 )
 from .base_category_map import SettingsCategoryBase
 from .settings_field_helper import setting
+from base.enums import LOGLEVEL
 
 
 @dataclass
@@ -82,7 +83,12 @@ class LogSettings(SettingsCategoryBase):
         label_text="Log Level:",
         verify_btn_text="Save Log Level",
         secure=False,
-        combo_box=["INFO", "WARN", "DEBUG", "ERROR"],
+        combo_box=[
+            LOGLEVEL.INFO.value,
+            LOGLEVEL.WARN.value,
+            LOGLEVEL.DEBUG.value,
+            LOGLEVEL.ERROR.value,
+        ],
         verify=validate_log_level,
     )
     log_print_logs: str = setting(
