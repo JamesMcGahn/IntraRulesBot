@@ -203,11 +203,7 @@ class Logger(QObject, metaclass=QSingleton):
                         (
                             LOGLEVEL.INFO,
                             f"{self.__class__.__name__}: Removed old log file {file_path}",
-                        ),
-                        (
-                            LOGLEVEL.INFO,
-                            self.log_print_logs,
-                        ),
+                        )
                     )
 
     @Slot()
