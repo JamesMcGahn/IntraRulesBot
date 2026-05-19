@@ -2,6 +2,7 @@ from enum import StrEnum
 
 
 class RULEEXECSTATUS(StrEnum):
+    RUNNING = "running"
     SUCCESS = "success"
     BROWSER_ERROR = "browser_error"
     NAME_EXISTS_ERROR = "name_exists_error"

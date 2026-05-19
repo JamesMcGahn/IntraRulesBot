@@ -5,17 +5,16 @@ from dataclasses import dataclass
 
 if TYPE_CHECKING:
     from ...rules.models import Rule
-    from ...browser.ports import BrowserPort, InteractionPort
+    from ...browser.ports import BrowserPort
     from ...logger.adapters import LogAdapter
+    from .rule_path_profile import RulePathProfile
 
 
 @dataclass(frozen=True)
 class RuleExecutionContext:
     tenant: str
     browser_port: BrowserPort
-    interaction_port: InteractionPort | None
     rule: Rule
     logger: LogAdapter
     should_stop: Callable[[], bool]
-    rule_name: str
-    rule_rename_attempts: int = 0
+    profile: RulePathProfile
