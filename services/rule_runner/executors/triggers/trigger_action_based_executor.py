@@ -1,110 +1,84 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ....browser.ports import FramePort
-    from ....rules.models import Rule
-    from ....rules.models.triggers import ActionTrigger
-    from ....logger.adapters import LogAdapter
-
-from time import sleep
-import threading
-from selenium.webdriver.common.by import By
-
-from ..wrappers import ExecutorWrappers
+    from ...models import RuleExecutionContext, RuleExecutionState
 
 from .trigger_action_state_changed_executor import TriggerActionStateChangedExecutor
 from ....rules.enums import ACTIONTRIGGERDETAILTYPE
+from ...enums import EXECUTORSCOPE
+
+from ..base import BaseScopeChildExecutor
+from ...models.executor_item_context import ExecutorItemContext
 
 
-class TriggerActionBasedExectuor:
+class TriggerActionBasedExectuor(BaseScopeChildExecutor):
     """
-    Worker class responsible for handling Action Based Triggers within rules.
-    This worker interacts with the UI to set up Action Based Triggers's provider categories, instances,
-    conditions, and email actions using Selenium WebDriver.
+    Executor Trigger : Action Based Triggers
     """
 
-    def __init__(
-        self,
-        frame_port: FramePort,
-        rule: Rule,
-        logger: LogAdapter,
-        should_stop: Callable,
-    ):
-        super().__init__()
-        self.frame_port = frame_port
-        self.rule = rule
-        self._rule_condition_queues_source = "queues"
-        self.logger = logger
-        self.should_stop = should_stop
-        self.action_type_reg = {
-            ACTIONTRIGGERDETAILTYPE: TriggerActionStateChangedExecutor
+    def __init__(self, context: RuleExecutionContext, state: RuleExecutionState):
+        super().__init__(EXECUTORSCOPE.TRIGGER, context, state)
+
+        self._detail_type_registry = {
+            ACTIONTRIGGERDETAILTYPE.STATE_CHANGED: TriggerActionStateChangedExecutor
         }
 
-    def logging(self, msg, level="INFO", print_msg=True) -> None:
-        msg = f"{self.__class__.__name__}: {msg}"
-        self.logger(msg, level, print_msg)
-
-    @ExecutorWrappers.child_raise_error
-    def execute(self) -> None:
-        """
-        Executes the steps required to process each Action Based Trigger within the rule, including setting
-        provider categories, instances, conditions, and executing email actions. Emits the
-        finished signal when the work is complete.
-        """
-        self.logging(
-            f"Starting {self.__class__.__name__} in thread: {threading.get_ident()}",
-            "INFO",
-        )
-        self.logging("Choosing Trigger Event", "INFO")
-        self.frame_port.click('[id*="overlayContent_lblAddEventSetFrequency"]')
-        action_based = self.rule.trigger
-        self.set_provider_category(action_based)
-        self.set_provider_instance(action_based)
-        self.set_provider_condition(action_based)
-        self.set_action_state(action_based)
-
-        self.execute_details_type(self.rule.trigger.details.action_type, self.rule)
-
-    def set_provider_category(self, action_trigger: ActionTrigger) -> None:
+    def set_provider_category(
+        self, ctx: RuleExecutionContext, state: RuleExecutionState
+    ) -> None:
         """
         Selects the provider category for the specified action.
         """
         self.logging("Selecting provider category for Action Trigger", "INFO")
-        self.frame_port.select_exact_item_from_list(
-            '//*[contains(@id, "overlayContent_selectTrigger_radMenuCategory")]/ul/li',
-            action_trigger.provider_category,
+        self.form_port.select_exact_item_from_list(
+            ctx.profile.selectors.triggers.common.provider_category_items,
+            ctx.rule.trigger.provider_category,
         )
 
-    def set_provider_instance(self, action_trigger: ActionTrigger) -> None:
+    def set_provider_instance(
+        self, ctx: RuleExecutionContext, state: RuleExecutionState
+    ) -> None:
         """
         Selects the provider instance for the specified condition.
         """
         self.logging("Selecting provider instance for Action Trigger", "INFO")
-        self.frame_port.select_exact_item_from_list(
-            '//*[contains(@id, "overlayContent_selectTrigger_radMenuProviderInstance")]/ul/li',
-            action_trigger.provider_instance,
+        self.form_port.select_exact_item_from_list(
+            ctx.profile.selectors.triggers.common.provider_instance_items,
+            ctx.rule.trigger.provider_instance,
         )
 
-    def set_provider_condition(self, action_trigger: ActionTrigger) -> None:
+    def set_provider_condition(
+        self, ctx: RuleExecutionContext, state: RuleExecutionState
+    ) -> None:
         """
         Selects the provider condition for the specified condition.
         """
         self.logging("Selecting condition selection for Action Trigger", "INFO")
 
-        self.frame_port.select_exact_item_from_list(
-            By.XPATH,
-            '//*[contains(@id, "overlayContent_selectTrigger_radMenuItem")]/ul/li',
+        self.form_port.select_exact_item_from_list(
+            ctx.profile.selectors.triggers.common.provider_condition_items,
+            ctx.rule.trigger.provider_condition,
         )
 
-        sleep(1)
-
-    def execute_details_type(self, action_type: ACTIONTRIGGERDETAILTYPE, rule: Rule):
-        executor = self.action_type_reg.get(action_type)
+    def execute_details_type(
+        self, ctx: RuleExecutionContext, state: RuleExecutionState
+    ):
+        action_type = ctx.rule.trigger.details.action_type
+        executor = self.detail_type_registry.get(action_type)
         if not executor:
-            msg = f"{action_type} is not a supported trigger action"
+            msg = f"{action_type.value} is not a supported trigger action"
             self.logging(msg, "ERROR")
-            raise ValueError(msg)
+            raise NotImplementedError(msg)
+        self.logging(f"Moving to {action_type.value} detail page.", "INFO")
+        selectors = ctx.profile.selectors.triggers.details.get(action_type)
+        if selectors is None:
+            msg = f"{action_type.value} is does not have selectors implemented"
+            self.logging(msg, "ERROR")
+            raise NotImplementedError(msg)
 
-        executor(self.frame_port, rule, self.logger, self.should_stop).execute()
+        item = ExecutorItemContext(
+            ctx.rule.trigger, ctx.rule.trigger.details.action_type, 0
+        )
+        executor(ctx, state, selectors, item).execute()

@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from .models import RuleRunnerRequestPayload
     from ..browser import BrowserSessionFactory
     from services.browser.models import PlaywrightSession
+    from services.profiles.rules import ProfileRegistry
 from PySide6.QtCore import Signal, QObject
 import threading
 from collections import deque
@@ -20,8 +21,10 @@ from services.auth.enums import PROVIDERS
 
 # from rulerunner.rule_worker import RuleWorker
 from .executors import RuleExecutor
-from .models import RuleRunItem, RuleExecutionResult
+from .models import RuleRunItem, RuleExecutionResult, RuleExecutionContext
 from .enums import RULERUNSTATUS, RULEEXECSTATUS
+from base.enums import INTRAVERSION
+
 from ..auth.enums import AUTHSTATUS
 from ..auth.models.auth_result import AuthResult
 
@@ -37,6 +40,7 @@ class RuleRunnerWorker(QObject):
         session: IntraProviderSession,
         auth_service: AuthService,
         logger: LogAdapter,
+        profile_registry: ProfileRegistry,
     ):
         super().__init__()
         self.rule_queue: Deque[RuleRunItem] = deque(job.payload.rules)
@@ -60,6 +64,8 @@ class RuleRunnerWorker(QObject):
 
         self.playwright_session_manager = None
         self.playwright_session: PlaywrightSession | None = None
+
+        self.profile_registry = profile_registry
 
     def should_stop(self) -> bool:
         return self.shut_down
@@ -146,13 +152,17 @@ class RuleRunnerWorker(QObject):
             try:
                 item = self.rule_queue.popleft()
                 item.status = RULERUNSTATUS.RUNNING
-                self.current_executor = RuleExecutor(
-                    self.url,
-                    self.playwright_session.browser_adapter,
-                    item.rule,
-                    self.logger,
-                    self.should_stop,
+                context = RuleExecutionContext(
+                    tenant=self.creds.tenant,
+                    browser_port=self.playwright_session.browser_adapter,
+                    rule=item.rule,
+                    logger=self.logger,
+                    should_stop=self.should_stop,
+                    profile=self.profile_registry.get_profile(
+                        INTRAVERSION(self.creds.platform_version)
+                    ),
                 )
+                self.current_executor = RuleExecutor(rule_context=context)
                 result = self.current_executor.execute()
                 self._handle_result(item, result)
 

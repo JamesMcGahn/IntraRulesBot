@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ...browser.ports import BrowserPort
-    from ...rules.models import Rule
-    from ...logger.adapters import LogAdapter
-    from ...browser.ports import FramePort
+    from ...browser.ports import InteractionPort
+    from ..models import RuleExecutionContext
 
 import threading
 
@@ -23,11 +21,19 @@ from ..errors import (
 from .actions import ActionsExecutor
 from .conditions import ConditionsExecutor
 from .triggers import TriggerExecutor
-from ..models import RuleExecutionResult
-from ..enums import RULEEXECSTATUS
+from ..models import (
+    RuleExecutionResult,
+    ExecutorTaskRef,
+    EXECSTEPCALL,
+    RuleExecutionState,
+)
 
 
-class RuleExecutor:
+from ..enums import EXECUTORTASK, RULEEXECSTATUS, EXECUTORSCOPE
+from .base.base_scope_executor import BaseScopeExecutor
+
+
+class RuleExecutor(BaseScopeExecutor):
     """
     Worker class responsible for creating rules in a web application using Selenium WebDriver.
     It handles setting up the rule name, triggers, conditions, and actions, and submitting the rule form.
@@ -36,254 +42,241 @@ class RuleExecutor:
 
     def __init__(
         self,
-        url: str,
-        browser_port: BrowserPort,
-        rule: Rule,
-        logger: LogAdapter,
-        should_stop: Callable,
+        rule_context: RuleExecutionContext,
     ):
-        super().__init__()
-        self.url = url
-        self.browser_port = browser_port
-        self.rule = rule
-        self.logger = logger
-        self.should_stop = should_stop
-        self.rule_rename_attempts = 0
-        self.rule_name = rule.rule_name
 
-    def logging(self, msg, level="INFO", print_msg=True) -> None:
-        msg = f"{self.__class__.__name__}: {msg}"
-        self.logger(msg, level, print_msg)
+        state = RuleExecutionState(
+            status=RULEEXECSTATUS.RUNNING,
+            rule_name=rule_context.rule.rule_name,
+            interaction_port=None,
+            current_task=ExecutorTaskRef(
+                scope=EXECUTORSCOPE.RULE,
+                task=EXECUTORTASK.START,
+                index=None,
+                detail_type=None,
+            ),
+        )
+        super().__init__(
+            scope_id=EXECUTORSCOPE.RULE, rule_context=rule_context, state=state
+        )
+
+        self._flow = [
+            EXECSTEPCALL(EXECUTORTASK.OPEN_FORM, self.open_rule_form),
+            EXECSTEPCALL(EXECUTORTASK.SET_RULE_NAME, self.set_rule_name),
+            EXECSTEPCALL(EXECUTORTASK.EXECUTE_TRIGGERS, self.execute_triggers),
+            EXECSTEPCALL(EXECUTORTASK.EXECUTE_CONDITIONS, self.execute_conditions),
+            EXECSTEPCALL(EXECUTORTASK.EXECUTE_ACTIONS, self.execute_actions),
+            EXECSTEPCALL(EXECUTORTASK.SET_RULE_CATEGORY, self.set_rule_category),
+            EXECSTEPCALL(EXECUTORTASK.SUBMIT_RULE, self.submit_rule),
+        ]
 
     def execute(self) -> RuleExecutionResult:
         """
         Executes the rule creation process by navigating through the form pages, setting up triggers, conditions,
         and actions, and submitting the rule. Handles duplicate rule names and retries.
         """
+
         try:
             self.logging(
                 f"Starting {self.__class__.__name__} in thread: {threading.get_ident()}",
                 "INFO",
             )
 
-            self.logging("Navigating to the Rules Page...", "INFO")
-            self.browser_port.goto(self.url + "/ManagerConsole/Delivery/Rules.aspx")
+            for step in self._flow:
+                self.run_step(step)
 
-            self.browser_port.click("#ctl00_ActionBarContent_rbAction_Add", 3000)
-            frame_port = self.switch_to_rule_module()
-
-            if self.is_tutorial_page_present(frame_port=frame_port):
-                self.logging("Tutorial Page is present...", "INFO")
-                self.next_page(frame_port=frame_port)
-
-            self.set_rule_name(frame_port=frame_port, rule_name=self.rule_name)
-
-            self.execute_triggers(frame_port=frame_port)
-            if self.should_stop():
-                return self._build_stopped_result()
-
-            self.next_page(frame_port=frame_port)
-
-            self.execute_conditions(frame_port=frame_port)
-            if self.should_stop():
-                return self._build_stopped_result()
-
-            self.next_page(frame_port=frame_port)
-
-            self.execute_actions(frame_port=frame_port)
-            if self.should_stop():
-                return self._build_stopped_result()
-
-            self.set_rule_category(frame_port=frame_port)
-            if self.should_stop():
-                return self._build_stopped_result()
-
-            # self.switch_to_rule_module()
-            self.next_page(frame_port=frame_port)
-            if self.should_stop():
-                return self._build_stopped_result()
-
-            self.submit_rule(frame_port=frame_port)
-            if self.should_stop():
-                return self._build_stopped_result()
-
-            if self.rule_rename_attempts > 0:
-                old_rule_name = self.rule.rule_name
-                self.logging(f"{old_rule_name} renamed {self.rule_name}")
+            if self._state.rule_rename_attempts > 0:
+                old_rule_name = self._ctx.rule.rule_name
+                self.logging(f"{old_rule_name} renamed {self._state.rule_name}")
 
             return RuleExecutionResult(
-                rule_guid=self.rule.guid,
-                rule_name=self.rule_name,
+                rule_guid=self._ctx.rule.guid,
+                rule_name=self._state.rule_name,
                 success=True,
                 status=RULEEXECSTATUS.SUCCESS,
                 message="Rule submitted successfully.",
             )
         except StoppedRequestException:
-            return RuleExecutionResult(
-                rule_guid=self.rule.guid,
-                rule_name=self.rule.rule_name,
-                success=False,
+            return self._build_error_result(
+                ctx=self._ctx,
+                state=self._state,
                 status=RULEEXECSTATUS.RUNNER_STOPPED_ERROR,
                 message="Stopped Requested.",
             )
 
         except DuplicateRuleNameException:
-            return RuleExecutionResult(
-                rule_guid=self.rule.guid,
-                rule_name=self.rule.rule_name,
-                success=False,
+            return self._build_error_result(
+                ctx=self._ctx,
+                state=self._state,
                 status=RULEEXECSTATUS.NAME_EXISTS_ERROR,
                 message="Rule name still exists after 2 renaming tries.",
             )
 
-        except PlaywrightSessionLostException:
-            if self.should_stop():
-                return RuleExecutionResult(
-                    rule_guid=self.rule.guid,
-                    rule_name=self.rule.rule_name,
-                    success=False,
+        except PlaywrightSessionLostException as e:
+
+            if self._ctx.should_stop():
+                return self._build_error_result(
+                    ctx=self._ctx,
+                    state=self._state,
                     status=RULEEXECSTATUS.RUNNER_STOPPED_ERROR,
                     message="Stopped Requested.",
                 )
-
-            self.logging(
-                "Can't Find Frame. The window was closed. Rule Failed.", "ERROR"
-            )
-            return RuleExecutionResult(
-                rule_guid=self.rule.guid,
-                rule_name=self.rule.rule_name,
-                success=False,
+            self.logging(str(e), "DEBUG")
+            return self._build_error_result(
+                ctx=self._ctx,
+                state=self._state,
                 status=RULEEXECSTATUS.BROWSER_ERROR,
                 message="Browser doesnt exist.",
             )
 
-        except PlaywrightTimeoutError:
-            self.logging("Finding element timed out. Rule Failed.", "ERROR")
-            return RuleExecutionResult(
-                rule_guid=self.rule.guid,
-                rule_name=self.rule.rule_name,
-                success=False,
+        except PlaywrightTimeoutError as e:
+            self.logging(str(e), "DEBUG")
+            return self._build_error_result(
+                ctx=self._ctx,
+                state=self._state,
                 status=RULEEXECSTATUS.TIMEOUT_ERROR,
-                message="Element doesnt exist.",
+                message="Finding element timed out. Rule Failed.",
             )
 
         except PlaywrightError as e:
-            self.logging(
-                f"Something went wrong in RuleWorker. Rule Failed.: {e}", "ERROR"
-            )
-            return RuleExecutionResult(
-                rule_guid=self.rule.guid,
-                rule_name=self.rule.rule_name,
-                success=False,
+            self.logging(str(e), "DEBUG")
+            return self._build_error_result(
+                ctx=self._ctx,
+                state=self._state,
                 status=RULEEXECSTATUS.BROWSER_ERROR,
-                message="Browser error.",
+                message="Browser error occurred.",
             )
+
         except Exception as e:
-            if self.should_stop():
-                return RuleExecutionResult(
-                    rule_guid=self.rule.guid,
-                    rule_name=self.rule.rule_name,
-                    success=False,
+
+            if self._ctx.should_stop():
+                return self._build_error_result(
+                    ctx=self._ctx,
+                    state=self._state,
                     status=RULEEXECSTATUS.RUNNER_STOPPED_ERROR,
                     message="Stopped Requested.",
                 )
 
-            self.logging(
-                f"Something went wrong in RuleWorker. Rule Failed.: {e}", "ERROR"
-            )
-            return RuleExecutionResult(
-                rule_guid=self.rule.guid,
-                rule_name=self.rule.rule_name,
-                success=False,
+            self.logging(str(e), "DEBUG")
+            return self._build_error_result(
+                ctx=self._ctx,
+                state=self._state,
                 status=RULEEXECSTATUS.UNKNOWN_ERROR,
                 message="Error happened in rule execution.",
             )
 
-    def execute_triggers(self, frame_port: FramePort) -> None:
-        """
-        Starts processing the triggers for the rule by initializing the TriggerWorker.
-        """
-        self.trigger = TriggerExecutor(
-            frame_port, self.rule, self.logger, self.should_stop
+    # STEPS
+
+    def open_rule_form(self, ctx: RuleExecutionContext, state: RuleExecutionState):
+        print("here 1", ctx, state)
+        self.logging("Navigating to the Rules Page...", "INFO")
+        print("**********", ctx.tenant, ctx.profile.selectors.rule_form.page_path)
+        ctx.browser_port.goto(
+            f"https://{ctx.tenant}.intradiem.com/{ctx.profile.selectors.rule_form.page_path}"
         )
-        self.trigger.execute()
+        print("herer")
+        ctx.browser_port.click(ctx.profile.selectors.rule_form.add_rule_button, 3000)
+        frame_port = self.switch_to_rule_module(ctx)
 
-    def execute_conditions(self, frame_port: FramePort) -> None:
-        """
-        Starts processing the conditions for the rule by initializing the ConditionsWorker.
-        """
+        print("herer w")
+        if frame_port is None:
+            raise RuntimeError("Rule form interaction port has not been initialized.")
+        self._state.interaction_port = frame_port
+        print(self.form_port, "88888888")
+        print("herersssc")
+        if self.is_tutorial_page_present(ctx):
+            self.logging("Tutorial Page is present...", "INFO")
+            self.next_page(ctx)
 
-        if self.rule.conditions:
-            self.conditions = ConditionsExecutor(
-                frame_port, self.rule, self.logger, self.should_stop
-            )
-            self.conditions.execute()
-
-    def execute_actions(self, frame_port: FramePort) -> None:
-        """
-        Starts processing the actions for the rule by initializing the ActionsWorker.
-        """
-
-        if self.rule.actions:
-            executor = ActionsExecutor(
-                frame_port, self.rule, self.logger, self.should_stop
-            )
-            executor.execute()
-
-    def switch_to_rule_module(self) -> FramePort:
-        """
-        Switches the WebDriver to the rule modal frame to interact with rule elements.
-        """
-        self.logging("Switching to the Rule Modal...", "INFO")
-        return self.browser_port.frame_locator('iframe[name="RadWindowAddEditRule"]')
-
-    def set_rule_name(self, frame_port: FramePort, rule_name: str) -> None:
+    def set_rule_name(
+        self, ctx: RuleExecutionContext, state: RuleExecutionState
+    ) -> None:
         """
         Sets the rule name in the rule creation form.
         """
         self.logging("Setting the Rule Name...", "INFO")
 
-        frame_port.fill('[id*="overlayRuleProgressArea_tbRuleName"]', rule_name)
+        self.form_port.fill(
+            ctx.profile.selectors.rule_form.rule_name_input, state.rule_name
+        )
 
-    def next_page(self, frame_port: FramePort) -> None:
+    def execute_triggers(
+        self, ctx: RuleExecutionContext, state: RuleExecutionState
+    ) -> None:
         """
-        Navigates to the next page in the rule creation form.
+        Starts processing the triggers for the rule by initializing the TriggerWorker.
         """
-        self.logging("Navigating to the Next Page...", "INFO")
+        print("at trigger")
+        TriggerExecutor(ctx, state).execute()
+        self.next_page(ctx)
 
-        frame_port.click('[id*="overlayButtons_rbContinue_input"]')
-
-    def is_tutorial_page_present(self, frame_port: FramePort) -> bool:
+    def execute_conditions(
+        self, ctx: RuleExecutionContext, state: RuleExecutionState
+    ) -> None:
         """
-        Checks if the tutorial page is present and can be skipped.
-
-        Returns:
-            bool: True if the tutorial page is present, False otherwise.
+        Starts processing the conditions for the rule by initializing the ConditionsWorker.
         """
-        return frame_port.is_visible('[id*="overlayButtonsLeft_cbDontAskLead"]')
 
-    def submit_rule(self, frame_port: FramePort) -> None:
+        if ctx.rule.conditions:
+            self.conditions = ConditionsExecutor(ctx, state)
+            self.conditions.execute()
+        self.next_page(ctx)
+
+    def execute_actions(
+        self, ctx: RuleExecutionContext, state: RuleExecutionState
+    ) -> None:
+        """
+        Starts processing the actions for the rule by initializing the ActionsWorker.
+        """
+
+        if ctx.rule.actions:
+            executor = ActionsExecutor(ctx, state)
+            executor.execute()
+        self.next_page(ctx)
+
+    def set_rule_category(
+        self, ctx: RuleExecutionContext, state: RuleExecutionState
+    ) -> None:
+        """
+        Sets the rule category in the rule creation form.
+        """
+        self.logging("Setting the rule category", "INFO")
+        self.form_port.click(ctx.profile.selectors.rule_form.add_rule_category_button)
+
+        category_frame = ctx.browser_port.frame_locator(
+            ctx.profile.selectors.rule_form.rule_category_frame
+        )
+        category_frame.click(
+            ctx.profile.selectors.rule_form.rule_category_dropdown_arrow
+        )
+        category_frame.select_exact_item_from_list(
+            ctx.profile.selectors.rule_form.rule_category_dropdown_list,
+            ctx.rule.rule_category,
+        )
+        self.logging("Switching the main frame", "INFO")
+
+    def submit_rule(self, ctx: RuleExecutionContext, state: RuleExecutionState) -> None:
         """
         Submits the rule form, handling duplicate rule alerts by renaming the rule and retrying.
         """
 
-        self.logging(f"Submitting Rule - {self.rule_name }...", "INFO")
+        self.logging(f"Submitting Rule - {state.rule_name }...", "INFO")
 
         def submit_rule_succeed():
             for _ in range(2):
 
                 # Retry twice before giving up
 
-                alert = self.browser_port.frame_click_and_accept_alert_if_appears(
-                    frame_port,
-                    '[id*="overlayButtons_rbSubmit_input"]',
+                alert = ctx.browser_port.frame_click_and_accept_alert_if_appears(
+                    self.form_port,
+                    ctx.profile.selectors.rule_form.submit_button,
                     "A Rule with this name already exists",
                     10000,
                 )
                 if alert:
-                    self.rename_rule(frame_port)
+                    self.rename_rule(ctx, state)
                     self.logging(
-                        f"Retrying Rule Submission for renamed rule - {self.rule_name }...",
+                        f"Retrying Rule Submission for renamed rule - {state.rule_name }...",
                         "INFO",
                     )
                     continue
@@ -294,85 +287,68 @@ class RuleExecutor:
 
         if not submit_rule_succeed():
             self.logging(
-                f"Rule '{self.rule_name}' could not be submitted after multiple retries.",
+                f"Rule '{state.rule_name}' could not be submitted after multiple retries.",
                 "ERROR",
             )
             raise DuplicateRuleNameException
 
-        # self.browser_port.switch_to_main_frame()
-        self.success_message()
+        self.success_message(ctx, state)
 
-    def rename_rule(self, frame_port: FramePort) -> None:
+    # HELPERS
+
+    def switch_to_rule_module(self, ctx: RuleExecutionContext) -> InteractionPort:
+        """
+        Switches the WebDriver to the rule modal frame to interact with rule elements.
+        """
+        self.logging("Switching to the Rule Modal...", "INFO")
+        return ctx.browser_port.frame_locator(
+            ctx.profile.selectors.rule_form.rule_modal_frame
+        )
+
+    def next_page(self, ctx: RuleExecutionContext) -> None:
+        """
+        Navigates to the next page in the rule creation form.
+        """
+        self.logging("Navigating to the Next Page...", "INFO")
+
+        self.form_port.click(ctx.profile.selectors.rule_form.next_page_button)
+
+    def is_tutorial_page_present(self, ctx: RuleExecutionContext) -> bool:
+        """
+        Checks if the tutorial page is present and can be skipped.
+
+        Returns:
+            bool: True if the tutorial page is present, False otherwise.
+        """
+        print("aasss")
+        return self.form_port.is_visible(
+            ctx.profile.selectors.rule_form.tutorial_checkbox
+        )
+
+    def rename_rule(self, ctx: RuleExecutionContext, state: RuleExecutionState) -> None:
         """
         Renames the rule in case of a duplicate name error.
         """
-        self.rule_rename_attempts += 1
-        old_rule_name = self.rule.rule_name
-        self.rule_name = f"{old_rule_name}-{self.rule_rename_attempts}"
+        state.rule_rename_attempts += 1
+
+        old_rule_name = ctx.rule.rule_name
+        state.rule_name = f"{old_rule_name}-{state.rule_rename_attempts}"
+
         self.logging(
-            f"Trying to rename rule: {old_rule_name} as {self.rule_name}",
+            f"Trying to rename rule: {old_rule_name} as {state.rule_name}",
             "WARN",
         )
-        self.set_rule_name(frame_port, self.rule_name)
+        self.set_rule_name(ctx, state)
 
-    def success_message(self) -> None:
+    def success_message(
+        self, ctx: RuleExecutionContext, state: RuleExecutionState
+    ) -> None:
         """
         Logs a success message after the rule has been successfully created.
         """
-        success = self.browser_port.is_visible(
-            "#ctl00_ActionBarContent_rbAction_Add", 10000
+        success = ctx.browser_port.is_visible(
+            ctx.profile.selectors.rule_form.success_marker, 10000
         )
-        print(success, "*******************")
         if not success:
             raise RuntimeError("No Success Message")
-        self.logging(f"Rule: {self.rule_name} has been created.", "INFO")
-
-    def set_rule_category(self, frame_port: FramePort) -> None:
-        """
-        Sets the rule category in the rule creation form.
-        """
-        self.logging("Setting the rule category", "INFO")
-        frame_port.click(
-            '//*[contains(@id, "overlayContent_divAddEditAction")]/div[3]/a'
-        )
-
-        category_frame = self.browser_port.frame_locator(
-            'iframe[name="RadWindowAddEditRuleSettings"]'
-        )
-        category_frame.click('[id*="ddRuleCategory_Arrow"]')
-        category_frame.select_exact_item_from_list(
-            '//*[contains(@id, "ddRuleCategory_DropDown")]/div/ul/li',
-            self.rule.rule_category,
-        )
-        self.logging("Switching the main frame", "INFO")
-
-    def wait_for_dup_rule_alert(self, wait_time: int) -> bool:
-        """
-        Waits for a duplicate rule alert and handles it by accepting the alert.
-        Returns:
-            bool: True if the alert is found and accepted, False otherwise.
-        """
-        alert_present = self.browser_port.click_and_accept_alert_if_appears()
-        alert_present = self.browser_port.wait_and_accept_alert(
-            "A Rule with this name already exists", wait_time
-        )
-        if alert_present:
-            self.logging(
-                f"A Rule with the name {self.rule_name} already exists.", "ERROR"
-            )
-            self.logging(
-                "Accepting window alert notifying of duplicate rule name.", "INFO"
-            )
-            return True
-        else:
-            self.logging(f"Rule: {self.rule_name} has been submitted.", "INFO")
-            return False
-
-    def _build_stopped_result(self):
-        return RuleExecutionResult(
-            rule_guid=self.rule.guid,
-            rule_name=self.rule.rule_name,
-            success=False,
-            status=RULEEXECSTATUS.RUNNER_STOPPED_ERROR,
-            message="Rule runner was stopped.",
-        )
+        self.logging(f"Rule: {state.rule_name} has been created.", "INFO")

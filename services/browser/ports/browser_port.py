@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
-    from .frame_port import FramePort
     from playwright.sync_api import FrameLocator
 from .interaction_port import InteractionPort
 
@@ -12,7 +11,7 @@ class BrowserPort(InteractionPort, Protocol):
 
     def goto(self, url: str) -> None: ...
 
-    def frame_locator(selector: str) -> FramePort: ...
+    def frame_locator(selector: str) -> InteractionPort: ...
 
     def screenshot(self, path: str) -> None: ...
 

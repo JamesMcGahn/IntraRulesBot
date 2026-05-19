@@ -32,7 +32,7 @@ class ExecutorWrappers:
                 return func(self, *args, **kwargs)
 
             except PlaywrightTimeoutError as e:
-                if self.should_stop():
+                if self._ctx.should_stop():
                     raise StoppedRequestException from e
 
                 self.logging(
@@ -43,7 +43,7 @@ class ExecutorWrappers:
                 raise
 
             except PlaywrightError as e:
-                if self.should_stop():
+                if self._ctx.should_stop():
                     raise StoppedRequestException from e
 
                 msg = str(e).lower()
@@ -68,7 +68,7 @@ class ExecutorWrappers:
                 raise
 
             except Exception as e:
-                if self.should_stop():
+                if self._ctx.should_stop():
                     raise StoppedRequestException from e
 
                 self.logging(str(e), "DEBUG")

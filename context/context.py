@@ -38,6 +38,7 @@ from services.auth.auth_service import AuthService
 from services.auth.enums import PROVIDERS
 from services.logger.adapters import LogAdapter
 from services.browser import BrowserSessionFactory
+from services.profiles.rules import ProfileRegistry
 
 
 class AppContext(QObject, metaclass=QSingleton):
@@ -55,6 +56,7 @@ class AppContext(QObject, metaclass=QSingleton):
         self.settings_repo = SettingsRepository(self.settings, self.secure_settings)
         self.settings_manager = SettingsService(repo=self.settings_repo)
         self.session_registry = SessionRegistry(self.log_adapter)
+        self.prolife_registry = ProfileRegistry()
         self.auth_service = AuthService(self.session_registry, self.log_adapter)
 
         self.schema_registry = SchemaRegistry()
@@ -90,6 +92,7 @@ class AppContext(QObject, metaclass=QSingleton):
             auth_service=self.auth_service,
             browser_session_factory=self.browser_session_factory,
             logger=self.log_adapter,
+            profile_registry=self.prolife_registry,
         )
         log_settings = self.settings_manager.get_category(SETTINGSCATEGORIES.LOG)
         self.logger.load_settings(log_settings)
