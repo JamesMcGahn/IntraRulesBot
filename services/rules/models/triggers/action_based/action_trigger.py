@@ -1,11 +1,13 @@
 from dataclasses import dataclass
 from ....enums import ACTIONTRIGGERCATEGORY
-from .action_trigger_details_base import BaseActionTriggerDetails
+from typing import TypeVar, Generic
+
+ItemT = TypeVar("ItemT")
 
 
 @dataclass
-class ActionTrigger:
+class ActionTrigger(Generic[ItemT]):
     provider_category: ACTIONTRIGGERCATEGORY
     provider_instance: str
     provider_condition: str
-    details: BaseActionTriggerDetails
+    details: ItemT

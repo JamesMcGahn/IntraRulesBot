@@ -1,11 +1,13 @@
 from dataclasses import dataclass
 from ...enums import CONDITIONCATEGORY
-from .condition_details_base import BaseConditionDetails
+from typing import TypeVar, Generic
+
+ItemT = TypeVar("ItemT")
 
 
 @dataclass
-class Condition:
+class Condition(Generic[ItemT]):
     provider_category: CONDITIONCATEGORY
     provider_instance: str
     provider_condition: str
-    details: BaseConditionDetails
+    details: ItemT
