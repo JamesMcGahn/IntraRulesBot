@@ -56,9 +56,9 @@ class ExecutorWrappers:
                         "target",
                     )
                 ):
-                    self.logging("Playwright session lost." "ERROR")
+                    self.logging("Playwright session lost.", "ERROR")
                     self.logging(str(e), "DEBUG")
-                    raise PlaywrightSessionLostException from PlaywrightError
+                    raise PlaywrightSessionLostException from e
 
                 self.logging(
                     "Playwright operation failed.",
