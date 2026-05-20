@@ -77,6 +77,27 @@ In the spec file, update the paths to exec_directory, icon and python_path. Then
 pyside6-deploy
 ```
 
+## Supported Use Cases:
+
+### Triggers:
+
+    - Frequency Based
+    - Action Triggers:
+        - ACD
+            - Agent Changed State Trigger
+            - Agent Logged In
+            - Agent Logged Out
+
+### Condition:
+
+    - ACD:
+        - Statistic
+
+### Actions:
+
+    - Communications
+        - Email
+
 ## How To Add Rule Use Case
 
 - update schema

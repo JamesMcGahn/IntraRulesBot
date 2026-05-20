@@ -23,7 +23,11 @@ RULES_SCHEMA = {
                     "properties": {
                         "action_type": {
                             "type": "string",
-                            "enum": ["state_changed", "user_logged_in"],
+                            "enum": [
+                                "state_changed",
+                                "user_logged_in",
+                                "user_logged_out",
+                            ],
                         },
                         "state": {
                             "type": "array",
@@ -63,6 +67,14 @@ RULES_SCHEMA = {
                             "if": {
                                 "properties": {
                                     "action_type": {"const": "user_logged_in"}
+                                }
+                            },
+                            "then": {"required": ["user_list"]},
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "action_type": {"const": "user_logged_out"}
                                 }
                             },
                             "then": {"required": ["user_list"]},

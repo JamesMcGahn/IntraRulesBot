@@ -12,6 +12,7 @@ from .models.triggers.action_based import (
     ActionTrigger,
     AgentStateChangeDetails,
     AgentLoggedInDetails,
+    AgentLoggedOutDetails,
 )
 from .models.agent_state import AgentState
 
@@ -33,6 +34,7 @@ class RuleBuilder(QObjectBase):
         self.ACTION_DETAIL_TRIGGER_BUILDERS = {
             ACTIONTRIGGERDETAILTYPE.STATE_CHANGED: self._build_action_trigger_state_changed,
             ACTIONTRIGGERDETAILTYPE.USER_LOGGED_IN: self._build_action_trigger_user_logged_in,
+            ACTIONTRIGGERDETAILTYPE.USER_LOGGED_OUT: self._build_action_trigger_user_logged_out,
         }
         self.CONDITION_DETAIL_BUILDERS = {"stats": self._build_stats_details}
 
@@ -116,6 +118,12 @@ class RuleBuilder(QObjectBase):
 
     def _build_action_trigger_user_logged_in(self, data_detail):
         return AgentLoggedInDetails(
+            action_type=ACTIONTRIGGERDETAILTYPE(data_detail["action_type"]),
+            user_list=data_detail["user_list"],
+        )
+
+    def _build_action_trigger_user_logged_out(self, data_detail):
+        return AgentLoggedOutDetails(
             action_type=ACTIONTRIGGERDETAILTYPE(data_detail["action_type"]),
             user_list=data_detail["user_list"],
         )

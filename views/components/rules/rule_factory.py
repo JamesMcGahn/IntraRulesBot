@@ -25,6 +25,7 @@ from services.rules.enums import (
 from .rule_widget import RuleWidget
 
 
+# TODO: Refactor to be cleaner
 class RuleFactory:
 
     def __init__(
@@ -348,6 +349,19 @@ class RuleFactory:
                 ),
             ]
         elif details.action_type == ACTIONTRIGGERDETAILTYPE.USER_LOGGED_IN:
+            detail_fields = [
+                (
+                    details.action_type,
+                    "Action Type:",
+                    "action_type",
+                ),
+                (
+                    details.user_list,
+                    "User List:",
+                    "user_list",
+                ),
+            ]
+        elif details.action_type == ACTIONTRIGGERDETAILTYPE.USER_LOGGED_OUT:
             detail_fields = [
                 (
                     details.action_type,

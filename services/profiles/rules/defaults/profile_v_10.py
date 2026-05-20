@@ -6,6 +6,7 @@ from ..models import (
     TriggerCommonSelectors,
     TriggerStateChangedSelectors,
     TriggerUserLoggedInSelectors,
+    TriggerUserLoggedOutSelectors,
     ConditionSelectors,
     ConditionCommonSelectors,
     ConditionStatsSelectors,
@@ -60,6 +61,10 @@ v_10 = RulePathProfile(
                     user_list_items='//*[contains(@id, "user_filter_static_id_DropDown")]/div/ul/li',
                 ),
                 ACTIONTRIGGERDETAILTYPE.USER_LOGGED_IN: TriggerUserLoggedInSelectors(
+                    user_list_arrow='[id*="user_filter_static_id_Arrow"]',
+                    user_list_items='//*[contains(@id, "user_filter_static_id_DropDown")]/div/ul/li',
+                ),
+                ACTIONTRIGGERDETAILTYPE.USER_LOGGED_OUT: TriggerUserLoggedOutSelectors(
                     user_list_arrow='[id*="user_filter_static_id_Arrow"]',
                     user_list_items='//*[contains(@id, "user_filter_static_id_DropDown")]/div/ul/li',
                 ),

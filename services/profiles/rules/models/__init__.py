@@ -6,6 +6,7 @@ from .trigger_selectors import (
     TriggerCommonSelectors,
     TriggerStateChangedSelectors,
     TriggerUserLoggedInSelectors,
+    TriggerUserLoggedOutSelectors,
 )
 from .condition_selectors import (
     ConditionSelectors,
@@ -29,6 +30,7 @@ __all__ = [
     "TriggerCommonSelectors",
     "TriggerStateChangedSelectors",
     "TriggerUserLoggedInSelectors",
+    "TriggerUserLoggedOutSelectors",
     "ConditionSelectors",
     "ConditionCommonSelectors",
     "ConditionStatsSelectors",
