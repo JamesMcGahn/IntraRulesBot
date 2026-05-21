@@ -42,6 +42,7 @@ class TriggerActionUserLoggedInExecutor(
         """
         Sets the user list for the state changed to rule.
         """
+        self.logging("Setting the user list.")
         self.form_port.click(self.selectors.user_list_arrow)
         self.form_port.select_exact_item_from_list(
             self.selectors.user_list_items,

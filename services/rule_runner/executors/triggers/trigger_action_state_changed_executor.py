@@ -58,7 +58,7 @@ class TriggerActionStateChangedExecutor(
         """
         Sets the agent state and aux code for the state changed to for the array of state.
         """
-
+        self.logging("Setting the state and aux.")
         for agent_changed in item_ctx.item.details.state:
             self.set_state_changed_to(agent_changed.state)
             self.set_agent_aux(agent_changed.aux)
@@ -95,6 +95,7 @@ class TriggerActionStateChangedExecutor(
         """
         Sets the user list for the state changed to rule.
         """
+        self.logging("Setting the user list.")
         self.form_port.click(self.selectors.user_list_arrow)
         self.form_port.select_exact_item_from_list(
             self.selectors.user_list_items,
