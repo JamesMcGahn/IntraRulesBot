@@ -374,6 +374,20 @@ class RuleFactory:
                     "user_list",
                 ),
             ]
+
+        elif details.action_type == ACTIONTRIGGERDETAILTYPE.QUICK_ACTION:
+            detail_fields = [
+                (
+                    details.action_type,
+                    "Action Type:",
+                    "action_type",
+                ),
+                (
+                    details.quick_action_name,
+                    "Quick Action Name:",
+                    "quick_action_name",
+                ),
+            ]
         elif details.action_type == ACTIONTRIGGERDETAILTYPE.TIME_IN_STATE:
             state_layout = WidgetFactory.create_form_box(
                 "State",

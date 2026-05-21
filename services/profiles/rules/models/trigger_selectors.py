@@ -53,11 +53,18 @@ class TriggerUserLoggedOutSelectors:
     user_list_items: str
 
 
+@dataclass()
+class TriggerQuickActionSelectors:
+    quick_action_name_input: str
+    quick_action_icon_container: str
+
+
 TriggerDetailSelectors = (
     TriggerStateChangedSelectors
     | TriggerUserLoggedInSelectors
     | TriggerUserLoggedOutSelectors
     | TriggerTimeInStateSelectors
+    | TriggerQuickActionSelectors
 )
 
 

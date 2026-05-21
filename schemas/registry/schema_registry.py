@@ -1,7 +1,7 @@
 from jsonschema import Draft202012Validator
 from jsonschema.validators import RefResolver
 
-from schemas import MAIN_SCHEMA, RULES_SCHEMA
+from schemas import MAIN_SCHEMA, RULES_SCHEMA, TRIGGER_ACTION_BASED
 from ..enums import SCHEMATYPE
 
 
@@ -31,7 +31,7 @@ class SchemaRegistry:
         Returns:
             None: This function does not return a value.
         """
-        for schema_file in (MAIN_SCHEMA, RULES_SCHEMA):
+        for schema_file in (MAIN_SCHEMA, RULES_SCHEMA, TRIGGER_ACTION_BASED):
             self.schema_store[schema_file["$id"]] = schema_file
 
     def get_schema(self, selected_schema: SCHEMATYPE) -> str:

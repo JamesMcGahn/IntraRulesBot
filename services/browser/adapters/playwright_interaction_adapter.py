@@ -26,6 +26,15 @@ class PlaywrightInteractionAdapter:
     ) -> None:
         self.container.locator(selector).click(timeout=timeout)
 
+    def click_first_child(
+        self,
+        selector: str,
+        timeout: int = 30000,
+    ) -> None:
+        first = self.container.locator(selector).first
+        first.wait_for(state="visible", timeout=timeout)
+        first.click(timeout=timeout)
+
     def fill(
         self,
         selector: str,

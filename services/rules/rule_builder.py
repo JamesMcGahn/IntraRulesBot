@@ -14,6 +14,7 @@ from .models.triggers.action_based import (
     AgentLoggedInDetails,
     AgentLoggedOutDetails,
     AgentTimeInStateDetails,
+    IntraQuickActionClicked,
 )
 from .models.agent_state import AgentState
 
@@ -37,6 +38,7 @@ class RuleBuilder(QObjectBase):
             ACTIONTRIGGERDETAILTYPE.TIME_IN_STATE: self._build_action_trigger_time_in_state,
             ACTIONTRIGGERDETAILTYPE.USER_LOGGED_IN: self._build_action_trigger_user_logged_in,
             ACTIONTRIGGERDETAILTYPE.USER_LOGGED_OUT: self._build_action_trigger_user_logged_out,
+            ACTIONTRIGGERDETAILTYPE.QUICK_ACTION: self._build_action_trigger_quick_action,
         }
         self.CONDITION_DETAIL_BUILDERS = {"stats": self._build_stats_details}
 
@@ -141,6 +143,12 @@ class RuleBuilder(QObjectBase):
         return AgentLoggedOutDetails(
             action_type=ACTIONTRIGGERDETAILTYPE(data_detail["action_type"]),
             user_list=data_detail["user_list"],
+        )
+
+    def _build_action_trigger_quick_action(self, data_detail):
+        return IntraQuickActionClicked(
+            action_type=ACTIONTRIGGERDETAILTYPE(data_detail["action_type"]),
+            quick_action_name=data_detail["quick_action_name"],
         )
 
     # CONDITIONS

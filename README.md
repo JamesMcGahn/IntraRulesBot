@@ -87,6 +87,10 @@ pyside6-deploy
             - Agent Changed State Trigger
             - Agent Logged In
             - Agent Logged Out
+            - Time in State
+        - Intradiem
+            - Users
+                - Quick Action Clicked
 
 ### Condition:
 

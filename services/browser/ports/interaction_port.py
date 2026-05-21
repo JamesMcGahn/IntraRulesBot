@@ -14,6 +14,12 @@ class InteractionPort(Protocol):
         timeout: int = 30000,
     ) -> None: ...
 
+    def click_first_child(
+        self,
+        selector: str,
+        timeout: int = 30000,
+    ) -> None: ...
+
     def fill(
         self,
         selector: str,

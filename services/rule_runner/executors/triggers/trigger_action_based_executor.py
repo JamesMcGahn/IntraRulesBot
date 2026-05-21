@@ -9,6 +9,7 @@ from .trigger_action_state_changed_executor import TriggerActionStateChangedExec
 from .trigger_action_user_logged_in_executor import TriggerActionUserLoggedInExecutor
 from .trigger_action_user_logged_out_executor import TriggerActionUserLoggedOutExecutor
 from .trigger_action_time_in_state_executor import TriggerTimeInStateExecutor
+from .trigger_action_quick_action_executor import TriggerQuickActionExecutor
 from ....rules.enums import ACTIONTRIGGERDETAILTYPE
 from ...enums import EXECUTORSCOPE
 
@@ -29,6 +30,7 @@ class TriggerActionBasedExectuor(BaseScopeChildExecutor):
             ACTIONTRIGGERDETAILTYPE.USER_LOGGED_IN: TriggerActionUserLoggedInExecutor,
             ACTIONTRIGGERDETAILTYPE.USER_LOGGED_OUT: TriggerActionUserLoggedOutExecutor,
             ACTIONTRIGGERDETAILTYPE.TIME_IN_STATE: TriggerTimeInStateExecutor,
+            ACTIONTRIGGERDETAILTYPE.QUICK_ACTION: TriggerQuickActionExecutor,
         }
 
     def set_provider_category(

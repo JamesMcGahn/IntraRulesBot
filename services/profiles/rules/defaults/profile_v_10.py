@@ -8,6 +8,7 @@ from ..models import (
     TriggerTimeInStateSelectors,
     TriggerUserLoggedInSelectors,
     TriggerUserLoggedOutSelectors,
+    TriggerQuickActionSelectors,
     ConditionSelectors,
     ConditionCommonSelectors,
     ConditionStatsSelectors,
@@ -81,6 +82,10 @@ v_10 = RulePathProfile(
                     user_list_arrow='[id*="user_filter_static_id_Arrow"]',
                     user_list_items='//*[contains(@id, "user_filter_static_id_DropDown")]/div/ul/li',
                 ),
+                ACTIONTRIGGERDETAILTYPE.QUICK_ACTION: TriggerQuickActionSelectors(
+                    quick_action_name_input='[id*="overlayContent_triggerParameters_ctl05"]',
+                    quick_action_icon_container="""[id*="overlayContent_triggerParameters_ctl12"] > div""",
+                ),
             },
         ),
         conditions=ConditionSelectors(
@@ -115,7 +120,7 @@ v_10 = RulePathProfile(
                     email_message="""[id*="overlayContent_actionParameters_ctl12"],[id*="overlayContent_actionParameters_ctl13"]""",
                     user_settings_button='[id*="overlayButtons_rbContinue_input"]',
                     email_individual_radio='[id*="overlayContent_actionParameters_rblIntradiemUsersIndividual_Users_1"]',
-                    email_address="""textarea[id*="overlayContent_actionParameters_ctl65"],textarea[id*="overlayContent_actionParameters_ctl61"]""",
+                    email_address="""textarea[id*="overlayContent_actionParameters_ctl65"],textarea[id*="overlayContent_actionParameters_ctl61"],textarea[id*="overlayContent_actionParameters_ctl66"]""",
                 ),
             },
         ),

@@ -10,7 +10,8 @@ from typing import Tuple
 
 from PySide6.QtWidgets import QLineEdit, QTextEdit, QWidget
 
-from services.validator import ValidationError
+
+from jsonschema import ValidationError
 
 
 class RuleAdapter:

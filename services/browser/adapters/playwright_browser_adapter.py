@@ -1,5 +1,5 @@
 from services.browser.ports.browser_port import BrowserPort
-from services.browser.ports.frame_port import FramePort
+
 
 from playwright.sync_api import (
     Page,
@@ -9,7 +9,6 @@ from playwright.sync_api import (
     Error as PlaywrightError,
 )
 
-from .playwright_frame_locator_adapter import PlaywrightFrameLocatorAdapter
 from .playwright_interaction_adapter import PlaywrightInteractionAdapter
 
 
@@ -22,12 +21,12 @@ class PlaywrightBrowserAdapter(BrowserPort):
     def goto(self, url: str) -> None:
         self._page.goto(url)
 
-    def frame_locator(self, selector: str) -> FramePort:
+    def frame_locator(self, selector: str) -> PlaywrightInteractionAdapter:
         frame = self._page.frame_locator(selector)
         if frame is None:
             raise ValueError(f"Frame not found: {selector}")
 
-        return PlaywrightFrameLocatorAdapter(frame)
+        return PlaywrightInteractionAdapter(frame)
 
     def click(
         self,
