@@ -1,0 +1,19 @@
+{
+  "rules": [
+    {
+      "rule_name": "User Logged In",
+      "rule_category": "Other - Admin",
+      "action_based": {
+        "provider_category": "ACD",
+        "provider_instance": "Avaya Test ACD",
+        "provider_condition": "User Logged In",
+        "details": {
+          "action_type": "user_logged_in",
+          "user_list": "All Users"
+        }
+      },
+      "conditions": [],
+      "actions": []
+    }
+  ]
+}

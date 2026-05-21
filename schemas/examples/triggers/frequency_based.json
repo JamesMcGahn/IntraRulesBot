@@ -1,0 +1,13 @@
+{
+  "rules": [
+    {
+      "rule_name": "Frequency Based",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [],
+      "actions": []
+    }
+  ]
+}
