@@ -168,22 +168,17 @@ class RuleExecutor(BaseScopeExecutor):
     # STEPS
 
     def open_rule_form(self, ctx: RuleExecutionContext, state: RuleExecutionState):
-        print("here 1", ctx, state)
         self.logging("Navigating to the Rules Page...", "INFO")
-        print("**********", ctx.tenant, ctx.profile.selectors.rule_form.page_path)
         ctx.browser_port.goto(
             f"https://{ctx.tenant}.intradiem.com/{ctx.profile.selectors.rule_form.page_path}"
         )
-        print("herer")
         ctx.browser_port.click(ctx.profile.selectors.rule_form.add_rule_button, 3000)
         frame_port = self.switch_to_rule_module(ctx)
 
-        print("herer w")
         if frame_port is None:
             raise RuntimeError("Rule form interaction port has not been initialized.")
         self._state.interaction_port = frame_port
-        print(self.form_port, "88888888")
-        print("herersssc")
+
         if self.is_tutorial_page_present(ctx):
             self.logging("Tutorial Page is present...", "INFO")
             self.next_page(ctx)
@@ -206,7 +201,7 @@ class RuleExecutor(BaseScopeExecutor):
         """
         Starts processing the triggers for the rule by initializing the TriggerWorker.
         """
-        print("at trigger")
+
         TriggerExecutor(ctx, state).execute()
         self.next_page(ctx)
 
@@ -320,7 +315,7 @@ class RuleExecutor(BaseScopeExecutor):
         Returns:
             bool: True if the tutorial page is present, False otherwise.
         """
-        print("aasss")
+
         return self.form_port.is_visible(
             ctx.profile.selectors.rule_form.tutorial_checkbox
         )

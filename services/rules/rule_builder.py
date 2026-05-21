@@ -13,6 +13,7 @@ from .models.triggers.action_based import (
     AgentStateChangeDetails,
     AgentLoggedInDetails,
     AgentLoggedOutDetails,
+    AgentTimeInStateDetails,
 )
 from .models.agent_state import AgentState
 
@@ -33,6 +34,7 @@ class RuleBuilder(QObjectBase):
         self.ACTION_DETAIL_BUILDERS = {"email": self._build_action_email}
         self.ACTION_DETAIL_TRIGGER_BUILDERS = {
             ACTIONTRIGGERDETAILTYPE.STATE_CHANGED: self._build_action_trigger_state_changed,
+            ACTIONTRIGGERDETAILTYPE.TIME_IN_STATE: self._build_action_trigger_time_in_state,
             ACTIONTRIGGERDETAILTYPE.USER_LOGGED_IN: self._build_action_trigger_user_logged_in,
             ACTIONTRIGGERDETAILTYPE.USER_LOGGED_OUT: self._build_action_trigger_user_logged_out,
         }
@@ -114,6 +116,19 @@ class RuleBuilder(QObjectBase):
             equality_operator=data_detail["equality_operator"],
             state=state,
             user_list=data_detail["user_list"],
+        )
+
+    def _build_action_trigger_time_in_state(self, data_detail):
+        state = []
+        for state_obj in data_detail["state"]:
+            state.append(AgentState(state=state_obj["state"], aux=state_obj["aux"]))
+        return AgentTimeInStateDetails(
+            action_type=ACTIONTRIGGERDETAILTYPE(data_detail["action_type"]),
+            equality_operator=data_detail["equality_operator"],
+            equality_threshold=data_detail["equality_threshold"],
+            state=state,
+            user_list=data_detail["user_list"],
+            aux_equality_operator=data_detail["aux_equality_operator"],
         )
 
     def _build_action_trigger_user_logged_in(self, data_detail):

@@ -374,6 +374,70 @@ class RuleFactory:
                     "user_list",
                 ),
             ]
+        elif details.action_type == ACTIONTRIGGERDETAILTYPE.TIME_IN_STATE:
+            state_layout = WidgetFactory.create_form_box(
+                "State",
+                details_layout,
+                False,
+                object_name="Action-Trigger-State",
+                drop_shadow_effect=False,
+                title_font_size=11,
+            )
+
+            for index, state in enumerate(details.state):
+
+                self.create_text_input_row(
+                    line_edit_value=state.state,
+                    label_text="State",
+                    parent_layout=state_layout,
+                    full_path=self.build_path(
+                        "action_based",
+                        "details",
+                        "state",
+                        index,
+                        "state",
+                    ),
+                )
+                self.create_text_input_row(
+                    line_edit_value=state.aux,
+                    label_text="Aux",
+                    parent_layout=state_layout,
+                    full_path=self.build_path(
+                        "action_based",
+                        "details",
+                        "state",
+                        index,
+                        "aux",
+                    ),
+                )
+
+            detail_fields = [
+                (
+                    details.action_type,
+                    "Action Type:",
+                    "action_type",
+                ),
+                (
+                    details.equality_operator,
+                    "Equality Operator:",
+                    "equality_operator",
+                ),
+                (
+                    details.aux_equality_operator,
+                    "Aux Equality Operator:",
+                    "aux_equality_operator",
+                ),
+                (
+                    str(details.equality_threshold),
+                    "Equality Threshold:",
+                    "equality_threshold",
+                ),
+                (
+                    details.user_list,
+                    "User List:",
+                    "user_list",
+                ),
+            ]
 
         for initial_value, label_text, rule_input_path in detail_fields:
 

@@ -27,6 +27,7 @@ RULES_SCHEMA = {
                                 "state_changed",
                                 "user_logged_in",
                                 "user_logged_out",
+                                "time_in_state",
                             ],
                         },
                         "state": {
@@ -45,6 +46,11 @@ RULES_SCHEMA = {
                             "type": "string",
                             "enum": ["Equal To", "Not Equal To"],
                         },
+                        "aux_equality_operator": {
+                            "type": "string",
+                            "enum": ["Equal To", "Not Equal To"],
+                        },
+                        "equality_threshold": {"type": "number", "minimum": 1},
                         "user_list": {
                             "type": "string",
                             "default": "All Users",
@@ -61,6 +67,22 @@ RULES_SCHEMA = {
                             },
                             "then": {
                                 "required": ["state", "equality_operator", "user_list"]
+                            },
+                        },
+                        {
+                            "if": {
+                                "properties": {
+                                    "action_type": {"const": "time_in_state"}
+                                }
+                            },
+                            "then": {
+                                "required": [
+                                    "state",
+                                    "equality_operator",
+                                    "equality_threshold",
+                                    "user_list",
+                                    "aux_equality_operator",
+                                ]
                             },
                         },
                         {

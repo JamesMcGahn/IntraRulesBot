@@ -7,6 +7,8 @@ if TYPE_CHECKING:
 
 from .trigger_action_state_changed_executor import TriggerActionStateChangedExecutor
 from .trigger_action_user_logged_in_executor import TriggerActionUserLoggedInExecutor
+from .trigger_action_user_logged_out_executor import TriggerActionUserLoggedOutExecutor
+from .trigger_action_time_in_state_executor import TriggerTimeInStateExecutor
 from ....rules.enums import ACTIONTRIGGERDETAILTYPE
 from ...enums import EXECUTORSCOPE
 
@@ -25,6 +27,8 @@ class TriggerActionBasedExectuor(BaseScopeChildExecutor):
         self._detail_type_registry = {
             ACTIONTRIGGERDETAILTYPE.STATE_CHANGED: TriggerActionStateChangedExecutor,
             ACTIONTRIGGERDETAILTYPE.USER_LOGGED_IN: TriggerActionUserLoggedInExecutor,
+            ACTIONTRIGGERDETAILTYPE.USER_LOGGED_OUT: TriggerActionUserLoggedOutExecutor,
+            ACTIONTRIGGERDETAILTYPE.TIME_IN_STATE: TriggerTimeInStateExecutor,
         }
 
     def set_provider_category(

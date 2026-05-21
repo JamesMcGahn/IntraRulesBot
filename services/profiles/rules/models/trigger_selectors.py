@@ -28,6 +28,20 @@ class TriggerStateChangedSelectors:
 
 
 @dataclass(frozen=True)
+class TriggerTimeInStateSelectors:
+    state_dropdown_arrow: str
+    state_dropdown_items: str
+    aux_input: str
+    state_equality_operator_dropdown_arrow: str
+    state_equality_operator_dropdown_items: str
+    state_equality_threshold_input: str
+    aux_equality_operator_dropdown_arrow: str
+    aux_equality_operator_dropdown_items: str
+    user_list_arrow: str
+    user_list_items: str
+
+
+@dataclass(frozen=True)
 class TriggerUserLoggedInSelectors:
     user_list_arrow: str
     user_list_items: str
@@ -43,6 +57,7 @@ TriggerDetailSelectors = (
     TriggerStateChangedSelectors
     | TriggerUserLoggedInSelectors
     | TriggerUserLoggedOutSelectors
+    | TriggerTimeInStateSelectors
 )
 
 
