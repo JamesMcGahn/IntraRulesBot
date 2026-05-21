@@ -165,8 +165,10 @@ class RuleRunnerWorker(QObject):
                 self.current_executor = RuleExecutor(rule_context=context)
                 result = self.current_executor.execute()
                 self._handle_result(item, result)
-
             except Exception as e:
+                if self.should_stop():
+                    self.stop_clean_up()
+
                 print(e)
                 self.logging(
                     f"Failure trying to process next rule: {e}",
@@ -189,6 +191,7 @@ class RuleRunnerWorker(QObject):
                 self.errored_rules.append(item)
                 self.completed_count = self.total_count
                 self.logging("Rule Executor stopped.", "WARN")
+                self.stop_clean_up()
                 return
 
             self.logging(f"{result.rule_name} - failed.")
@@ -242,6 +245,13 @@ class RuleRunnerWorker(QObject):
 
         self.logging(f"Removing remaining rules from queue: {reason}", "WARN")
 
+    def stop_clean_up(self):
+        self._drain_remaining_rules(
+            RULERUNSTATUS.STOPPED, "Rule runner manually stopped."
+        )
+        self.progress.emit(self.total_count, self.total_count)
+        self._close_down_browser()
+
     def stop(self) -> None:
         """
         Stops the thread execution.
@@ -249,11 +259,6 @@ class RuleRunnerWorker(QObject):
         self.logging("Stop Button Pressed", "INFO")
         self.logging("Shutting down", "INFO")
         self.shut_down = True
-        self._drain_remaining_rules(
-            RULERUNSTATUS.STOPPED, "Rule runner manually stopped."
-        )
-        self.progress.emit(self.total_count, self.total_count)
-        self._close_down_browser()
 
     def close(self) -> None:
         """
