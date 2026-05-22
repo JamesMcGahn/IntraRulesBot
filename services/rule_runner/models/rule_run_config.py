@@ -8,3 +8,4 @@ class RuleRunnerConfig:
     password: str
     tenant: str
     platform_version: INTRAVERSION
+    login_valid: bool

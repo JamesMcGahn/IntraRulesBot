@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from typing import Mapping
 
-from ....rules.enums import ACTIONTRIGGERDETAILTYPE
+from ...rules.enums import ACTIONTRIGGERDETAILTYPE
 
 
 @dataclass(frozen=True)

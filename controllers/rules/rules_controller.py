@@ -279,6 +279,12 @@ class RulesController(QObjectBase):
         rules = self.rule_builder.build_rules(batch.valid_rules)
         rule_items = [RuleRunItem(rule.guid, rule) for rule in rules]
         login_config = self._settings_provider.get_rule_run_config()
+        if not login_config.login_valid:
+            self.send_toast_failure(
+                "Login Settings Not Valid",
+                "Please validate all of the login settings on the Settings Page.",
+            )
+            return
         payload = RuleRunnerRequestPayload(login_config, rule_items)
         job_ref_id = uuid4()
         self._active_runners[job_ref_id] = RuleRunnerRequestPayload

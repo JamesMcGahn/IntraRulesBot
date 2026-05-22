@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from typing import Mapping
 
-from ....rules.enums import CONDITIONDETAILTYPE
+from ...rules.enums import CONDITIONDETAILTYPE
 
 
 @dataclass(frozen=True)

@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from ..base.models import JobRequest
     from .models import RuleRunnerRequestPayload
     from ..browser import BrowserSessionFactory
-    from ..profiles.rules import ProfileRegistry
+    from ..profiles import ProfileRegistry
 from PySide6.QtCore import Signal, QThread, QObject
 from .rule_runner_worker import RuleRunnerWorker
 

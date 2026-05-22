@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from .models import RuleRunnerRequestPayload
     from ..browser import BrowserSessionFactory
     from services.browser.models import PlaywrightSession
-    from services.profiles.rules import ProfileRegistry
+    from services.profiles import ProfileRegistry
 from PySide6.QtCore import Signal, QObject
 import threading
 from collections import deque
@@ -51,7 +51,6 @@ class RuleRunnerWorker(QObject):
 
         self.creds = job.payload.config
         self.url = f"https://{self.creds.tenant}.intradiem.com/"
-        self.platform_version = "v10"
 
         self.driver = None
         self.driver_adapter = None

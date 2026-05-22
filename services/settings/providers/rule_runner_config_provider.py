@@ -19,10 +19,14 @@ class SettingsRuleRunnerConfigProvider:
         login: LoginSettings = self._settings_service.get_category(
             SETTINGSCATEGORIES.LOGIN
         )
-
+        valid_dict = self._settings_service.get_category_validation(
+            SETTINGSCATEGORIES.LOGIN
+        )
+        is_valid = all(valid_dict.values())
         return RuleRunnerConfig(
             user_name=login.user_name,
             password=login.password,
             tenant=login.tenant,
             platform_version=login.platform_version,
+            login_valid=is_valid,
         )

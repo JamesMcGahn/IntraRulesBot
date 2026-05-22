@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from base.enums import INTRAVERSION
-from ...profiles.rules.models import RuleExecutorSelectors
+from .executor_selectors import ExecutorSelectors
 
 
 @dataclass(frozen=True)
-class RulePathProfile:
+class BrowserProfile:
     version: INTRAVERSION
-    selectors: RuleExecutorSelectors
+    selectors: ExecutorSelectors
     # form_opener: RuleFormOpener

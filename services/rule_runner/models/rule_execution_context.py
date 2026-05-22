@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from ...rules.models import Rule
     from ...browser.ports import BrowserPort
     from ...logger.adapters import LogAdapter
-    from .rule_path_profile import RulePathProfile
+    from ...profiles.models.browser_profile import BrowserProfile
 
 
 @dataclass(frozen=True)
@@ -17,4 +17,4 @@ class RuleExecutionContext:
     rule: Rule
     logger: LogAdapter
     should_stop: Callable[[], bool]
-    profile: RulePathProfile
+    profile: BrowserProfile

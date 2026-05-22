@@ -12,7 +12,7 @@ from ....rules.models.conditions import Condition, ConditionStatsDetails
 from ..base import BaseChildDetailedExecutor
 
 from ...enums import EXECUTORSCOPE
-from ....profiles.rules.models.condition_selectors import ConditionDetailSelectors
+from ....profiles.models.condition_selectors import ConditionDetailSelectors
 
 
 class ConditionsStatsExecutor(

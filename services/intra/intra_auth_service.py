@@ -9,7 +9,8 @@ if TYPE_CHECKING:
     from services.logger.adapters import LogAdapter
     from services.browser.ports import BrowserPort
     from .models.intra_login import IntraLogin
-
+    from services.profiles import ProfileRegistry
+    from services.profiles.models import LoginSelectors
 import time
 
 from ..auth.models.auth_validation_response import AuthValidationResponse
@@ -22,9 +23,13 @@ from playwright.sync_api import Error as PlaywrightError
 class IntraAuthService(BaseAuthService):
 
     def __init__(
-        self, session_registry: SessionRegistry, provider: PROVIDERS, logger: LogAdapter
+        self,
+        session_registry: SessionRegistry,
+        profile_registry: ProfileRegistry,
+        provider: PROVIDERS,
+        logger: LogAdapter,
     ):
-        super().__init__(session_registry, provider, logger)
+        super().__init__(session_registry, profile_registry, provider, logger)
 
         self.last_login_attempt = None
         self.login_cooldown_seconds = self.session.login_cool_down
@@ -62,19 +67,29 @@ class IntraAuthService(BaseAuthService):
                 status=AUTHSTATUS.COOLDOWN,
                 message="Login cooldown active",
             )
-
-        return self.login(creds, browser_port, should_stop_cb)
+        print(creds.platform_version)
+        profile = self.profile_registry.get_profile(creds.platform_version)
+        log_selectors = profile.selectors.login
+        return self.login(creds, browser_port, log_selectors, should_stop_cb)
 
     def login(
-        self, creds: IntraLogin, browser_port: BrowserPort, should_stop_cb
+        self,
+        creds: IntraLogin,
+        browser_port: BrowserPort,
+        selectors: LoginSelectors,
+        should_stop_cb,
     ) -> AuthResult:
-        result = self._perform_login(creds, browser_port, should_stop_cb)
+        result = self._perform_login(creds, browser_port, selectors, should_stop_cb)
         self.last_login_attempt = time.time()
 
         return result
 
     def _perform_login(
-        self, creds: IntraLogin, browser_port: BrowserPort, should_stop_cb
+        self,
+        creds: IntraLogin,
+        browser_port: BrowserPort,
+        selectors: LoginSelectors,
+        should_stop_cb,
     ):
         try:
             browser_port.goto(
@@ -82,10 +97,9 @@ class IntraAuthService(BaseAuthService):
             )
             browser_port.wait_for_page_ready()
 
-            self._enter_login_info(creds, browser_port)
-            self._wait_for_session_alert(browser_port)
+            self._enter_login_info(creds, browser_port, selectors)
             browser_port.wait_for_page_ready()
-            return self._wait_for_success(browser_port)
+            return self._wait_for_success(browser_port, selectors)
         except PlaywrightError as e:
             if should_stop_cb is not None and should_stop_cb():
                 self.logging("Stop Requested. Stopping Auth.")
@@ -116,14 +130,17 @@ class IntraAuthService(BaseAuthService):
                 message="Error Occurred while logging in.",
             )
 
-    def _enter_login_info(self, creds: IntraLogin, browser_port: BrowserPort) -> None:
+    def _enter_login_info(
+        self, creds: IntraLogin, browser_port: BrowserPort, selectors: LoginSelectors
+    ) -> None:
         """
         Enters the username and password into the login fields and clicks the login button.
         """
-        browser_port.fill("#inputUserName", creds.user_name)
-        browser_port.fill("#inputPassword", creds.password)
-        # browser_port.click("#btnLogin")
-        alert = browser_port.click_and_accept_alert_if_appears("#btnLogin")
+
+        browser_port.fill(selectors.user_name_input, creds.user_name)
+        browser_port.fill(selectors.password_input, creds.password)
+
+        alert = browser_port.click_and_accept_alert_if_appears(selectors.submit_button)
         if alert:
             self.logging(
                 "Session open elsewhere alert was present. Accepted alert to proceed with this session.",
@@ -132,27 +149,22 @@ class IntraAuthService(BaseAuthService):
         else:
             self.logging("No session alert was present.", "INFO")
 
-    def _wait_for_session_alert(self, browser_port: BrowserPort) -> None:
-        """
-        Waits for a session alert indicating that a session is open elsewhere, and accepts the alert if present.
-        """
-        pass
-        # alert = browser_port.accept_alert_if_appears(None, 5000)
-
-    def _wait_for_success(self, browser_port: BrowserPort) -> AuthResult:
+    def _wait_for_success(
+        self, browser_port: BrowserPort, selectors: LoginSelectors
+    ) -> AuthResult:
         """
         Waits for the login success by checking for any error messages.
         """
 
-        error_toast = browser_port.is_visible("#loginErrorContainer span", 5000)
+        error_toast = browser_port.is_visible(selectors.error_container, 5000)
         if error_toast:
-            msg = f"Error during login: {error_toast.text}"
+            msg = f"Error during login. Couldnt log in."
             self.logging(msg, "ERROR")
             return AuthResult(
                 success=False, status=AUTHSTATUS.INVALID_CREDENTIALS, message=msg
             )
         self.logging("Login error toast not found. Verifying page loaded.", "INFO")
-        main_page_content = browser_port.is_visible("#ctl00_contentWrapper", 5000)
+        main_page_content = browser_port.is_visible(selectors.main_page_container, 5000)
         if main_page_content:
             msg = "Found main content on page. Login Successful."
             self.logging(msg)

@@ -1,7 +1,7 @@
-from ....rule_runner.models.rule_path_profile import RulePathProfile
+from ..models import BrowserProfile
 from ..models import (
     RuleFormSelectors,
-    RuleExecutorSelectors,
+    ExecutorSelectors,
     TriggerSelectors,
     TriggerCommonSelectors,
     TriggerStateChangedSelectors,
@@ -15,19 +15,27 @@ from ..models import (
     ActionCommonSelectors,
     ActionSelectors,
     ActionEmailSelectors,
+    LoginSelectors,
 )
 
 
 from base.enums import INTRAVERSION
-from ....rules.enums import (
+from ...rules.enums import (
     ACTIONTRIGGERDETAILTYPE,
     CONDITIONDETAILTYPE,
     ACTIONDETAILTYPE,
 )
 
-v_10 = RulePathProfile(
+v_10 = BrowserProfile(
     version=INTRAVERSION.V10,
-    selectors=RuleExecutorSelectors(
+    selectors=ExecutorSelectors(
+        login=LoginSelectors(
+            user_name_input="#inputUserName",
+            password_input="#inputPassword",
+            submit_button="#btnLogin",
+            error_container="#loginErrorContainer span",
+            main_page_container="#ctl00_contentWrapper",
+        ),
         rule_form=RuleFormSelectors(
             page_path="ManagerConsole/Delivery/Rules.aspx",
             add_rule_button="#ctl00_ActionBarContent_rbAction_Add",

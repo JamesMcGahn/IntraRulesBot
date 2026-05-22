@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 from ....rules.enums import STATEEQUALITYOPERATOR
 from ...enums import EXECUTORSCOPE
 from ..base import BaseChildDetailedExecutor
-from ....profiles.rules.models.trigger_selectors import TriggerDetailSelectors
+from ....profiles.models.trigger_selectors import TriggerDetailSelectors
 from ....rules.models.triggers.action_based import AgentStateChangeDetails
 from ...models.executor_item_context import ExecutorItemContext
 from ....rules.models.triggers import ActionTrigger

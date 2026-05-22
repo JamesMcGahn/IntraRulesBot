@@ -43,7 +43,7 @@ class IntraLoginWorker(QObject):
         self.username = batch.get("user_name")
         self.password = batch.get("password")
         self.url = f"https://{self.tenant}.intradiem.com/"
-        self.platform_version = "v10"
+        self.platform_version = batch.get("platform_version")
 
         self.creds = RuleRunnerConfig(
             self.username, self.password, self.tenant, self.platform_version

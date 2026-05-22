@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from .models.auth_result import AuthResult
     from services.logger.adapters import LogAdapter
     from services.rule_runner.interfaces import BrowserPort
-
+    from services.profiles import ProfileRegistry
 
 from .enums import PROVIDERS
 from .models import AuthValidationResponse
@@ -19,11 +19,16 @@ from .base_auth_service import BaseAuthService
 
 class AuthService:
 
-    def __init__(self, session_registry: SessionRegistry, logger: LogAdapter):
+    def __init__(
+        self,
+        session_registry: SessionRegistry,
+        profile_registry: ProfileRegistry,
+        logger: LogAdapter,
+    ):
         super().__init__()
         self._providers: dict[PROVIDERS, BaseAuthService] = {
             PROVIDERS.INTRA: IntraAuthService(
-                session_registry, PROVIDERS.INTRA, logger
+                session_registry, profile_registry, PROVIDERS.INTRA, logger
             ),
         }
 

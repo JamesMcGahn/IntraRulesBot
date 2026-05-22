@@ -32,6 +32,7 @@ class LoginSettings(SettingsCategoryBase):
         tied_fields=[
             ("password", SETTINGSWIDGETTYPE.LINE_EDIT),
             ("tenant", SETTINGSWIDGETTYPE.LINE_EDIT),
+            ("platform_version", SETTINGSWIDGETTYPE.COMBO_BOX),
         ],
         async_verify_group="validate_intra_login",
     )
@@ -49,6 +50,7 @@ class LoginSettings(SettingsCategoryBase):
         tied_fields=[
             ("user_name", SETTINGSWIDGETTYPE.LINE_EDIT),
             ("tenant", SETTINGSWIDGETTYPE.LINE_EDIT),
+            ("platform_version", SETTINGSWIDGETTYPE.COMBO_BOX),
         ],
         async_verify_group="validate_intra_login",
     )
@@ -65,6 +67,7 @@ class LoginSettings(SettingsCategoryBase):
         tied_fields=[
             ("user_name", SETTINGSWIDGETTYPE.LINE_EDIT),
             ("password", SETTINGSWIDGETTYPE.LINE_EDIT),
+            ("platform_version", SETTINGSWIDGETTYPE.COMBO_BOX),
         ],
         async_verify_group="validate_intra_login",
     )
@@ -78,4 +81,10 @@ class LoginSettings(SettingsCategoryBase):
         secure=False,
         combo_box=[INTRAVERSION.V10.value, INTRAVERSION.V11.value],
         verify=validate_platform_version,
+        tied_fields=[
+            ("user_name", SETTINGSWIDGETTYPE.LINE_EDIT),
+            ("password", SETTINGSWIDGETTYPE.LINE_EDIT),
+            ("tenant", SETTINGSWIDGETTYPE.LINE_EDIT),
+        ],
+        async_verify_group="validate_intra_login",
     )

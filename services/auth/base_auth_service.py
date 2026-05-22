@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from .models.auth_result import AuthResult
     from services.logger.adapters import LogAdapter
     from services.rule_runner.interfaces import BrowserPort
+    from services.profiles import ProfileRegistry
 
 import time
 
@@ -17,10 +18,15 @@ from .models.auth_validation_response import AuthValidationResponse
 class BaseAuthService:
 
     def __init__(
-        self, session_registry: SessionRegistry, provider: PROVIDERS, logger: LogAdapter
+        self,
+        session_registry: SessionRegistry,
+        profile_registry: ProfileRegistry,
+        provider: PROVIDERS,
+        logger: LogAdapter,
     ):
         self.logger = logger
         self.session = session_registry.for_provider(provider=provider)
+        self.profile_registry = profile_registry
         self.provider_name = provider
         self.last_login_attempt = None
         self.login_cooldown_seconds = self.session.login_cool_down

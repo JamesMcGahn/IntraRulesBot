@@ -1,5 +1,5 @@
 from .rule_form_selectors import RuleFormSelectors
-from .rule_executor_selectors import RuleExecutorSelectors
+from .executor_selectors import ExecutorSelectors
 from .trigger_selectors import (
     TriggerSelectors,
     TriggerDetailSelectors,
@@ -23,10 +23,13 @@ from .action_selectors import (
     ActionSelectors,
     ActionEmailSelectors,
 )
+from .login_selectors import LoginSelectors
+from .browser_profile import BrowserProfile
 
 __all__ = [
+    "LoginSelectors",
     "RuleFormSelectors",
-    "RuleExecutorSelectors",
+    "ExecutorSelectors",
     "TriggerSelectors",
     "TriggerDetailSelectors",
     "TriggerCommonSelectors",
@@ -43,4 +46,5 @@ __all__ = [
     "ActionDetailSelectors",
     "ActionSelectors",
     "ActionEmailSelectors",
+    "BrowserProfile",
 ]

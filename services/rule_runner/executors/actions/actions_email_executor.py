@@ -10,7 +10,7 @@ from ....rules.models.actions import Action, ActionsEmailDetails
 from ..base import BaseChildDetailedExecutor
 
 from ...enums import EXECUTORSCOPE
-from ....profiles.rules.models.action_selectors import ActionDetailSelectors
+from ....profiles.models.action_selectors import ActionDetailSelectors
 
 
 class ActionsEmailExecutor(

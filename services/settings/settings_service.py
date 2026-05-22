@@ -97,6 +97,14 @@ class SettingsService(QObjectBase):
             raise ValueError(msg)
         return cat
 
+    def get_category_validation(self, category: SETTINGSCATEGORIES) -> dict[str, bool]:
+        cat = self._validated.get(category)
+        if not cat:
+            msg = f"Cannot Find Category: {category}"
+            self.logging(msg)
+            raise ValueError(msg)
+        return cat
+
     def get_field_meta(self, category: SETTINGSCATEGORIES, field: str):
         field_category = self.get_category(category)
         meta = field_category.get_field_meta(field)
