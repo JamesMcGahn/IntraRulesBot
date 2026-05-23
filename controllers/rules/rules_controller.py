@@ -74,6 +74,15 @@ class RulesController(QObjectBase):
         self.rule_runner_service.progress.connect(self.runner_progress)
         self.stop_runner_service.connect(self.rule_runner_service.stop_current_run)
 
+        self.batch_dispatchers = {
+            VALIDATIONBATCHTYPE.IMPORT: self._handle_import_batch,
+            VALIDATIONBATCHTYPE.RUNTIME: self._handle_run_time,
+            VALIDATIONBATCHTYPE.USER_SAVE: self._handle_user_save,
+            VALIDATIONBATCHTYPE.SYS_SAVE: self._handle_sys_save,
+            VALIDATIONBATCHTYPE.RULE_RUNNER: self._handle_run_rules,
+            VALIDATIONBATCHTYPE.BOOKMARK: self._handle_bookmark,
+        }
+
     def hydrate_rules_page(self):
         self._emit_rules_updated()
 
@@ -178,104 +187,87 @@ class RulesController(QObjectBase):
         if batch.batch_total == batch.validation_total:
             self._finalize_batch(job_id)
 
-    # TODO NEED TO SPLIT INTO HANDLERS
     def _finalize_batch(self, batch_id: str):
         batch = self._active_batches.pop(batch_id)
-        if batch.batch_type == VALIDATIONBATCHTYPE.IMPORT:
-            if batch.rule_errors:
-                message = f"""Import Failed. {batch.total_errors} errors found in rule set. View Errors Dialog for more details"""
-                title = "Import Failed"
-                error = SchemaErrorDialogEvent(errors=batch.rule_errors)
-                error_event = UIEvent(UIEVENTTYPE.DISPLAY, payload=error)
-                self.send_toast_failure(title=title, message=message)
-                self.ui_event.emit(error_event)
-            else:
-                toast = ToastEvent(
-                    message="Import Suceeded. 0 errors found in rule set.",
-                    title="Import Suceeded",
-                    toast_level=QTOASTSTATUS.SUCCESS,
-                    log_level=LOGLEVEL.INFO,
-                )
-                event = UIEvent(UIEVENTTYPE.DISPLAY, payload=toast)
-                self.ui_event.emit(event)
+        dispatcher = self.batch_dispatchers.get(batch.batch_type)
 
-                rules = self.rule_builder.build_rules(batch.valid_rules)
-                self.rules_registry.add_rules(rules)
-                self._emit_rules_updated()
-        elif batch.batch_type == VALIDATIONBATCHTYPE.RUNTIME:
-            errors_grouped_dict = self._group_batch_errors(batch)
+        if dispatcher is None:
+            msg = f"{batch.batch_type} doesnt have a handler implemented"
+            self.logging(msg, "ERROR")
+            raise NotImplementedError(msg)
 
+        dispatcher(batch)
+
+    def _handle_run_time(self, batch: ValidationBatch):
+        if batch.rule_errors:
+            self._handle_batch_errors("Validation", batch)
+        errors_grouped_dict = self._group_batch_errors(batch)
+        self.runtime_validation_result.emit(ValidationRulesResult(errors_grouped_dict))
+
+    def _handle_bookmark(self, batch: ValidationBatch):
+        errors_grouped_dict = self._group_batch_errors(batch)
+        if batch.rule_errors:
+            self._handle_batch_errors("Bookmark Saved", batch)
             self.runtime_validation_result.emit(
                 ValidationRulesResult(errors_grouped_dict)
             )
-        elif batch.batch_type == VALIDATIONBATCHTYPE.USER_SAVE:
-            # TODO MAKE HELPER METHOD
-            errors_grouped_dict = self._group_batch_errors(batch)
-            if batch.rule_errors:
+            return
 
-                message = f"""Saved Failed. {batch.total_errors} errors found in rule set. View Errors Dialog for more details"""
-                title = "Saved Failed"
-                error = SchemaErrorDialogEvent(errors=batch.rule_errors)
-                error_event = UIEvent(UIEVENTTYPE.DISPLAY, payload=error)
-                self.send_toast_failure(title=title, message=message)
-                self.ui_event.emit(error_event)
+        data = {
+            "rule_set_name": batch.rule_batch_name,
+            "description": batch.rule_batch_description,
+            "default": False,
+            "rules": batch.valid_rules,
+        }
+        self.rule_set_bookmarked.emit(data)
 
+    def _handle_import_batch(self, batch: ValidationBatch):
+        if batch.rule_errors:
+            self._handle_batch_errors("Import", batch)
+            return
+        toast = ToastEvent(
+            message="Import Suceeded. 0 errors found in rule set.",
+            title="Import Suceeded",
+            toast_level=QTOASTSTATUS.SUCCESS,
+            log_level=LOGLEVEL.INFO,
+        )
+        event = UIEvent(UIEVENTTYPE.DISPLAY, payload=toast)
+        self.ui_event.emit(event)
+        rules = self.rule_builder.build_rules(batch.valid_rules)
+        self.rules_registry.add_rules(rules)
+        self._emit_rules_updated()
+
+    def _handle_user_save(self, batch: ValidationBatch):
+        errors_grouped_dict = self._group_batch_errors(batch)
+        if batch.rule_errors:
+            self._handle_batch_errors("Saved", batch)
             self.runtime_validation_result.emit(
                 ValidationRulesResult(errors_grouped_dict)
             )
+            return
 
-            if batch.rule_errors or not batch.file_path:
-                return
+        path = PathManager.regex_path(batch.file_path)
+        rules = {
+            "rule_set_name": path["filename"],
+            "description": "Saved Rules From Editor",
+            "rules": batch.valid_rules,
+        }
 
-            path = PathManager.regex_path(batch.file_path)
-            rules = {
-                "rule_set_name": path["filename"],
-                "description": "Saved Rules From Editor",
-                "rules": batch.valid_rules,
-            }
-
-            is_saved, error = self.rules_store.save(rules, batch.file_path)
-            if is_saved:
-                toast = ToastEvent(
-                    message="File Saved",
-                    title=f"File Saved to {batch.file_path}",
-                    toast_level=QTOASTSTATUS.SUCCESS,
-                    log_level=LOGLEVEL.INFO,
-                )
-                event = UIEvent(UIEVENTTYPE.DISPLAY, payload=toast)
-                self.ui_event.emit(event)
-        elif batch.batch_type == VALIDATIONBATCHTYPE.SYS_SAVE:
-            self.handle_sys_save(batch)
-
-        elif batch.batch_type == VALIDATIONBATCHTYPE.RULE_RUNNER:
-            # TODO CHECK FOR ERRORS ETC
-            self.handle_run_rules(batch)
-        elif batch.batch_type == VALIDATIONBATCHTYPE.BOOKMARK:
-            errors_grouped_dict = self._group_batch_errors(batch)
-            if batch.rule_errors:
-                message = f"""Saved Failed. {batch.total_errors} errors found in rule set. View Errors Dialog for more details"""
-                title = "Saved Failed"
-                error = SchemaErrorDialogEvent(errors=batch.rule_errors)
-                error_event = UIEvent(UIEVENTTYPE.DISPLAY, payload=error)
-                self.send_toast_failure(title=title, message=message)
-                self.ui_event.emit(error_event)
-
-            self.runtime_validation_result.emit(
-                ValidationRulesResult(errors_grouped_dict)
+        is_saved, error = self.rules_store.save(rules, batch.file_path)
+        if is_saved:
+            toast = ToastEvent(
+                message="File Saved",
+                title=f"File Saved to {batch.file_path}",
+                toast_level=QTOASTSTATUS.SUCCESS,
+                log_level=LOGLEVEL.INFO,
             )
+            event = UIEvent(UIEVENTTYPE.DISPLAY, payload=toast)
+            self.ui_event.emit(event)
 
-            if batch.rule_errors:
-                return
-
-            data = {
-                "rule_set_name": batch.rule_batch_name,
-                "description": batch.rule_batch_description,
-                "default": False,
-                "rules": batch.valid_rules,
-            }
-            self.rule_set_bookmarked.emit(data)
-
-    def handle_run_rules(self, batch: ValidationBatch):
+    def _handle_run_rules(self, batch: ValidationBatch):
+        if batch.rule_errors:
+            self._handle_batch_errors("Run Rules", batch)
+            return
         rules = self.rule_builder.build_rules(batch.valid_rules)
         rule_items = [RuleRunItem(rule.guid, rule) for rule in rules]
         login_config = self._settings_provider.get_rule_run_config()
@@ -290,32 +282,33 @@ class RulesController(QObjectBase):
         self._active_runners[job_ref_id] = RuleRunnerRequestPayload
         self.rule_runner_service.start_run(JobRequest(job_ref_id, None, payload))
 
-    def handle_sys_save(self, batch: ValidationBatch):
+    def _handle_sys_save(self, batch: ValidationBatch):
         if batch.rule_errors:
             errors_grouped_dict = self._group_batch_errors(batch)
 
             self.runtime_validation_result.emit(
                 ValidationRulesResult(errors_grouped_dict)
             )
-        else:
-            path = PathManager.create_folder_in_app_data("rule_editor_state")
-            rules = {
-                "rule_set_name": "Saved Rules",
-                "description": "Saved Rules From Editor",
-                "rules": batch.valid_rules,
-            }
-            base_dir = Path(path)
-            file_path = base_dir / "rule_editor_state.json"
-            is_saved, error = self.rules_store.save(rules, file_path)
-            if is_saved:
-                toast = ToastEvent(
-                    message="Rules Saved",
-                    title="Rules Saved to System",
-                    toast_level=QTOASTSTATUS.SUCCESS,
-                    log_level=LOGLEVEL.INFO,
-                )
-                event = UIEvent(UIEVENTTYPE.DISPLAY, payload=toast)
-                self.ui_event.emit(event)
+            return
+
+        path = PathManager.create_folder_in_app_data("rule_editor_state")
+        rules = {
+            "rule_set_name": "Saved Rules",
+            "description": "Saved Rules From Editor",
+            "rules": batch.valid_rules,
+        }
+        base_dir = Path(path)
+        file_path = base_dir / "rule_editor_state.json"
+        is_saved, error = self.rules_store.save(rules, file_path)
+        if is_saved:
+            toast = ToastEvent(
+                message="Rules Saved",
+                title="Rules Saved to System",
+                toast_level=QTOASTSTATUS.SUCCESS,
+                log_level=LOGLEVEL.INFO,
+            )
+            event = UIEvent(UIEVENTTYPE.DISPLAY, payload=toast)
+            self.ui_event.emit(event)
 
     def _group_batch_errors(
         self, batch: ValidationBatch
@@ -395,3 +388,11 @@ class RulesController(QObjectBase):
             new_rules.append(rule)
         self.rules_registry.add_rules(new_rules)
         self._emit_rules_updated()
+
+    def _handle_batch_errors(self, batch_type: str, batch: ValidationBatch):
+        message = f"""{batch_type} Failed. {batch.total_errors} errors found in rule set. View Errors Dialog for more details"""
+        title = f"{batch_type} Failed"
+        error = SchemaErrorDialogEvent(errors=batch.rule_errors)
+        error_event = UIEvent(UIEVENTTYPE.DISPLAY, payload=error)
+        self.send_toast_failure(title=title, message=message)
+        self.ui_event.emit(error_event)
