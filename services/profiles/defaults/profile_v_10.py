@@ -1,29 +1,28 @@
-from ..models import BrowserProfile
+from base.enums import INTRAVERSION
+
+from ...rules.enums import (
+    ACTIONDETAILTYPE,
+    ACTIONTRIGGERDETAILTYPE,
+    CONDITIONDETAILTYPE,
+)
 from ..models import (
-    RuleFormSelectors,
+    ActionCommonSelectors,
+    ActionEmailSelectors,
+    ActionSelectors,
+    BrowserProfile,
+    ConditionCommonSelectors,
+    ConditionSelectors,
+    ConditionStatsSelectors,
     ExecutorSelectors,
-    TriggerSelectors,
+    LoginSelectors,
+    RuleFormSelectors,
     TriggerCommonSelectors,
+    TriggerQuickActionSelectors,
+    TriggerSelectors,
     TriggerStateChangedSelectors,
     TriggerTimeInStateSelectors,
     TriggerUserLoggedInSelectors,
     TriggerUserLoggedOutSelectors,
-    TriggerQuickActionSelectors,
-    ConditionSelectors,
-    ConditionCommonSelectors,
-    ConditionStatsSelectors,
-    ActionCommonSelectors,
-    ActionSelectors,
-    ActionEmailSelectors,
-    LoginSelectors,
-)
-
-
-from base.enums import INTRAVERSION
-from ...rules.enums import (
-    ACTIONTRIGGERDETAILTYPE,
-    CONDITIONDETAILTYPE,
-    ACTIONDETAILTYPE,
 )
 
 v_10 = BrowserProfile(
@@ -35,6 +34,7 @@ v_10 = BrowserProfile(
             submit_button="#btnLogin",
             error_container="#loginErrorContainer span",
             main_page_container="#ctl00_contentWrapper",
+            logged_out_session="#lblLoggedOut",
         ),
         rule_form=RuleFormSelectors(
             page_path="ManagerConsole/Delivery/Rules.aspx",

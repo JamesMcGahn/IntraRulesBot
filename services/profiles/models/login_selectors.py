@@ -8,3 +8,4 @@ class LoginSelectors:
     submit_button: str
     error_container: str
     main_page_container: str
+    logged_out_session: str

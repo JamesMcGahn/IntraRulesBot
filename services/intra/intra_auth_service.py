@@ -69,7 +69,6 @@ class IntraAuthService(BaseAuthService):
                 status=AUTHSTATUS.COOLDOWN,
                 message="Login cooldown active",
             )
-        print(creds.platform_version)
         profile = self.profile_registry.get_profile(creds.platform_version)
         log_selectors = profile.selectors.login
         return self.login(creds, browser_port, log_selectors, should_stop_cb)
@@ -158,13 +157,21 @@ class IntraAuthService(BaseAuthService):
         Waits for the login success by checking for any error messages.
         """
 
-        error_toast = browser_port.is_visible(selectors.error_container, 5000)
+        error_toast = browser_port.is_visible(selectors.error_container, 3000)
+        duplicate_session = browser_port.is_visible(selectors.logged_out_session, 3000)
         if error_toast:
             msg = "Error during login. Couldnt log in."
             self.logging(msg, "ERROR")
             return AuthResult(
                 success=False, status=AUTHSTATUS.INVALID_CREDENTIALS, message=msg
             )
+        if duplicate_session:
+            msg = "You have logged out or have been logged out due to logging in from another session."
+            self.logging(msg, "ERROR")
+            return AuthResult(
+                success=False, status=AUTHSTATUS.DUPLICATE_SESSION, message=msg
+            )
+
         self.logging("Login error toast not found. Verifying page loaded.", "INFO")
         main_page_content = browser_port.is_visible(selectors.main_page_container, 5000)
         if main_page_content:

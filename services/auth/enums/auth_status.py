@@ -9,3 +9,4 @@ class AUTHSTATUS(StrEnum):
     BROWSER_ERROR = "browser_error"
     UNKNOWN_ERROR = "unknown_error"
     STOPPED_REQUESTED = "stopped_requested"
+    DUPLICATE_SESSION = "duplicate_session"

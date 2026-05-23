@@ -6,7 +6,7 @@ from playwright.sync_api import (
     FrameLocator,
     Locator,
     TimeoutError as PlaywrightTimeoutError,
-    Error as PlaywrightError,
+    Dialog,
 )
 
 from .playwright_interaction_adapter import PlaywrightInteractionAdapter
@@ -77,31 +77,33 @@ class PlaywrightBrowserAdapter(BrowserPort):
     def screenshot(self, path: str) -> None:
         self._page.screenshot(path=path)
 
+    def _handle_dialog(
+        self, dialog: Dialog, check_alert_text: str, result: dict[str, bool]
+    ):
+        message = dialog.message
+        if check_alert_text and check_alert_text not in message:
+            dialog.dismiss()
+            result["result"] = False
+
+        dialog.accept()
+        result["result"] = True
+
     def click_and_accept_alert_if_appears(
         self,
         locator: str,
         check_alert_text: str | None = None,
         timeout: int = 3000,
     ) -> bool:
-        try:
-            with self._page.expect_event("dialog", timeout=timeout) as dialog_info:
-                self._page.locator(locator).click()
+        result = {"result": False}
 
-            dialog = dialog_info.value
-            message = dialog.message
+        def handler(dialog: Dialog) -> None:
+            self._handle_dialog(dialog, check_alert_text, result)
 
-            if check_alert_text and check_alert_text not in message:
-                dialog.dismiss()
-                return False
+        self._page.on("dialog", handler)
 
-            dialog.accept()
-            return True
-
-        except PlaywrightTimeoutError:
-            return False
-
-        except PlaywrightError as e:
-            return False
+        self._page.locator(locator).click()
+        self._page.remove_listener("dialog", handler)
+        return result["result"]
 
     def frame_click_and_accept_alert_if_appears(
         self,

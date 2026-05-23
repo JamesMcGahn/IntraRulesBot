@@ -8,15 +8,17 @@ if TYPE_CHECKING:
     from .intra_provider_session import IntraProviderSession
     from services.logger.adapters import LogAdapter
     from services.browser.models import PlaywrightSession
-from PySide6.QtCore import Signal, QObject
+
 import threading
 
+from PySide6.QtCore import QObject, Signal
 
 from services.auth.enums import PROVIDERS
+from services.browser.models import PlaywrightConfig
 
-from ..rule_runner.models import RuleRunnerConfig
 from ..auth.enums import AUTHSTATUS
 from ..auth.models.auth_result import AuthResult
+from ..rule_runner.models import RuleRunnerConfig
 
 
 class IntraLoginWorker(QObject):
@@ -33,7 +35,6 @@ class IntraLoginWorker(QObject):
         logger: LogAdapter,
     ):
         super().__init__()
-        print(batch)
         self.logger = logger
         self.session = session
         self.auth_service = auth_service
@@ -46,7 +47,11 @@ class IntraLoginWorker(QObject):
         self.platform_version = batch.get("platform_version")
 
         self.creds = RuleRunnerConfig(
-            self.username, self.password, self.tenant, self.platform_version
+            self.username,
+            self.password,
+            self.tenant,
+            self.platform_version,
+            login_valid=False,
         )
 
         self.playwright_session_manager = None
@@ -81,7 +86,7 @@ class IntraLoginWorker(QObject):
         Initializes the Selenium WebDriver through the WebDriverManager.
         """
         self.playwright_session_manager = self.browser_session_factory.create_session(
-            PROVIDERS.INTRA
+            PROVIDERS.INTRA, PlaywrightConfig()
         )
         self.playwright_session = self.playwright_session_manager.start()
 
