@@ -125,13 +125,6 @@ class RulesPage(QWidgetBase):
         )
         self.controllers.rules.handle_stop_runner()
 
-        # field_name = obj_name.split("**")[0]
-        # path = obj_name.split("**")[1]
-
-        # self.focus_object_name = field_name
-        # self.focus_object_text = object_text
-        # print(path, field_name, object_text)
-
     def display_errors_dialog(self) -> None:
         """
         Display the error dialog if validation errors are found in the form fields.

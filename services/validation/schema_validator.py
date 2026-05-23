@@ -71,7 +71,6 @@ class SchemaValidationService(QObjectBase):
         job = self._pending_jobs.get(job_id)
         if not job:
             return
-        print("sending")
         job_response = JobResponse(
             job_ref=JobRef(job_id, task=None, status=JOBSTATUS.COMPLETE),
             payload=ValidationResponse(kind=VALIDATEJOBTYPE.SCHEMA, data=res),

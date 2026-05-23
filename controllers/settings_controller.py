@@ -66,7 +66,6 @@ class SettingsController(QObjectBase):
         )
 
     def on_field_verify(self, category: SETTINGSCATEGORIES, field: str, value):
-        print("controller", category, field, value)
 
         job_id = str(uuid4())
 
@@ -110,7 +109,6 @@ class SettingsController(QObjectBase):
             | ValidationBatchResponse[SettingsValidateResponse]
         ],
     ):
-        print("received")
         job_id = job_res.job_ref.id
         if job_id not in self._active_jobs:
             return

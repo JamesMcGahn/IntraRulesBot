@@ -87,12 +87,9 @@ class SettingsUIHelper(QObject):
             tied_validation.append((tab, key, value))
             for tie in tied_fields:
                 tied_key, tied_widget = tie
-                # value =
-                print(f"{tab}/{tied_widget.value}_{tied_key}")
                 tied_value = self.field_registery.get_text_value(
                     f"{tab}/{tied_widget.value}_{tied_key}"
                 )
-                print(tied_value)
                 tied_validation.append((tab, tied_key, tied_value))
                 self.set_verify_btn_disable(tab, tied_key, True)
             self.send_batch_to_verify.emit(tied_validation)
@@ -289,7 +286,6 @@ class SettingsUIHelper(QObject):
         self.timers[timer_key].start(500)
 
     def handle_secure_user_done_typing(self, tab, key, field):
-        print(tab, key, field)
         text = field.text()
         self.handle_secure_setting_change(tab, key, text)
 
@@ -316,7 +312,6 @@ class SettingsUIHelper(QObject):
         path = line_edit.text() or "./"
 
         folder = QFileDialog.getExistingDirectory(caption="Select Folder", dir=path)
-        print(folder, widget_type)
         if folder:
             folder = folder if folder[-1] == "/" else folder + "/"
 

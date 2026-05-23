@@ -109,7 +109,6 @@ class IconOnlyNavBarView(QWidget):
         """
         Handles the button click event and emits the `btn_clicked_page` signal.
         """
-        print("here")
         self.page_change_request.emit(PAGE(self.sender().objectName()))
 
     def _btn_checked(self, checked: bool) -> None:

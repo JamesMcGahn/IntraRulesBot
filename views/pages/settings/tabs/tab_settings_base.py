@@ -55,7 +55,6 @@ class TabSettingsBase(QWidgetBase):
                 tab = event.payload.category
                 field = event.payload.field
                 status = event.payload.status
-                print(tab, field, status)
                 if status == FIELDSTATESTATUS.VALID:
                     self.change_verify_btn_disable.emit(tab, field, False)
                     self.verify_response_update.emit(tab, field, True)

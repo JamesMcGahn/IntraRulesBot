@@ -33,9 +33,6 @@ class SettingsService(QObjectBase):
         self._settings_loaded = False
 
         self.load_settings()
-        # REMOVE AFTER TESTING
-        # self.get()
-        # print(self.get_category(SETTINGSCATEGORIES.LOG))
 
     def load_settings(self):
         if self._settings_loaded:
@@ -64,7 +61,6 @@ class SettingsService(QObjectBase):
         self.logging("Settings save sucessfully.")
 
     def get_settings(self) -> AppSettingsMap:
-        print(self._settings)
         return deepcopy(self._settings)
 
     def get_validations(self) -> dict[SETTINGSCATEGORIES, dict[str, bool]]:

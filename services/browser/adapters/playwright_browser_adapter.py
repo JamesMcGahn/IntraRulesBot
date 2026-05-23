@@ -89,22 +89,18 @@ class PlaywrightBrowserAdapter(BrowserPort):
 
             dialog = dialog_info.value
             message = dialog.message
-            print("**** dialog message:", message)
 
             if check_alert_text and check_alert_text not in message:
                 dialog.dismiss()
                 return False
 
             dialog.accept()
-            print("dialog accepted")
             return True
 
         except PlaywrightTimeoutError:
-            print("no dialog appeared")
             return False
 
         except PlaywrightError as e:
-            print(f"dialog handling failed: {e}")
             return False
 
     def frame_click_and_accept_alert_if_appears(
@@ -120,7 +116,6 @@ class PlaywrightBrowserAdapter(BrowserPort):
 
             dialog = dialog_info.value
             message = dialog.message
-            print("**** dialog message:", message)
 
             if check_alert_text and check_alert_text not in message:
                 dialog.dismiss()

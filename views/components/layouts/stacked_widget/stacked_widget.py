@@ -19,7 +19,6 @@ class StackedWidget(QStackedWidget):
     def set_current_by_name(self, name: str) -> None:
 
         index = self.widget_map.get(name)
-        print(self.widget_map, index)
         if not index:
             return
         self.setCurrentIndex(index)

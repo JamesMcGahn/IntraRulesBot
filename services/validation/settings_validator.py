@@ -107,7 +107,6 @@ class SettingsValidationService(QObjectBase):
         self._pending_jobs[job.id] = job
 
         payload = job.payload.data
-        print("payload validate", payload)
         failed = False
         async_function = None
         batch_object = {}
@@ -150,7 +149,6 @@ class SettingsValidationService(QObjectBase):
             job_ref=JobRef(job_id, task=None, status=JOBSTATUS.COMPLETE),
             payload=ValidationResponse(kind=VALIDATEJOBTYPE.SETTINGS, data=res),
         )
-        print("emitting")
         self.task_complete.emit(job_response)
         self._pending_jobs.pop(job_id)
 
@@ -184,7 +182,6 @@ class SettingsValidationService(QObjectBase):
             self._intra_worker = None
 
     def handle_intra_login_response(self, job_id: str, is_valid: bool):
-        print("hey now", is_valid)
         job = self._pending_jobs.get(job_id)
         payload = job.payload.data
         response_payloads = []

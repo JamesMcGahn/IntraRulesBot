@@ -76,20 +76,17 @@ class RuleAdapter:
             None: This function does not return a value.
         """
         rule_imports = self.field_map
-        print(rule_imports)
 
         def set_sheet(el, status=False):
             if status:
                 color = "green"
             else:
                 color = "red"
-            print(el)
             el.setStyleSheet(f"border: 1px solid {color};")
 
         def turn_green(field_refs):
             if isinstance(field_refs, ValidationError):
                 return
-            # print(field_refs)
             for key, field in field_refs.items():
                 if key == "guid":
                     continue
