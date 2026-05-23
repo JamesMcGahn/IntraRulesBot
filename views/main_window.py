@@ -44,7 +44,9 @@ class MainWindow(QMainWindow):
         if font_family != -1:
             StyleHelper.dpi_scale_set_font(self.app, font_family, 13)
         # Initialize central widget
-        self.central_widget = CentralWidget(controller_factory=self.controller_factory)
+        self.central_widget = CentralWidget(
+            controllers=self.controller_factory.create_central_widget()
+        )
         # Set application icon
         app_icon = QIcon()
         app_icon.addFile(":/system_icons/logo16_16.ico", QSize(16, 16))

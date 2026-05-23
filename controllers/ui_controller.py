@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from controllers import ControllerFactory
     from views.components.toasts.qtoast.enums import QTOASTSTATUS
     from services.logger.adapters import LogAdapter
     from PySide6.QtWidgets import QWidget
@@ -11,18 +10,23 @@ if TYPE_CHECKING:
 from PySide6.QtCore import Signal, Slot
 
 from base import QObjectBase
-from base.enums import UIEVENTTYPE, LOGLEVEL
-from services.base.enums import JOBSTATUS
-
-from base.events import UIEvent
+from base.enums import LOGLEVEL
+from base.events import SchemaErrorDialogEvent, ToastEvent, UIEvent
+from views.base.enums import PAGE
+from views.components.dialogs import SchemaErrorDialog
 from views.components.toasts import QToast
 from views.components.toasts.qtoast.enums import QTOASTSTATUS
-from base.events import UIEvent, ToastEvent, SchemaErrorDialogEvent
-
-from views.components.dialogs import SchemaErrorDialog
 
 
 class UIController(QObjectBase):
+    page_changed = Signal(object)
+    side_bar_changed = Signal(bool)
+
+    def set_side_bar(self, expand: bool):
+        self.side_bar_changed.emit(expand)
+
+    def set_active_page(self, page: PAGE):
+        self.page_changed.emit(page)
 
     def __init__(self, logger: LogAdapter):
         super().__init__()

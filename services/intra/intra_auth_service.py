@@ -11,13 +11,15 @@ if TYPE_CHECKING:
     from .models.intra_login import IntraLogin
     from services.profiles import ProfileRegistry
     from services.profiles.models import LoginSelectors
+
 import time
 
-from ..auth.models.auth_validation_response import AuthValidationResponse
+from playwright.sync_api import Error as PlaywrightError
+
 from ..auth.base_auth_service import BaseAuthService
 from ..auth.enums.auth_status import AUTHSTATUS
 from ..auth.models.auth_result import AuthResult
-from playwright.sync_api import Error as PlaywrightError
+from ..auth.models.auth_validation_response import AuthValidationResponse
 
 
 class IntraAuthService(BaseAuthService):
@@ -158,7 +160,7 @@ class IntraAuthService(BaseAuthService):
 
         error_toast = browser_port.is_visible(selectors.error_container, 5000)
         if error_toast:
-            msg = f"Error during login. Couldnt log in."
+            msg = "Error during login. Couldnt log in."
             self.logging(msg, "ERROR")
             return AuthResult(
                 success=False, status=AUTHSTATUS.INVALID_CREDENTIALS, message=msg

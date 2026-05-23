@@ -3,14 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from controllers import ControllerFactory
-
+    from controllers.models import TopNavControllers
 
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import QFileDialog
 
 from base import QWidgetBase
-
 
 from .header_navbar_css import STYLES
 from .header_navbar_ui import HeaderNavBarView
@@ -25,10 +23,7 @@ class HeaderNavBar(QWidgetBase):
     hamburger_signal = Signal(bool)
     load_rules = Signal(list)
 
-    def __init__(self, controller_factory: ControllerFactory):
-        """
-        Initializes the HeaderNavBar, sets up the view and connections, and prepares the rule validation.
-        """
+    def __init__(self, controllers: TopNavControllers):
         super().__init__()
         self.setObjectName("header_widget")
         self.setMaximumSize(QSize(16777215, 175))
@@ -39,9 +34,9 @@ class HeaderNavBar(QWidgetBase):
         self.ui = HeaderNavBarView()
         self.layout.addWidget(self.ui)
 
-        self.controller_factory = controller_factory
-        self.top_nav_controllers = self.controller_factory.create_top_nav_bar()
-        self.rule_controller = self.top_nav_controllers.rules
+        self.controllers = controllers
+        self.rule_controller = self.controllers.rules
+        self.ui_controller = self.controllers.ui
         # Connect signals
         self.ui.hamburger_icon_btn.toggled.connect(self.hamburger_icon_btn_toggled)
         self.ui.open_file_btn.clicked.connect(self.open_json_file)
@@ -50,12 +45,11 @@ class HeaderNavBar(QWidgetBase):
         """
         Slot for handling hamburger button toggle events. Emits the hamburger_signal.
         """
-        self.hamburger_signal.emit(self.ui.hamburger_icon_btn.isChecked())
+        self.ui_controller.set_side_bar(self.ui.hamburger_icon_btn.isChecked())
 
     def open_json_file(self) -> None:
         """
-        Opens a file dialog to select a JSON file, validates its content against the rules schema,
-        and emits the valid data to the RulesModel. Displays errors if validation fails.
+        Opens a file dialog to select a JSON file, passes filename to rules controller
         """
         file_name, _ = QFileDialog.getOpenFileName(
             self,
