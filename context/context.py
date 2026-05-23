@@ -23,6 +23,7 @@ from controllers import (
     RulesController,
     RuleSetsController,
     UIController,
+    RulesValidationCoordinator,
 )
 from services.rules import RuleRegistry, RuleStore, RuleBuilder, RuleSerializer
 from services.rule_sets import (
@@ -112,8 +113,12 @@ class AppContext(QObject, metaclass=QSingleton):
             rule_set_store=self.rule_set_store,
             rule_set_serializer=self.rule_set_serializer,
         )
+
+        self.rules_validation_coord = RulesValidationCoordinator(
+            validation_service=self.validation_service
+        )
         self.rules_controller = RulesController(
-            validation_service=self.validation_service,
+            validation_coordinator=self.rules_validation_coord,
             rules_registry=self.rules_registry,
             rule_store=self.rule_store,
             rule_builder=self.rule_builder,

@@ -32,7 +32,7 @@ class RulesPage(QWidgetBase):
 
     send_rules = Signal(list)
     send_rule_sets = Signal(object)
-    runtime_validation_result = Signal(object)
+    display_validation_result = Signal(object)
 
     def __init__(self, controllers: RulesPageControllers):
         """
@@ -54,7 +54,7 @@ class RulesPage(QWidgetBase):
 
         ##
         self.rules_controller.ui_event.connect(self.receive_ui_event)
-        self.rules_controller.runtime_validation_result.connect(
+        self.rules_controller.display_validation_result.connect(
             self.ui.update_form_validation
         )
         self.rules_controller.runner_progress.connect(self.ui.set_progress_bar)
@@ -98,13 +98,13 @@ class RulesPage(QWidgetBase):
 
     @Slot(list)
     def handle_validate_rules(self, rules: dict):
-        self.controllers.rules.validate_json(
+        self.controllers.rules.validate_rules(
             rules, batch_type=VALIDATIONBATCHTYPE.RUNTIME
         )
 
     @Slot(list)
     def handle_start_runner(self, rules: dict):
-        self.controllers.rules.validate_json(
+        self.controllers.rules.validate_rules(
             rules, batch_type=VALIDATIONBATCHTYPE.RULE_RUNNER
         )
 
@@ -159,7 +159,7 @@ class RulesPage(QWidgetBase):
             # Ensure the file has a .json extension
             if not file_path.endswith(".json"):
                 file_path += ".json"
-        self.controllers.rules.validate_json(
+        self.controllers.rules.validate_rules(
             rules, batch_type=VALIDATIONBATCHTYPE.USER_SAVE, file_path=file_path
         )
 
@@ -167,7 +167,7 @@ class RulesPage(QWidgetBase):
         """
         Save the validated rules to the internal system storage.
         """
-        self.controllers.rules.validate_json(
+        self.controllers.rules.validate_rules(
             rules, batch_type=VALIDATIONBATCHTYPE.SYS_SAVE
         )
 
