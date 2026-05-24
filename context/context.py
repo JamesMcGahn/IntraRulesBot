@@ -24,6 +24,7 @@ from controllers import (
     RuleSetsController,
     UIController,
     RulesValidationCoordinator,
+    RulesRunMonitorController,
 )
 from services.rules import RuleRegistry, RuleStore, RuleBuilder, RuleSerializer
 from services.rule_sets import (
@@ -40,6 +41,7 @@ from services.auth.enums import PROVIDERS
 from services.logger.adapters import LogAdapter
 from services.browser import BrowserSessionFactory
 from services.profiles import ProfileRegistry
+from services.rule_monitor import RunMonitorStore
 
 
 class AppContext(QObject, metaclass=QSingleton):
@@ -101,8 +103,12 @@ class AppContext(QObject, metaclass=QSingleton):
         self.logger.load_settings(log_settings)
         self.logger.start_up()
 
+        self.run_monitor_store = RunMonitorStore()
         ## Controllers
         self.ui_controller = UIController(logger=self.log_adapter)
+        self.rules_monitor_controller = RulesRunMonitorController(
+            run_store=self.run_monitor_store
+        )
         self.settings_controller = SettingsController(
             settings_service=self.settings_manager,
             validation_service=self.validation_service,
@@ -133,6 +139,11 @@ class AppContext(QObject, metaclass=QSingleton):
         self.session_registry.pre_load_providers([PROVIDERS.INTRA])
 
         # CONNECTIONS
+        ## Rule Runner
+        self.rule_runner_service.task_progress.connect(
+            self.rules_monitor_controller.handle_task_progress_event
+        )
+
         ## SETTINGS
         self.settings_controller.setting_updated.connect(self.setting_updated)
         self.setting_updated.connect(self.logger.received_settings_change)

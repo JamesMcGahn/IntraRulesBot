@@ -33,7 +33,9 @@ class ControllerFactory:
         )
 
     def create_rules_page(self) -> RulesPageControllers:
-        return RulesPageControllers(rules=self.ctx.rules_controller)
+        return RulesPageControllers(
+            rules=self.ctx.rules_controller, monitor=self.ctx.rules_monitor_controller
+        )
 
     def create_bookmarks_page(self) -> BookmarksPageControllers:
         return BookmarksPageControllers(rule_sets=self.ctx.rule_sets_controller)

@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from ...browser.ports import BrowserPort
     from ...logger.adapters import LogAdapter
     from ...profiles.models.browser_profile import BrowserProfile
+    from .rule_progress_event import RuleProgressEvent
 
 
 @dataclass(frozen=True)
@@ -18,3 +19,4 @@ class RuleExecutionContext:
     logger: LogAdapter
     should_stop: Callable[[], bool]
     profile: BrowserProfile
+    progress_cb: Callable[[RuleProgressEvent], None]

@@ -92,6 +92,7 @@ class RuleExecutor(BaseScopeExecutor):
             return RuleExecutionResult(
                 rule_guid=self._ctx.rule.guid,
                 rule_name=self._state.rule_name,
+                task_ref=self._state.current_task,
                 success=True,
                 status=RULEEXECSTATUS.SUCCESS,
                 message="Rule submitted successfully.",

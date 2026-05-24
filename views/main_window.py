@@ -108,7 +108,7 @@ class MainWindow(QMainWindow):
             "Close",
         )
         self.send_logs.emit("Close Application Button Clicked", "INFO", True)
-        if dialog.show():
+        if dialog.exec():
             self.prompted_user_for_close = True
             self.appshutdown.emit()
 

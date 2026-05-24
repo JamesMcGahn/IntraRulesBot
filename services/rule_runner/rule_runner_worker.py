@@ -12,10 +12,11 @@ if TYPE_CHECKING:
     from ..browser import BrowserSessionFactory
     from services.browser.models import PlaywrightSession
     from services.profiles import ProfileRegistry
+from .models import RuleProgressEvent
 from PySide6.QtCore import Signal, QObject
 import threading
 from collections import deque
-
+from .models import ExecutorTaskRef
 
 from services.auth.enums import PROVIDERS
 
@@ -32,6 +33,8 @@ from ..auth.models.auth_result import AuthResult
 class RuleRunnerWorker(QObject):
     done = Signal()
     progress = Signal(int, int)
+    runner_result = Signal(object)
+    task_progress = Signal(object)
 
     def __init__(
         self,
@@ -68,6 +71,9 @@ class RuleRunnerWorker(QObject):
 
     def should_stop(self) -> bool:
         return self.shut_down
+
+    def send_rule_progress(self, event: RuleProgressEvent):
+        self.task_progress.emit(event)
 
     def logging(self, msg, level="INFO", print_msg=True) -> None:
         msg = f"{self.__class__.__name__}: {msg}"
@@ -135,7 +141,20 @@ class RuleRunnerWorker(QObject):
         )
         return result
 
+    def _send_start_progress(self):
+        for rule_item in self.rule_queue:
+            self.send_rule_progress(
+                RuleProgressEvent(
+                    rule_guid=rule_item.rule_guid,
+                    rule_name=rule_item.rule.rule_name,
+                    task_ref=None,
+                    status=RULEEXECSTATUS.PENDING,
+                    message="Rule queued.",
+                )
+            )
+
     def run_queue(self):
+        self._send_start_progress()
         auth_result = self._authenticate()
         if auth_result.status == AUTHSTATUS.STOPPED_REQUESTED:
             self.create_rule_summary()
@@ -160,6 +179,7 @@ class RuleRunnerWorker(QObject):
                     profile=self.profile_registry.get_profile(
                         INTRAVERSION(self.creds.platform_version)
                     ),
+                    progress_cb=self.send_rule_progress,
                 )
                 self.current_executor = RuleExecutor(rule_context=context)
                 result = self.current_executor.execute()
@@ -241,6 +261,10 @@ class RuleRunnerWorker(QObject):
             item = self.rule_queue.popleft()
             item.status = status
             self.errored_rules.append(item)
+            # RuleExecutionResult(
+            #     item.rule_guid, item.rule.rule_name, False, ExecutorTaskRef(scope=EX)
+            # )
+            # self.runner_result.emit(result)
 
         self.logging(f"Removing remaining rules from queue: {reason}", "WARN")
 

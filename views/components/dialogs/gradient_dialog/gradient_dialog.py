@@ -94,11 +94,11 @@ class GradientDialog(QDialog):
         self.yStop = yStop
         self.update()
 
-    def show(self) -> int:
-        """
-        Show the dialog as a modal dialog.
+    # def show(self) -> int:
+    #     """
+    #     Show the dialog as a modal dialog.
 
-        Returns:
-            int: returns 0 if the dialog is rejected, 1 if it is accepted.
-        """
-        return self.exec()
+    #     Returns:
+    #         int: returns 0 if the dialog is rejected, 1 if it is accepted.
+    #     """
+    #     return self.exec()

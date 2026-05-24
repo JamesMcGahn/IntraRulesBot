@@ -6,16 +6,15 @@ if TYPE_CHECKING:
     from ...models import RuleExecutionContext
     from ....browser.ports import InteractionPort
 
-
-from ...models import (
-    RuleExecutionResult,
-    ExecutorTaskRef,
-    EXECSTEPCALL,
-    RuleExecutionState,
-)
-
+from ...enums import EXECUTORSCOPE, EXECUTORTASK, RULEEXECSTATUS
 from ...errors import StoppedRequestException
-from ...enums import EXECUTORTASK, RULEEXECSTATUS, EXECUTORSCOPE
+from ...models import (
+    EXECSTEPCALL,
+    ExecutorTaskRef,
+    RuleExecutionResult,
+    RuleExecutionState,
+    RuleProgressEvent,
+)
 
 
 class BaseScopeExecutor:
@@ -62,9 +61,21 @@ class BaseScopeExecutor:
             detail_type=detail_type,
         )
 
+    def rule_progress(self, message=None):
+        self._ctx.progress_cb(
+            RuleProgressEvent(
+                rule_guid=self._ctx.rule.guid,
+                rule_name=self._state.rule_name,
+                task_ref=self._state.current_task,
+                status=self._state.status,
+                message=message,
+            )
+        )
+
     def set_state_status(self, task_ref: ExecutorTaskRef, status: RULEEXECSTATUS):
         self._state.current_task = task_ref
         self._state.status = status
+        self.rule_progress()
 
     def run_step(self, step: EXECSTEPCALL):
 
@@ -106,6 +117,7 @@ class BaseScopeExecutor:
         return RuleExecutionResult(
             rule_guid=ctx.rule.guid,
             rule_name=state.rule_name,
+            task_ref=state.current_task,
             success=False,
             status=status,
             message=message,

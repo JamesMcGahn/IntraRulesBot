@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from base.events import UIEvent
 
 from controllers.rules.enums import VALIDATIONBATCHTYPE
-from base.events import RulesLoadedEvent
+from base.events import RulesLoadedEvent, MonitorRowUpsertEvent
 import uuid
 
 from PySide6.QtCore import Signal, Slot
@@ -16,7 +16,7 @@ from PySide6.QtWidgets import QFileDialog
 from base import QWidgetBase
 from views.components.dialogs import SchemaErrorDialog, RuleSetDialog
 from views.components.toasts.qtoast.enums import QTOASTSTATUS
-
+from .rules_monitor.rule_runner_monitor import RuleRunnerMonitor
 
 from .rules_page_css import STYLES
 from .rules_page_ui import RulesPageView
@@ -33,6 +33,7 @@ class RulesPage(QWidgetBase):
     send_rules = Signal(list)
     send_rule_sets = Signal(object)
     display_validation_result = Signal(object)
+    monitor_upsert_row = Signal(object)
 
     def __init__(self, controllers: RulesPageControllers):
         """
@@ -41,7 +42,7 @@ class RulesPage(QWidgetBase):
         super().__init__()
         self.controllers = controllers
         self.rules_controller = controllers.rules
-
+        self.monitor_controller = controllers.monitor
         self.setStyleSheet(STYLES)
 
         self.ui = RulesPageView()
@@ -54,6 +55,7 @@ class RulesPage(QWidgetBase):
 
         ##
         self.rules_controller.ui_event.connect(self.receive_ui_event)
+        self.monitor_controller.ui_event.connect(self.receive_ui_event)
         self.rules_controller.display_validation_result.connect(
             self.ui.update_form_validation
         )
@@ -69,6 +71,7 @@ class RulesPage(QWidgetBase):
         self.ui.sys_save_rules.connect(self.handle_sys_rules_save)
         self.ui.start_runner.connect(self.handle_start_runner)
         self.ui.stop_runner.connect(self.handle_stop_runner)
+        self.ui.display_monitor.connect(self.handle_display_monitor)
         self.send_rules.connect(self.ui.rules_changed)
         self.ui.validate_open_dialog.clicked.connect(self.display_errors_dialog)
 
@@ -76,13 +79,21 @@ class RulesPage(QWidgetBase):
         self.dialog.send_form.connect(self.save_rule_set)
         self.check_for_saved_rules()
 
+        self.rule_runner_monitor = RuleRunnerMonitor(self)
+        self.monitor_upsert_row.connect(self.rule_runner_monitor.handle_upsert_row)
         self.focus_object_name = None
         self.focus_object_text = None
+
+    @Slot()
+    def handle_display_monitor(self):
+        self.rule_runner_monitor.show()
 
     @Slot(object)
     def receive_ui_event(self, event: UIEvent):
         if isinstance(event.payload, RulesLoadedEvent):
             self.ui.rules_changed(event.payload.rules)
+        elif isinstance(event.payload, MonitorRowUpsertEvent):
+            self.monitor_upsert_row.emit(event.payload.row)
 
     @Slot(str)
     def handle_delete_rule(self, guid: str):

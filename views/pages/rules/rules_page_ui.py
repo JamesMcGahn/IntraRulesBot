@@ -49,6 +49,7 @@ class RulesPageView(QWidget):
     bookmark_rules = Signal(str, str, dict)
     start_runner = Signal(dict)
     stop_runner = Signal()
+    display_monitor = Signal()
 
     def __init__(self):
         super().__init__()
@@ -205,6 +206,7 @@ class RulesPageView(QWidget):
         self.save.clicked.connect(self.handle_sys_save)
         self.start.clicked.connect(self.handle_start_runner)
         self.stop.clicked.connect(self.handle_stop_runner)
+        self.monitor.clicked.connect(self.handle_display_monitor)
         self.rule_set_dialog.send_form.connect(self.handle_bookmark_rules)
         self.event_filter.event_changed.connect(self.focus_changed)
 
@@ -331,7 +333,7 @@ class RulesPageView(QWidget):
         WidgetFactory.create_icon(
             self.start,
             ":/images/play.png",
-            50,
+            20,
             20,
             True,
             False,
@@ -339,21 +341,36 @@ class RulesPageView(QWidget):
         WidgetFactory.create_icon(
             self.stop,
             ":/images/stop.png",
-            50,
+            20,
             20,
             True,
             False,
         )
+        # TODO CHANGE TO ICON
+        self.monitor = GradientButton(
+            "Monitor",
+            "black",
+            [(0.05, "#FEB220"), (0.50, "#f58220"), (1, "#f58220")],
+            "#f58220",
+            1,
+            3,
+        )
+        self.monitor.setFixedWidth(50)
+        self.monitor.setFixedHeight(30)
         self.stop.setFixedWidth(30)
+        self.stop.setFixedHeight(30)
+        self.start.setFixedHeight(30)
         # self.stop.setHidden(True)
         self.start.setChecked(True)
         self.progress_bar = QProgressBar(self)
-        self.progress_bar.setHidden(True)
+        # self.progress_bar.setHidden(True)
         bottom_h_layout = QHBoxLayout()
         bottom_h_layout.setSpacing(5)
-        thread_controls = QHBoxLayout()
+
         bottom_h_layout.addWidget(self.progress_bar)
 
+        thread_controls = QHBoxLayout()
+        thread_controls.addWidget(self.monitor)
         thread_controls.addWidget(self.start)
         thread_controls.addWidget(self.stop)
         thread_controls.setSpacing(1)
@@ -393,6 +410,9 @@ class RulesPageView(QWidget):
         form = self.stacked_widget.get_form_by_index(self.stacked_widget.currentIndex())
 
         self.clone_rule.emit(form.guid)
+
+    def handle_display_monitor(self):
+        self.display_monitor.emit()
 
     def handle_stop_runner(self):
         self.stop_runner.emit()

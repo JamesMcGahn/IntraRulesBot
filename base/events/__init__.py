@@ -3,6 +3,7 @@ from .ui_event import UIEvent
 from .schema_error_dialog_event import SchemaErrorDialogEvent
 from .rules_loaded_event import RulesLoadedEvent
 from .rule_sets_loaded_event import RuleSetsLoadedEvent
+from .monitor_row_upsert_event import MonitorRowUpsertEvent
 
 __all__ = [
     "UIEvent",
@@ -10,4 +11,5 @@ __all__ = [
     "SchemaErrorDialogEvent",
     "RulesLoadedEvent",
     "RuleSetsLoadedEvent",
+    "MonitorRowUpsertEvent",
 ]
