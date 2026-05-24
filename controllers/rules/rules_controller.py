@@ -274,8 +274,8 @@ class RulesController(QObjectBase):
         if batch.rule_errors:
             self._handle_batch_errors(type_name, batch)
         else:
-            message = (f"{type_name} Suceeded. 0 errors found in rule set.",)
-            title = (f"{type_name} Suceeded",)
+            message = f"{type_name} Suceeded. 0 errors found in rule set."
+            title = f"{type_name} Suceeded"
             self.send_toast_success(title, message)
 
         self.display_validation_result.emit(ValidationRulesResult(errors_grouped_dict))
