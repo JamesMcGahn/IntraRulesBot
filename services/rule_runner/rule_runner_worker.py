@@ -12,22 +12,28 @@ if TYPE_CHECKING:
     from ..browser import BrowserSessionFactory
     from services.browser.models import PlaywrightSession
     from services.profiles import ProfileRegistry
-from .models import RuleProgressEvent
-from PySide6.QtCore import Signal, QObject
-import threading
+
+import time
 from collections import deque
-from .models import ExecutorTaskRef
+from threading import Event, get_ident
 
-from services.auth.enums import PROVIDERS
+from PySide6.QtCore import QObject, Signal
 
-# from rulerunner.rule_worker import RuleWorker
-from .executors import RuleExecutor
-from .models import RuleRunItem, RuleExecutionResult, RuleExecutionContext
-from .enums import RULERUNSTATUS, RULEEXECSTATUS
 from base.enums import INTRAVERSION
+from services.auth.enums import PROVIDERS
 
 from ..auth.enums import AUTHSTATUS
 from ..auth.models.auth_result import AuthResult
+from .enums import RULEEXECSTATUS, RULERUNSTATUS
+
+# from rulerunner.rule_worker import RuleWorker
+from .executors import RuleExecutor
+from .models import (
+    RuleExecutionContext,
+    RuleExecutionResult,
+    RuleProgressEvent,
+    RuleRunItem,
+)
 
 
 class RuleRunnerWorker(QObject):
@@ -35,6 +41,7 @@ class RuleRunnerWorker(QObject):
     progress = Signal(int, int)
     runner_result = Signal(object)
     task_progress = Signal(object)
+    run_started = Signal()
 
     def __init__(
         self,
@@ -62,7 +69,7 @@ class RuleRunnerWorker(QObject):
         self.success_rules = []
         self.completed_count = 0
         self.total_count = len(self.rule_queue)
-        self.shut_down = False
+        self._shut_down = Event()
 
         self.playwright_session_manager = None
         self.playwright_session: PlaywrightSession | None = None
@@ -70,7 +77,7 @@ class RuleRunnerWorker(QObject):
         self.profile_registry = profile_registry
 
     def should_stop(self) -> bool:
-        return self.shut_down
+        return self._shut_down.is_set()
 
     def send_rule_progress(self, event: RuleProgressEvent):
         self.task_progress.emit(event)
@@ -81,7 +88,7 @@ class RuleRunnerWorker(QObject):
 
     def do_work(self):
         self.logging(
-            f"Starting {self.__class__.__name__} in thread: {threading.get_ident()}",
+            f"Starting {self.__class__.__name__} in thread: {get_ident()}",
             "INFO",
         )
         try:
@@ -117,7 +124,7 @@ class RuleRunnerWorker(QObject):
         max_attempts = 2
 
         while auth_attempts < max_attempts:
-            if self.shut_down:
+            if self.should_stop():
                 return AuthResult(success=False, status=AUTHSTATUS.STOPPED_REQUESTED)
             self.logging(
                 f"Attempting to authenticate: {auth_attempts} / {max_attempts-1}"
@@ -141,61 +148,113 @@ class RuleRunnerWorker(QObject):
         )
         return result
 
-    def _send_start_progress(self):
+    def _send_batch_progress(
+        self,
+        status: RULEEXECSTATUS,
+        msg: str,
+        start_time: bool = False,
+        end_time: bool = False,
+    ):
         for rule_item in self.rule_queue:
             self.send_rule_progress(
                 RuleProgressEvent(
                     rule_guid=rule_item.rule_guid,
                     rule_name=rule_item.rule.rule_name,
                     task_ref=None,
-                    status=RULEEXECSTATUS.PENDING,
-                    message="Rule queued.",
+                    status=status,
+                    message=msg,
+                    started_at=int(time.time()) if start_time else None,
+                    finished_at=int(time.time()) if end_time else None,
                 )
             )
 
     def run_queue(self):
-        self._send_start_progress()
-        auth_result = self._authenticate()
-        if auth_result.status == AUTHSTATUS.STOPPED_REQUESTED:
+
+        try:
+            self.run_started.emit()
+            self._send_batch_progress(RULEEXECSTATUS.PENDING, "Rule queued.")
+            auth_result = self._authenticate()
+            if auth_result.status == AUTHSTATUS.STOPPED_REQUESTED:
+                self.stop_clean_up()
+                return
+
+            if not auth_result.success:
+                self._shut_down.set()
+                self._drain_remaining_rules(
+                    RULERUNSTATUS.FAILED, "Failed to Authenticate"
+                )
+                return
+
+            while self.rule_queue and not self.should_stop():
+                self.progress.emit(self.completed_count, self.total_count)
+                try:
+                    item = self.rule_queue.popleft()
+                    item.status = RULERUNSTATUS.RUNNING
+                    context = RuleExecutionContext(
+                        tenant=self.creds.tenant,
+                        browser_port=self.playwright_session.browser_adapter,
+                        rule=item.rule,
+                        logger=self.logger,
+                        should_stop=self.should_stop,
+                        profile=self.profile_registry.get_profile(
+                            INTRAVERSION(self.creds.platform_version)
+                        ),
+                        progress_cb=self.send_rule_progress,
+                    )
+                    self.send_rule_progress(
+                        RuleProgressEvent(
+                            rule_guid=item.rule_guid,
+                            rule_name=item.rule.rule_name,
+                            task_ref=None,
+                            status=RULERUNSTATUS.RUNNING,
+                            message="Started Run",
+                            started_at=int(time.time()),
+                        )
+                    )
+                    self.current_executor = RuleExecutor(rule_context=context)
+                    result = self.current_executor.execute()
+                    self._handle_result(item, result)
+                except Exception as e:
+                    if self.should_stop():
+                        self.stop_clean_up()
+                        return
+                    self.logging(f"{e}", "DEBUG")
+                    self.logging(
+                        "Failure in rule. Trying to process next rule", "ERROR"
+                    )
+            if self.should_stop():
+                self.stop_clean_up()
+                return
+
+        except Exception as e:
+            if self.should_stop():
+                self.stop_clean_up()
+                return
+
+            self.logging("Fatal Error Occurred. Shutting Down", "ERROR")
+            self.logging(f"{e}", "ERROR")
+        finally:
             self.create_rule_summary()
             self.close()
-            return
 
-        if not auth_result.success:
-            self.shut_down = True
-            self._drain_remaining_rules(RULERUNSTATUS.FAILED, "Failed to Authenticate")
-
-        while self.rule_queue and not self.shut_down:
-            self.progress.emit(self.completed_count, self.total_count)
-            try:
-                item = self.rule_queue.popleft()
-                item.status = RULERUNSTATUS.RUNNING
-                context = RuleExecutionContext(
-                    tenant=self.creds.tenant,
-                    browser_port=self.playwright_session.browser_adapter,
-                    rule=item.rule,
-                    logger=self.logger,
-                    should_stop=self.should_stop,
-                    profile=self.profile_registry.get_profile(
-                        INTRAVERSION(self.creds.platform_version)
-                    ),
-                    progress_cb=self.send_rule_progress,
-                )
-                self.current_executor = RuleExecutor(rule_context=context)
-                result = self.current_executor.execute()
-                self._handle_result(item, result)
-            except Exception as e:
-                if self.should_stop():
-                    self.stop_clean_up()
-
-                print(e)
-                self.logging(
-                    f"Failure trying to process next rule: {e}",
-                    "ERROR",
-                )
-        self.progress.emit(self.completed_count, self.total_count)
-        self.create_rule_summary()
-        self.close()
+    def _send_result_progress(
+        self,
+        item: RuleRunItem,
+        result: RuleExecutionResult,
+        message: str,
+        use_exec_status: bool = True,
+    ):
+        self.send_rule_progress(
+            RuleProgressEvent(
+                rule_guid=item.rule_guid,
+                rule_name=item.rule.rule_name,
+                task_ref=result.task_ref,
+                status=result.status if use_exec_status else item.status,
+                message=message,
+                started_at=None,
+                finished_at=time.time(),
+            )
+        )
 
     def _handle_result(self, item: RuleRunItem, result: RuleExecutionResult):
         self.logging(f"Recieved result for {result.rule_name}")
@@ -204,9 +263,13 @@ class RuleRunnerWorker(QObject):
             item.status = RULERUNSTATUS.SUCCESS
             item.rule.rule_name = result.rule_name
             self.success_rules.append(item)
+            self._send_result_progress(item, result, "Succeeded", use_exec_status=False)
             self.completed_count += 1
         else:
             if result.status == RULEEXECSTATUS.RUNNER_STOPPED_ERROR:
+                self._send_result_progress(
+                    item, result, "Stop Requested", use_exec_status=True
+                )
                 self.errored_rules.append(item)
                 self.completed_count = self.total_count
                 self.logging("Rule Executor stopped.", "WARN")
@@ -221,17 +284,24 @@ class RuleRunnerWorker(QObject):
                     self.errored_rules.append(item)
                     self.completed_count += 1
                     self.logging(f"{result.rule_name} - not retrying running rule.")
+                    self._send_result_progress(
+                        item, result, "Rule Name Exists Already.", use_exec_status=False
+                    )
                 elif result.status in (
                     RULEEXECSTATUS.BROWSER_ERROR,
                     RULEEXECSTATUS.UNKNOWN_ERROR,
                 ):
+
                     self.logging(f"{result.rule_name} - retrying running rule.")
                     item.status = RULERUNSTATUS.RETRYING
                     self.rule_queue.appendleft(item)
+                    self._send_result_progress(
+                        item, result, "Retrying...", use_exec_status=False
+                    )
                     self._rebuild_browser()
                     auth_result = self._authenticate()
                     if not auth_result.success:
-                        self.shut_down = True
+                        self._shut_down.set()
                         self._drain_remaining_rules(
                             RULERUNSTATUS.FAILED, "Authentication failed during retry"
                         )
@@ -239,6 +309,9 @@ class RuleRunnerWorker(QObject):
             else:
                 self.logging(f"{result.rule_name} - not retrying running rule.")
                 item.status = RULERUNSTATUS.FAILED
+                self._send_result_progress(
+                    item, result, "Failed. Not retrying.", use_exec_status=False
+                )
                 self.errored_rules.append(item)
                 self.completed_count += 1
 
@@ -258,13 +331,10 @@ class RuleRunnerWorker(QObject):
 
     def _drain_remaining_rules(self, status: RULERUNSTATUS, reason: str):
         while self.rule_queue:
+            self._send_batch_progress(status, reason, end_time=True)
             item = self.rule_queue.popleft()
             item.status = status
             self.errored_rules.append(item)
-            # RuleExecutionResult(
-            #     item.rule_guid, item.rule.rule_name, False, ExecutorTaskRef(scope=EX)
-            # )
-            # self.runner_result.emit(result)
 
         self.logging(f"Removing remaining rules from queue: {reason}", "WARN")
 
@@ -273,7 +343,6 @@ class RuleRunnerWorker(QObject):
             RULERUNSTATUS.STOPPED, "Rule runner manually stopped."
         )
         self.progress.emit(self.total_count, self.total_count)
-        self._close_down_browser()
 
     def stop(self) -> None:
         """
@@ -281,7 +350,7 @@ class RuleRunnerWorker(QObject):
         """
         self.logging("Stop Button Pressed", "INFO")
         self.logging("Shutting down", "INFO")
-        self.shut_down = True
+        self._shut_down.set()
 
     def close(self) -> None:
         """

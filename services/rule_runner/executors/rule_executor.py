@@ -11,26 +11,22 @@ import threading
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
-
+from ..enums import EXECUTORSCOPE, EXECUTORTASK, RULEEXECSTATUS
 from ..errors import (
     DuplicateRuleNameException,
-    StoppedRequestException,
     PlaywrightSessionLostException,
+    StoppedRequestException,
 )
-
-from .actions import ActionsExecutor
-from .conditions import ConditionsExecutor
-from .triggers import TriggerExecutor
 from ..models import (
-    RuleExecutionResult,
-    ExecutorTaskRef,
     EXECSTEPCALL,
+    ExecutorTaskRef,
+    RuleExecutionResult,
     RuleExecutionState,
 )
-
-
-from ..enums import EXECUTORTASK, RULEEXECSTATUS, EXECUTORSCOPE
+from .actions import ActionsExecutor
 from .base.base_scope_executor import BaseScopeExecutor
+from .conditions import ConditionsExecutor
+from .triggers import TriggerExecutor
 
 
 class RuleExecutor(BaseScopeExecutor):
@@ -173,7 +169,7 @@ class RuleExecutor(BaseScopeExecutor):
         ctx.browser_port.goto(
             f"https://{ctx.tenant}.intradiem.com/{ctx.profile.selectors.rule_form.page_path}"
         )
-        ctx.browser_port.click(ctx.profile.selectors.rule_form.add_rule_button, 3000)
+        ctx.browser_port.click(ctx.profile.selectors.rule_form.add_rule_button, 15000)
         frame_port = self.switch_to_rule_module(ctx)
 
         if frame_port is None:

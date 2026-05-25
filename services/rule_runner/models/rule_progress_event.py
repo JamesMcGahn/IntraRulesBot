@@ -11,3 +11,5 @@ class RuleProgressEvent:
     task_ref: ExecutorTaskRef | None
     status: RULEEXECSTATUS
     message: str | None = None
+    started_at: int | None = None
+    finished_at: int | None = None
