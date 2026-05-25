@@ -1,13 +1,12 @@
-from services.browser.ports.browser_port import BrowserPort
-
-
 from playwright.sync_api import (
-    Page,
+    Dialog,
     FrameLocator,
     Locator,
-    TimeoutError as PlaywrightTimeoutError,
-    Dialog,
+    Page,
 )
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+
+from services.browser.ports.browser_port import BrowserPort
 
 from .playwright_interaction_adapter import PlaywrightInteractionAdapter
 
@@ -90,9 +89,8 @@ class PlaywrightBrowserAdapter(BrowserPort):
 
     def click_and_accept_alert_if_appears(
         self,
-        locator: str,
+        selector: str,
         check_alert_text: str | None = None,
-        timeout: int = 3000,
     ) -> bool:
         result = {"result": False}
 
@@ -101,7 +99,7 @@ class PlaywrightBrowserAdapter(BrowserPort):
 
         self._page.on("dialog", handler)
 
-        self._page.locator(locator).click()
+        self._page.locator(selector).click()
         self._page.remove_listener("dialog", handler)
         return result["result"]
 

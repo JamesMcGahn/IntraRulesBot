@@ -17,9 +17,8 @@ class BrowserPort(InteractionPort, Protocol):
 
     def click_and_accept_alert_if_appears(
         self,
-        locator: str,
+        selector: str,
         check_alert_text: str | None = None,
-        timeout: int = 3000,
     ) -> bool: ...
 
     def frame_click_and_accept_alert_if_appears(
