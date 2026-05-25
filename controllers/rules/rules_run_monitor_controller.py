@@ -7,14 +7,12 @@ if TYPE_CHECKING:
     from services.rule_runner.models import RuleProgressEvent
     from services.rule_monitor import RunMonitorStore
 
-from services.rule_monitor.models import RuleRunRow
-from PySide6.QtCore import Slot, Signal
+from PySide6.QtCore import Signal, Slot
+
 from base import QObjectBase
 from base.enums import UIEVENTTYPE
-from base.events import (
-    UIEvent,
-    MonitorRowUpsertEvent,
-)
+from base.events import MonitorRowUpsertEvent, MonitorSummaryUpdateEvent, UIEvent
+from services.rule_monitor.models import RuleRunRow, RunSummary
 
 # TODO Create Rule Runner Response
 
@@ -25,6 +23,15 @@ class RulesRunMonitorController(QObjectBase):
     def __init__(self, run_store: RunMonitorStore):
         super().__init__()
         self.run_store = run_store
+
+    # FROM RULERUNNER
+    def handle_runner_started(self):
+        print("Runner Started")
+        pass
+
+    def handle_runner_finished(self):
+        print("Runner Finished")
+        pass
 
     @Slot(object)
     def handle_task_progress_event(self, event: RuleProgressEvent):
@@ -38,14 +45,25 @@ class RulesRunMonitorController(QObjectBase):
             index=event.task_ref.index if event.task_ref else 0,
             detail_type=event.task_ref.detail_type if event.task_ref else "",
             message=event.message,
+            started_at=event.started_at,
+            finished_at=event.finished_at,
         )
         self.run_store.upsert_row(row)
         self._emit_row_updated(row)
+        self._emit_summary_updated(self.run_store.get_summary())
 
     def _emit_row_updated(self, row):
         self.ui_event.emit(
             UIEvent(
                 event_type=UIEVENTTYPE.DISPLAY,
                 payload=MonitorRowUpsertEvent(row=row),
+            )
+        )
+
+    def _emit_summary_updated(self, summary: RunSummary):
+        self.ui_event.emit(
+            UIEvent(
+                event_type=UIEVENTTYPE.DISPLAY,
+                payload=MonitorSummaryUpdateEvent(summary=summary),
             )
         )

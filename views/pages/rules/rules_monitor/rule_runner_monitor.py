@@ -1,25 +1,24 @@
 from typing import Optional
-from PySide6.QtGui import QFont
+
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QPushButton,
     QSizePolicy,
-    QTextEdit,
+    QTableView,
     QVBoxLayout,
     QWidget,
-    QTableView,
 )
 
-from ....components.helpers import WidgetFactory
-from ....components.dialogs import GradientDialog
-from .monitor_table import MonitorTableModel
-from services.rule_monitor.models import RuleRunRow
+from services.rule_monitor.models import RuleRunRow, RunSummary
 
-# from .rule_set_css import STYLES
+from ....components.dialogs import GradientDialog
+from ....components.helpers import WidgetFactory
+from .monitor_table import MonitorTableModel
+from .rule_runner_monitor_styles import STYLES
 
 
 class RuleRunnerMonitor(GradientDialog):
@@ -46,7 +45,7 @@ class RuleRunnerMonitor(GradientDialog):
         self.table_view_w.setModel(self.monitor_table_model)
         # self.table_view_w.setSelectionBehavior(QTableView.SelectRows)
         self.table_view_w.show()
-        # self.setStyleSheet(STYLES)
+        self.setStyleSheet(STYLES)
 
         self.setAttribute(Qt.WA_StyledBackground, True)
         outter_layout = WidgetFactory.create_form_box(
@@ -74,6 +73,31 @@ class RuleRunnerMonitor(GradientDialog):
             QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
         )
 
+        summary_layout = QHBoxLayout()
+        summary_layout.setSpacing(5)
+        # summary_layout.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.total_label = QLabel("Total: ")
+        self.completed_label = QLabel("Completed: ")
+        self.succeeded_label = QLabel("Succeeded:")
+        self.failed_label = QLabel("Failed: ")
+        self.retrying_label = QLabel("Retrying: ")
+        self.stopped_label = QLabel("Stopped: ")
+        self.pending_label = QLabel("Pending: ")
+        self.total_label.setStyleSheet("color: white;")
+        self.total_label.setStyleSheet("color: white;")
+        self.total_label.setStyleSheet("color: white;")
+        self.total_label.setStyleSheet("color: white;")
+        self.total_label.setStyleSheet("color: white;")
+        self.total_label.setStyleSheet("color: white;")
+        summary_layout.addWidget(self.total_label)
+        summary_layout.addWidget(self.completed_label)
+        summary_layout.addWidget(self.succeeded_label)
+        summary_layout.addWidget(self.failed_label)
+        summary_layout.addWidget(self.retrying_label)
+        summary_layout.addWidget(self.pending_label)
+
+        outter_layout.addRow(summary_layout)
+        # TABLE
         inner_layout.addRow(self.table_view_w)
 
         self.cancel_btn = QPushButton("Close")
@@ -94,3 +118,13 @@ class RuleRunnerMonitor(GradientDialog):
     def handle_upsert_row(self, row: RuleRunRow):
         self.monitor_table_model.upsert_row(row)
         self.table_view_w.resizeColumnsToContents()
+
+    def handle_summary_update(self, summary: RunSummary):
+        # print(summary)
+        self.total_label.setText(f"Total: {summary.total}")
+        self.completed_label.setText(f"Completed: {summary.completed} ")
+        self.succeeded_label.setText(f"Succeeded: {summary.succeeded}")
+        self.failed_label.setText(f"Failed: {summary.failed}")
+        self.retrying_label.setText(f"Retrying: {summary.retrying}")
+        self.stopped_label.setText(f"Stopped: {summary.stopped}")
+        self.pending_label.setText(f"Pending: {summary.pending}")

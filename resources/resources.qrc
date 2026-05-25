@@ -69,5 +69,6 @@
         <file>images/toast/close.png</file>
         <file>images/toast/success.png</file>
         <file>images/toast/information.png</file>
+        <file>images/monitor.png</file>
     </qresource>
 </RCC>

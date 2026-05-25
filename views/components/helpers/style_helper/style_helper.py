@@ -1,7 +1,12 @@
 from typing import Union
 
 from PySide6.QtGui import QColor, QFont
-from PySide6.QtWidgets import QApplication, QGraphicsDropShadowEffect, QWidget
+from PySide6.QtWidgets import (
+    QApplication,
+    QGraphicsDropShadowEffect,
+    QPushButton,
+    QWidget,
+)
 
 
 class StyleHelper:
@@ -43,3 +48,11 @@ class StyleHelper:
         font.setPointSizeF(adjusted_font_size)
 
         parent.setFont(font)
+
+    @staticmethod
+    def set_tool_tip(element: QPushButton, tool_tip: str, additional_styles: str):
+        element.setToolTip(tool_tip)
+        element.setStyleSheet(
+            f"{additional_styles}"
+            + "QToolTip { background: #DEDEDE; color: black; border: 1px solid #f58220; border-radius: 0px; padding: 5px; }"
+        )

@@ -25,9 +25,8 @@ from views.components.buttons import EditorActionButton, GradientButton
 from views.components.helpers import StyleHelper, WidgetFactory
 from views.components.layouts import ScrollArea, StackedFormWidget
 
-from ...components.rules import RuleAdapter, RuleFactory, RuleEventFilter
-
 from ...components.dialogs import RuleSetDialog
+from ...components.rules import RuleAdapter, RuleEventFilter, RuleFactory
 from ...components.rules.rule_registry import RuleFieldRegistry
 
 
@@ -284,7 +283,6 @@ class RulesPageView(QWidget):
         for index, btn in enumerate(actionBtns):
             btn_ref, tool_tip, image_loc1, image_loc2 = btn
 
-            btn_ref.setToolTip(tool_tip)
             btn_ref.setFixedWidth(40)
             style = ""
             if index == 0:
@@ -302,12 +300,12 @@ class RulesPageView(QWidget):
                 image_loc2,
                 False,
             )
-            btn_ref.setStyleSheet(
+            additional_style = (
                 "QPushButton { "
                 + f"{style} padding: 5px 5px ; background: #DEDEDE; border-bottom: 1px solid #f58220; "
-                + "} QToolTip"
-                + "{ background: #DEDEDE; color: black; border: 1px solid #f58220; border-radius: 0px; padding: 5px; }"
+                + "} "
             )
+            StyleHelper.set_tool_tip(btn_ref, tool_tip, additional_style)
             self.form_actions_btn_inner_layout.addWidget(btn_ref)
 
     def init_thread_controls(self) -> None:
@@ -330,9 +328,28 @@ class RulesPageView(QWidget):
             1,
             3,
         )
+        self.monitor = GradientButton(
+            "",
+            "black",
+            [(0.05, "#FEB220"), (0.50, "#f58220"), (1, "#f58220")],
+            "#f58220",
+            1,
+            3,
+        )
+        StyleHelper.set_tool_tip(self.stop, "Stop Runner", "")
+        StyleHelper.set_tool_tip(self.start, "Start Runner", "")
+        StyleHelper.set_tool_tip(self.monitor, "Monitor Runner", "")
         WidgetFactory.create_icon(
             self.start,
             ":/images/play.png",
+            20,
+            20,
+            True,
+            False,
+        )
+        WidgetFactory.create_icon(
+            self.monitor,
+            ":/images/monitor.png",
             20,
             20,
             True,
@@ -346,15 +363,7 @@ class RulesPageView(QWidget):
             True,
             False,
         )
-        # TODO CHANGE TO ICON
-        self.monitor = GradientButton(
-            "Monitor",
-            "black",
-            [(0.05, "#FEB220"), (0.50, "#f58220"), (1, "#f58220")],
-            "#f58220",
-            1,
-            3,
-        )
+
         self.monitor.setFixedWidth(50)
         self.monitor.setFixedHeight(30)
         self.stop.setFixedWidth(30)
@@ -363,7 +372,7 @@ class RulesPageView(QWidget):
         # self.stop.setHidden(True)
         self.start.setChecked(True)
         self.progress_bar = QProgressBar(self)
-        # self.progress_bar.setHidden(True)
+        self.progress_bar.setHidden(True)
         bottom_h_layout = QHBoxLayout()
         bottom_h_layout.setSpacing(5)
 
@@ -387,10 +396,9 @@ class RulesPageView(QWidget):
         """
         Updates the rules progress bar.
         """
-        if current < total:
-            self.progress_bar.setHidden(False)
-        else:
-            self.progress_bar.setHidden(True)
+        self.progress_bar.setHidden(False)
+
+        self.progress_bar.setHidden(True)
         self.progress_bar.setRange(0, total)
         self.progress_bar.setValue(current)
 

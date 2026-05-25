@@ -6,18 +6,22 @@ if TYPE_CHECKING:
     from controllers.models import RulesPageControllers
     from base.events import UIEvent
 
-from controllers.rules.enums import VALIDATIONBATCHTYPE
-from base.events import RulesLoadedEvent, MonitorRowUpsertEvent
 import uuid
 
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QFileDialog
 
 from base import QWidgetBase
-from views.components.dialogs import SchemaErrorDialog, RuleSetDialog
+from base.events import (
+    MonitorRowUpsertEvent,
+    MonitorSummaryUpdateEvent,
+    RulesLoadedEvent,
+)
+from controllers.rules.enums import VALIDATIONBATCHTYPE
+from views.components.dialogs import RuleSetDialog, SchemaErrorDialog
 from views.components.toasts.qtoast.enums import QTOASTSTATUS
-from .rules_monitor.rule_runner_monitor import RuleRunnerMonitor
 
+from .rules_monitor.rule_runner_monitor import RuleRunnerMonitor
 from .rules_page_css import STYLES
 from .rules_page_ui import RulesPageView
 
@@ -34,6 +38,8 @@ class RulesPage(QWidgetBase):
     send_rule_sets = Signal(object)
     display_validation_result = Signal(object)
     monitor_upsert_row = Signal(object)
+    monitor_summary_update = Signal(object)
+    progress_bar_update = Signal(int, int)
 
     def __init__(self, controllers: RulesPageControllers):
         """
@@ -59,7 +65,7 @@ class RulesPage(QWidgetBase):
         self.rules_controller.display_validation_result.connect(
             self.ui.update_form_validation
         )
-        self.rules_controller.runner_progress.connect(self.ui.set_progress_bar)
+        self.progress_bar_update.connect(self.ui.set_progress_bar)
         self.ui.delete_rule.connect(self.handle_delete_rule)
         self.ui.delete_all_rules.connect(self.handle_delete_all_rules)
         self.ui.clone_rule.connect(self.handle_clone_rule)
@@ -81,12 +87,20 @@ class RulesPage(QWidgetBase):
 
         self.rule_runner_monitor = RuleRunnerMonitor(self)
         self.monitor_upsert_row.connect(self.rule_runner_monitor.handle_upsert_row)
+        self.monitor_summary_update.connect(
+            self.rule_runner_monitor.handle_summary_update
+        )
         self.focus_object_name = None
         self.focus_object_text = None
 
     @Slot()
     def handle_display_monitor(self):
-        self.rule_runner_monitor.show()
+        if self.rule_runner_monitor and self.rule_runner_monitor.isVisible():
+            self.rule_runner_monitor.close()
+            return
+        if self.rule_runner_monitor and not self.rule_runner_monitor.isVisible():
+            self.rule_runner_monitor.show()
+            return
 
     @Slot(object)
     def receive_ui_event(self, event: UIEvent):
@@ -94,6 +108,11 @@ class RulesPage(QWidgetBase):
             self.ui.rules_changed(event.payload.rules)
         elif isinstance(event.payload, MonitorRowUpsertEvent):
             self.monitor_upsert_row.emit(event.payload.row)
+        elif isinstance(event.payload, MonitorSummaryUpdateEvent):
+            self.progress_bar_update.emit(
+                event.payload.summary.completed, event.payload.summary.total
+            )
+            self.monitor_summary_update.emit(event.payload.summary)
 
     @Slot(str)
     def handle_delete_rule(self, guid: str):

@@ -42,6 +42,7 @@
 - [/] : Intradiem
   - [x] : Quick Action Clicked
 - Threaded Service Safe Shutdown
+- Display Rule Runner Summaries of Rule Completion
 
 #### 1.0.0
 
