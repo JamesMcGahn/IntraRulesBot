@@ -10,8 +10,6 @@
 - [ ] : update schema to check for provider_condition based on provider_category
 - [ ] :#FEATURE : Setting to turn off Toasts
 - [ ] :#TODO : switch page to rules page after open file validation
-- [ ] :#FEATURE : Action Based Triggers
-  - [ ] :#TODO : Time in Current State
 
 - [ ] : TODO : Remove implicit passing of logger to services
 - [ ] :#FEATURE : Stats Queue Selection
@@ -40,6 +38,10 @@
   - [x] : Agent Changed State Trigger
   - [x] : Agent Logged In
   - [x] : Agent Logged Out
+  - [x] : Time in Current State
+- [/] : Intradiem
+  - [x] : Quick Action Clicked
+- Threaded Service Safe Shutdown
 
 #### 1.0.0
 

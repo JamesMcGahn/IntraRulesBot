@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from services.logger.adapters import LogAdapter
     from services.browser.models import PlaywrightSession
 
-import threading
+from threading import Event, get_ident
 
 from PySide6.QtCore import QObject, Signal
 
@@ -56,10 +56,10 @@ class IntraLoginWorker(QObject):
 
         self.playwright_session_manager = None
         self.playwright_session: PlaywrightSession | None = None
-        self.shut_down = False
+        self._shut_down = Event()
 
     def should_stop(self) -> bool:
-        return self.shut_down
+        return self._shut_down.is_set()
 
     def logging(self, msg, level="INFO", print_msg=True) -> None:
         msg = f"{self.__class__.__name__}: {msg}"
@@ -67,18 +67,20 @@ class IntraLoginWorker(QObject):
 
     def do_work(self):
         self.logging(
-            f"Starting {self.__class__.__name__} in thread: {threading.get_ident()}",
+            f"Starting {self.__class__.__name__} in thread: {get_ident()}",
             "INFO",
         )
         try:
             self._init_browser(False)
             self._authenticate()
-            self.close()
 
         except Exception as e:
-            print(e)
-            self.logging("Fatal Error", "ERROR")
+            if not self.should_stop():
+                self.logging(f"{e}", "DEBUG")
+                self.logging("Fatal Error", "ERROR")
             self.is_valid.emit(self.job_id, False)
+
+        finally:
             self.close()
 
     def _init_browser(self, load_session_cookies=False) -> None:
@@ -102,7 +104,7 @@ class IntraLoginWorker(QObject):
         max_attempts = 2
 
         while auth_attempts < max_attempts:
-            if self.shut_down:
+            if self.should_stop():
                 return AuthResult(success=False, status=AUTHSTATUS.STOPPED_REQUESTED)
             self.logging(
                 f"Attempting to authenticate: {auth_attempts} / {max_attempts-1}"
@@ -132,3 +134,7 @@ class IntraLoginWorker(QObject):
         """
         self._close_down_browser()
         self.done.emit()
+
+    def request_shut_down(self) -> None:
+        self.logging("Requested Shut Down.", "INFO")
+        self._shut_down.set()

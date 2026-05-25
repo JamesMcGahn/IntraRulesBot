@@ -2,46 +2,45 @@ import os
 import subprocess
 import sys
 
-from PySide6.QtCore import Signal, QObject
+from PySide6.QtCore import QObject, Signal
 
 from base import QSingleton
-
-from utils.files import PathManager
-
+from controllers import (
+    RulesController,
+    RuleSetsController,
+    RulesRunMonitorController,
+    RulesValidationCoordinator,
+    SettingsController,
+    UIController,
+)
+from schemas.registry import SchemaRegistry
+from services.auth.auth_service import AuthService
+from services.auth.enums import PROVIDERS
+from services.auth.session import SessionRegistry
+from services.browser import BrowserSessionFactory
+from services.lifecycle import ShutdownCoordinator
 from services.logger import Logger
+from services.logger.adapters import LogAdapter
+from services.profiles import ProfileRegistry
+from services.rule_monitor import RunMonitorStore
+from services.rule_runner import RuleRunnerService
+from services.rule_sets import (
+    RuleSetBuilder,
+    RuleSetRegistry,
+    RuleSetSerializer,
+    RuleSetStore,
+)
+from services.rules import RuleBuilder, RuleRegistry, RuleSerializer, RuleStore
 from services.settings import (
     AppSettings,
     SecureCredentials,
     SettingsRepository,
     SettingsService,
 )
-from services.settings.providers import SettingsRuleRunnerConfigProvider
 from services.settings.enums import SETTINGSCATEGORIES
+from services.settings.providers import SettingsRuleRunnerConfigProvider
 from services.validation import ValidationService
-from controllers import (
-    SettingsController,
-    RulesController,
-    RuleSetsController,
-    UIController,
-    RulesValidationCoordinator,
-    RulesRunMonitorController,
-)
-from services.rules import RuleRegistry, RuleStore, RuleBuilder, RuleSerializer
-from services.rule_sets import (
-    RuleSetRegistry,
-    RuleSetStore,
-    RuleSetBuilder,
-    RuleSetSerializer,
-)
-from schemas.registry import SchemaRegistry
-from services.rule_runner import RuleRunnerService
-from services.auth.session import SessionRegistry
-from services.auth.auth_service import AuthService
-from services.auth.enums import PROVIDERS
-from services.logger.adapters import LogAdapter
-from services.browser import BrowserSessionFactory
-from services.profiles import ProfileRegistry
-from services.rule_monitor import RunMonitorStore
+from utils.files import PathManager
 
 
 class AppContext(QObject, metaclass=QSingleton):
@@ -51,9 +50,12 @@ class AppContext(QObject, metaclass=QSingleton):
 
     def __init__(self):
         super().__init__()
+
         self.logger = Logger()
+
         self.send_logs.connect(self.logger.insert)
         self.log_adapter = LogAdapter(self.logger)
+        self.shut_down_coord = ShutdownCoordinator(self.log_adapter)
         self.settings = AppSettings()
         self.secure_settings = SecureCredentials()
         self.settings_repo = SettingsRepository(self.settings, self.secure_settings)
@@ -88,6 +90,7 @@ class AppContext(QObject, metaclass=QSingleton):
             session=self.session_registry.for_provider(PROVIDERS.INTRA),
             auth_service=self.auth_service,
             browser_session_factory=self.browser_session_factory,
+            logger=self.log_adapter,
         )
         self.rule_settings_provider = SettingsRuleRunnerConfigProvider(
             settings_service=self.settings_manager
@@ -138,10 +141,22 @@ class AppContext(QObject, metaclass=QSingleton):
         self.ensure_playwright_browsers(folder)
         self.session_registry.pre_load_providers([PROVIDERS.INTRA])
 
+        self.shut_down_coord.register_service("rule_runner", self.rule_runner_service)
+        self.shut_down_coord.register_service(
+            "validation_service", self.validation_service
+        )
+
         # CONNECTIONS
         ## Rule Runner
         self.rule_runner_service.task_progress.connect(
             self.rules_monitor_controller.handle_task_progress_event
+        )
+
+        self.rule_runner_service.run_started.connect(
+            self.rules_monitor_controller.handle_runner_started
+        )
+        self.rule_runner_service.run_finished.connect(
+            self.rules_monitor_controller.handle_runner_finished
         )
 
         ## SETTINGS
@@ -160,6 +175,8 @@ class AppContext(QObject, metaclass=QSingleton):
         self.rule_sets_controller.ui_event.connect(self.ui_controller.handle_ui_event)
         self.settings_controller.ui_event.connect(self.ui_controller.handle_ui_event)
 
+        self.shut_down_coord.shutdown_confirmed.connect(self._finalize_app_shut_down)
+
     def ensure_playwright_browsers(self, app_data_path):
         env = os.environ.copy()
         env["PLAYWRIGHT_BROWSERS_PATH"] = app_data_path
@@ -172,7 +189,18 @@ class AppContext(QObject, metaclass=QSingleton):
 
     ## App shutdown
     def handle_app_shut_down(self):
-        self.logger.close()
+        self.log_adapter(
+            f"{self.__class__.__name__}: Checking Services before shut down.", "INFO"
+        )
+        self.shut_down_coord.request_shutdown()
+
+    def _finalize_app_shut_down(self):
+
+        self.log_adapter(
+            f"{self.__class__.__name__}: Requesting Services to Save and Shutdown.",
+            "INFO",
+        )
         self.settings_manager.save_settings()
         self.session_registry.save_all()
+        self.logger.close()
         self.app_shut_down_confirmed.emit()

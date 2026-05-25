@@ -16,24 +16,28 @@ if TYPE_CHECKING:
     from settings.models import SettingsFieldMeta
     from .interfaces.settings_meta_provider import SettingsMetaProvider
     from ..browser import BrowserSessionFactory
+    from ..logger.adapters import LogAdapter
 
-from PySide6.QtCore import Signal, QThread
+from PySide6.QtCore import QThread, Signal
 
 from base import QObjectBase
+
 from ..base.enums import JOBSTATUS
 from ..base.models import JobRef, JobResponse
+from ..intra.login_worker import IntraLoginWorker
 from ..settings.enums import FIELDSTATESTATUS
 from .enums import VALIDATEJOBTYPE
 from .models import (
     SettingsValidateResponse,
-    ValidationResponse,
     ValidationBatchResponse,
+    ValidationResponse,
 )
-from ..intra.login_worker import IntraLoginWorker
 
 
 class SettingsValidationService(QObjectBase):
     task_complete = Signal(object)
+    shut_down_requested = Signal()
+    shutdown_ready = Signal(str)
 
     def __init__(
         self,
@@ -41,8 +45,10 @@ class SettingsValidationService(QObjectBase):
         session: IntraProviderSession,
         auth_service: AuthService,
         browser_session_factory: BrowserSessionFactory,
+        logger: LogAdapter,
     ):
         super().__init__()
+        self._logger = logger
         self.settings_meta_provider = settings_meta_provider
         self._session = session
         self._auth_service = auth_service
@@ -50,6 +56,7 @@ class SettingsValidationService(QObjectBase):
 
         self._pending_jobs = {}
         self._intra_login_thread = None
+        self._shut_down_in_requested = False
 
     def validate(
         self, job: JobRequest[ValidationRequest[SettingsValidatePayload]]
@@ -181,6 +188,10 @@ class SettingsValidationService(QObjectBase):
             self._intra_login_thread = None
             self._intra_worker = None
 
+        if self._shut_down_in_requested:
+            self._shut_down_in_requested = False
+            self.shutdown_ready.emit("settings_validation")
+
     def handle_intra_login_response(self, job_id: str, is_valid: bool):
         job = self._pending_jobs.get(job_id)
         payload = job.payload.data
@@ -210,3 +221,18 @@ class SettingsValidationService(QObjectBase):
         )
         self.task_complete.emit(job_response)
         self._pending_jobs.pop(job_id)
+
+    def request_app_shutdown(self) -> bool:
+        if not self._intra_login_thread or not self._intra_login_thread.isRunning():
+            return True
+
+        self._shut_down_in_requested = True
+        if self._intra_worker:
+            self._intra_worker.request_shut_down()
+
+        self._logger(
+            f"{self.__class__.__name__}: IntraLoginWorker still active. Deferring app shutdown.",
+            "WARN",
+        )
+
+        return False

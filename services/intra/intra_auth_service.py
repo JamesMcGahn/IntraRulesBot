@@ -93,13 +93,17 @@ class IntraAuthService(BaseAuthService):
         should_stop_cb,
     ):
         try:
+            self.check_shutdown(should_stop_cb)
             browser_port.goto(
                 f"https://{creds.tenant}.intradiem.com/?loginoverride=manual"
             )
+            self.check_shutdown(should_stop_cb)
             browser_port.wait_for_page_ready()
-
+            self.check_shutdown(should_stop_cb)
             self._enter_login_info(creds, browser_port, selectors)
+            self.check_shutdown(should_stop_cb)
             browser_port.wait_for_page_ready()
+            self.check_shutdown(should_stop_cb)
             return self._wait_for_success(browser_port, selectors)
         except PlaywrightError as e:
             if should_stop_cb is not None and should_stop_cb():
@@ -184,3 +188,7 @@ class IntraAuthService(BaseAuthService):
             return AuthResult(
                 success=False, status=AUTHSTATUS.BROWSER_ERROR, message=msg
             )
+
+    def check_shutdown(self, should_stop_cb: Callable):
+        if should_stop_cb():
+            raise Exception
