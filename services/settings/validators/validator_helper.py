@@ -1,6 +1,9 @@
-from services.validation.models import SettingsValidateResponse
-
 from ..enums import FIELDSTATESTATUS, SETTINGSCATEGORIES
+
+# import directly to avoid circular import
+from services.validation.models.validation_settings_response import (
+    SettingsValidateResponse,
+)
 
 
 class ValidatorHelper:
@@ -9,6 +12,7 @@ class ValidatorHelper:
         self.category = category
 
     def settings_response(self, field, value, is_valid, error_msg=None):
+
         if is_valid:
             display_field = field.replace("_", " ").title()
             msg = f"{display_field} is valid."
