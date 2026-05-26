@@ -56,9 +56,11 @@ class RulesValidationCoordinator(QObjectBase):
             batch_total=len(rules),
             file_path=file_path,
         )
-        if not rules and batch_type == VALIDATIONBATCHTYPE.SYS_SAVE:
-            self.handle_sys_save(batch)
         self._active_batches[batch_id] = batch
+        if not rules and batch_type == VALIDATIONBATCHTYPE.SYS_SAVE:
+            self._finalize_batch(batch.batch_id)
+            return
+
         for rule in rules:
             rule_guid = rule.get("guid", None)
             if not rule_guid:

@@ -25,7 +25,7 @@ from base.events import (
 )
 from views.components.toasts.qtoast.enums import QTOASTSTATUS
 from services.base.models import JobRequest
-from services.rule_runner.enums import RULERUNNERLIFECYLE
+from services.rule_runner.enums import RULERUNNERLIFECYCLE
 
 # TODO Create Rule Runner Response
 from services.rule_runner.models import (
@@ -112,7 +112,7 @@ class RulesController(QObjectBase):
     # **********************************
     # RULE RUNNER
 
-    def handle_runner_lifecycle(self, status: RULERUNNERLIFECYLE):
+    def handle_runner_lifecycle(self, status: RULERUNNERLIFECYCLE):
         print("**********", status)
         self.ui_event.emit(
             UIEvent(

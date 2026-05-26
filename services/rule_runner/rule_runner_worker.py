@@ -24,7 +24,7 @@ from services.auth.enums import PROVIDERS
 
 from ..auth.enums import AUTHSTATUS
 from ..auth.models.auth_result import AuthResult
-from .enums import RULEEXECSTATUS, RULERUNSTATUS, RULERUNNERLIFECYLE
+from .enums import RULEEXECSTATUS, RULERUNSTATUS, RULERUNNERLIFECYCLE
 
 # from rulerunner.rule_worker import RuleWorker
 from .executors import RuleExecutor
@@ -99,7 +99,7 @@ class RuleRunnerWorker(QObject):
             self.logging(f"{e}", "DEBUG")
             self.logging("Fatal Error", "ERROR")
         finally:
-            self.runner_life_cyle.emit(RULERUNNERLIFECYLE.FINISHED)
+            self.runner_life_cyle.emit(RULERUNNERLIFECYCLE.FINISHED)
             self.clean_up()
 
     def _init_browser(self, load_session_cookies=False) -> None:
@@ -174,7 +174,7 @@ class RuleRunnerWorker(QObject):
     def run_queue(self):
 
         try:
-            self.runner_life_cyle.emit(RULERUNNERLIFECYLE.STARTED)
+            self.runner_life_cyle.emit(RULERUNNERLIFECYCLE.STARTED)
             self._send_batch_progress(RULEEXECSTATUS.PENDING, "Rule queued.")
             auth_result = self._authenticate()
             if auth_result.status == AUTHSTATUS.STOPPED_REQUESTED:

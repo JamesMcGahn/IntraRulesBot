@@ -17,7 +17,7 @@ from base.events import (
     UIEvent,
 )
 from services.rule_monitor.models import RuleRunRow, RunSummary
-from services.rule_runner.enums import RULERUNNERLIFECYLE
+from services.rule_runner.enums import RULERUNNERLIFECYCLE
 
 
 class RulesRunMonitorController(QObjectBase):
@@ -28,7 +28,7 @@ class RulesRunMonitorController(QObjectBase):
         self.run_store = run_store
 
     # FROM RULERUNNER
-    def handle_runner_lifecyle(self, status: RULERUNNERLIFECYLE):
+    def handle_runner_lifecyle(self, status: RULERUNNERLIFECYCLE):
         pass
 
     @Slot(object)

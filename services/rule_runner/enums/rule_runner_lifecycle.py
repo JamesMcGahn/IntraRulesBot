@@ -1,6 +1,6 @@
 from enum import StrEnum
 
 
-class RULERUNNERLIFECYLE(StrEnum):
+class RULERUNNERLIFECYCLE(StrEnum):
     STARTED = "started"
     FINISHED = "finished"

@@ -6,7 +6,6 @@ if TYPE_CHECKING:
     from controllers.models import RulesPageControllers
     from base.events import UIEvent
 
-import uuid
 
 from PySide6.QtCore import Signal, Slot
 from PySide6.QtWidgets import QFileDialog
@@ -19,12 +18,13 @@ from base.events import (
     RuleRunnerStateEvent,
 )
 from controllers.rules.enums import VALIDATIONBATCHTYPE
-from views.components.dialogs import RuleSetDialog, SchemaErrorDialog
 from views.components.toasts.qtoast.enums import QTOASTSTATUS
 
 from .rules_monitor.rule_runner_monitor import RuleRunnerMonitor
 from .rules_page_css import STYLES
 from .rules_page_ui import RulesPageView
+from .enums import RULESPAGEEVENT
+from .models import RulesPageAction
 
 
 class RulesPage(QWidgetBase):
@@ -36,7 +36,6 @@ class RulesPage(QWidgetBase):
     """
 
     send_rules = Signal(list)
-    send_rule_sets = Signal(object)
     display_validation_result = Signal(object)
     monitor_upsert_row = Signal(object)
     monitor_summary_update = Signal(object)
@@ -55,55 +54,42 @@ class RulesPage(QWidgetBase):
 
         self.ui = RulesPageView()
         self.layout.addWidget(self.ui)
-
-        self.forms_errors = []
-        self.total_errors = 0
-        self.rule_set_data = None
         self.setGraphicsEffect(None)
 
-        ##
+        self.focus_object_name = None
+        self.focus_object_text = None
+
+        self.rule_runner_monitor = RuleRunnerMonitor(self)
+
+        # Signal / Slot Connections
+        # Controllers connections
         self.rules_controller.ui_event.connect(self.receive_ui_event)
         self.monitor_controller.ui_event.connect(self.receive_ui_event)
         self.rules_controller.display_validation_result.connect(
             self.ui.update_form_validation
         )
-        self.progress_bar_update.connect(self.ui.set_progress_bar)
-        self.ui.delete_rule.connect(self.handle_delete_rule)
-        self.ui.delete_all_rules.connect(self.handle_delete_all_rules)
-        self.ui.clone_rule.connect(self.handle_clone_rule)
-        self.ui.bookmark_rules.connect(self.handle_bookmark_rules)
 
-        # Signal / Slot Connections
-        self.ui.user_save_rules.connect(self.handle_user_rules_save)
-        self.ui.validate_rules.connect(self.handle_validate_rules)
-        self.ui.sys_save_rules.connect(self.handle_sys_rules_save)
-        self.ui.start_runner.connect(self.handle_start_runner)
-        self.ui.stop_runner.connect(self.handle_stop_runner)
-        self.ui.display_monitor.connect(self.handle_display_monitor)
+        # UI Page connections
+        self.ui.rules_page_action.connect(self.handle_rule_page_action)
+        self.progress_bar_update.connect(self.ui.set_progress_bar)
         self.send_rules.connect(self.ui.rules_changed)
-        self.ui.validate_open_dialog.clicked.connect(self.display_errors_dialog)
         self.rule_runner_state_update.connect(self.ui.handle_rule_runner_state_update)
 
-        self.dialog = RuleSetDialog()
-        self.dialog.send_form.connect(self.save_rule_set)
-        self.check_for_saved_rules()
-
-        self.rule_runner_monitor = RuleRunnerMonitor(self)
+        # Monitor connections
         self.monitor_upsert_row.connect(self.rule_runner_monitor.handle_upsert_row)
         self.monitor_summary_update.connect(
             self.rule_runner_monitor.handle_summary_update
         )
-        self.focus_object_name = None
-        self.focus_object_text = None
 
-    @Slot()
-    def handle_display_monitor(self):
-        if self.rule_runner_monitor and self.rule_runner_monitor.isVisible():
-            self.rule_runner_monitor.close()
-            return
-        if self.rule_runner_monitor and not self.rule_runner_monitor.isVisible():
-            self.rule_runner_monitor.show()
-            return
+        self.check_for_saved_rules()
+
+    def check_for_saved_rules(self) -> None:
+        """
+        Check if there are any saved rules and emit them to the view.
+        """
+        self.rules_controller.hydrate_rules_page()
+
+    # External UI Events
 
     @Slot(object)
     def receive_ui_event(self, event: UIEvent):
@@ -119,39 +105,34 @@ class RulesPage(QWidgetBase):
         elif isinstance(event.payload, RuleRunnerStateEvent):
             self.rule_runner_state_update.emit(event.payload.state)
 
-    @Slot(str)
-    def handle_delete_rule(self, guid: str):
-        self.rules_controller.delete_rule(guid)
+    # ***********************************
+    # RULES PAGE - BUTTON ACTIONS
 
-    @Slot(str)
-    def handle_delete_all_rules(self):
-        self.rules_controller.delete_all_rules()
+    @Slot(object)
+    def handle_rule_page_action(self, action: RulesPageAction):
 
-    @Slot(str)
-    def handle_clone_rule(self, guid: str):
-        self.rules_controller.clone_rule(guid)
+        action_handlers = {
+            RULESPAGEEVENT.START_RUNNER: self._handle_send_validation,
+            RULESPAGEEVENT.SYS_SAVE_RULES: self._handle_send_validation,
+            RULESPAGEEVENT.VALIDATE_RULES: self._handle_send_validation,
+            RULESPAGEEVENT.USER_SAVE_RULES: self._handle_user_rules_save,
+            RULESPAGEEVENT.DELETE_ALL_RULES: self._handle_delete_all_rules,
+            RULESPAGEEVENT.DELETE_RULE: self._handle_delete_rule,
+            RULESPAGEEVENT.CLONE_RULE: self._handle_clone_rule,
+            RULESPAGEEVENT.BOOKMARK_RULES: self._handle_bookmark_rules,
+            RULESPAGEEVENT.STOP_RUNNER: self._handle_rule_runner_stop,
+            RULESPAGEEVENT.TOGGLE_DISPLAY_MONITOR: self._handle_display_monitor,
+        }
 
-    @Slot(list)
-    def handle_validate_rules(self, rules: dict):
-        self.controllers.rules.validate_rules(
-            rules, batch_type=VALIDATIONBATCHTYPE.RUNTIME
-        )
+        handler = action_handlers.get(action.event, None)
+        if handler is None:
+            return
+        handler(action)
 
-    @Slot(list)
-    def handle_start_runner(self, rules: dict):
-        self.controllers.rules.validate_rules(
-            rules, batch_type=VALIDATIONBATCHTYPE.RULE_RUNNER
-        )
+    # ***********************************
+    # RULE PAGE BUTTON ACTION - HANDLERS
 
-    @Slot(list)
-    def handle_bookmark_rules(
-        self, rule_set_name: str, rule_set_desc: str, rules: dict
-    ):
-        self.controllers.rules.handle_user_book_mark(
-            rule_set_name, rule_set_desc, rules
-        )
-
-    def handle_stop_runner(self):
+    def _handle_rule_runner_stop(self, _) -> None:
         self.log_with_toast(
             "Stop Runner Requested",
             "Stopping Rule Runner.",
@@ -160,28 +141,49 @@ class RulesPage(QWidgetBase):
         )
         self.controllers.rules.handle_stop_runner()
 
-    def display_errors_dialog(self) -> None:
-        """
-        Display the error dialog if validation errors are found in the form fields.
-        """
-        add = SchemaErrorDialog(self.forms_errors)
-        self.ui.set_hidden_errors_dialog_btn(False)
-        add.show()
+    def _handle_display_monitor(self, _) -> None:
+        if self.rule_runner_monitor and self.rule_runner_monitor.isVisible():
+            self.rule_runner_monitor.close()
+            return
+        if self.rule_runner_monitor and not self.rule_runner_monitor.isVisible():
+            self.rule_runner_monitor.show()
+            return
 
-    def check_for_saved_rules(self) -> None:
-        """
-        Check if there are any saved rules and emit them to the view.
-        """
-        self.rules_controller.hydrate_rules_page()
+    def _handle_send_validation(self, action: RulesPageAction[dict]):
+        batch_type_map = {
+            RULESPAGEEVENT.VALIDATE_RULES: VALIDATIONBATCHTYPE.RUNTIME,
+            RULESPAGEEVENT.START_RUNNER: VALIDATIONBATCHTYPE.RULE_RUNNER,
+            RULESPAGEEVENT.SYS_SAVE_RULES: VALIDATIONBATCHTYPE.SYS_SAVE,
+            RULESPAGEEVENT.USER_SAVE_RULES: VALIDATIONBATCHTYPE.USER_SAVE,
+        }
+        self.controllers.rules.validate_rules(
+            action.data, batch_type=batch_type_map.get(action.event)
+        )
 
-    def handle_user_rules_save(self, rules) -> None:
+    def _handle_bookmark_rules(self, action: RulesPageAction[object]) -> None:
+        self.controllers.rules.handle_user_book_mark(
+            action.data.get("rule_set_name"),
+            action.data.get("rule_set_description"),
+            action.data.get("rules"),
+        )
+
+    def _handle_clone_rule(self, action: RulesPageAction[str]) -> None:
+        self.rules_controller.clone_rule(action.data)
+
+    def _handle_delete_all_rules(self, _):
+        self.rules_controller.delete_all_rules()
+
+    def _handle_delete_rule(self, action: RulesPageAction[str]) -> None:
+        self.rules_controller.delete_rule(action.data)
+
+    def _handle_user_rules_save(self, action: RulesPageAction[dict]) -> None:
         """
         Save the validated rules to a JSON file selected by the user. It ensures the file has
         a `.json` extension.
         """
-        if not rules:
+        if not action or not action.data:
             return
-
+        rules = action.data
         file_path, _ = QFileDialog.getSaveFileName(
             self,
             "Save JSON File",
@@ -190,45 +192,10 @@ class RulesPage(QWidgetBase):
         )
         if not file_path:
             return
-        if file_path:
-            # Ensure the file has a .json extension
-            if not file_path.endswith(".json"):
-                file_path += ".json"
+
+        # Ensure the file has a .json extension
+        if not file_path.endswith(".json"):
+            file_path += ".json"
         self.controllers.rules.validate_rules(
             rules, batch_type=VALIDATIONBATCHTYPE.USER_SAVE, file_path=file_path
-        )
-
-    def handle_sys_rules_save(self, rules) -> None:
-        """
-        Save the validated rules to the internal system storage.
-        """
-        self.controllers.rules.validate_rules(
-            rules, batch_type=VALIDATIONBATCHTYPE.SYS_SAVE
-        )
-
-    def on_bookmark_click(self):
-        if self.ui.get_forms():
-            _, data = self.validate_rules()
-            if data:
-                self.rule_set_data = data
-                if not self.dialog.show():
-                    self.rule_set_data = None
-
-    @Slot(str, str)
-    def save_rule_set(self, rule_set_name, rule_set_desc):
-        rule_set = {
-            "guid": str(uuid.uuid4()),
-            "name": rule_set_name,
-            "description": rule_set_desc,
-            "rules": self.rule_set_data,
-        }
-        self.send_rule_sets.emit(rule_set)
-        self.rule_set_data = None
-        self.log_with_toast(
-            "Rules Set Saved",
-            f"Rules Set: {rule_set_name} Saved Successfully.",
-            "INFO",
-            "SUCCESS",
-            True,
-            self,
         )

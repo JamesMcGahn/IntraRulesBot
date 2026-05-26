@@ -25,10 +25,12 @@ from views.components.buttons import EditorActionButton, GradientButton
 from views.components.helpers import StyleHelper, WidgetFactory
 from views.components.layouts import ScrollArea, StackedFormWidget
 
-from ...components.dialogs import RuleSetDialog
+from ...components.dialogs import RuleSetDialog, SchemaErrorDialog
 from ...components.rules import RuleAdapter, RuleEventFilter, RuleFactory
 from ...components.rules.rule_registry import RuleFieldRegistry
-from services.rule_runner.enums.rule_runner_lifecycle import RULERUNNERLIFECYLE
+from services.rule_runner.enums.rule_runner_lifecycle import RULERUNNERLIFECYCLE
+from .enums.rules_page_event import RULESPAGEEVENT
+from .models import RulesPageAction
 
 
 class RulesPageView(QWidget):
@@ -40,16 +42,7 @@ class RulesPageView(QWidget):
 
     rules_form_updated = Signal()
 
-    delete_rule = Signal(str)
-    delete_all_rules = Signal()
-    clone_rule = Signal(str)
-    validate_rules = Signal(dict)
-    user_save_rules = Signal(dict)
-    sys_save_rules = Signal(dict)
-    bookmark_rules = Signal(str, str, dict)
-    start_runner = Signal(dict)
-    stop_runner = Signal()
-    display_monitor = Signal()
+    rules_page_action = Signal(object)
 
     def __init__(self):
         super().__init__()
@@ -58,6 +51,8 @@ class RulesPageView(QWidget):
         self._event_guid = None
         self._event_path = None
         self.init_ui()
+
+        self._form_errors = []
 
     def init_ui(self) -> None:
         """
@@ -193,20 +188,24 @@ class RulesPageView(QWidget):
         # Signal / Slot Connections
         self.scroll_area.verticalScrollBar().valueChanged.connect(self.repaint_shadow)
         self.scroll_area.horizontalScrollBar().valueChanged.connect(self.repaint_shadow)
-        self.trash.clicked.connect(self.on_delete_rule)
+
         self.prev_button.clicked.connect(self.show_previous_rule)
         self.next_button.clicked.connect(self.show_next_rule)
-        self.delete_all.clicked.connect(self.handle_delete_all)
-        self.bookmark.clicked.connect(self.handle_bookmark_click)
+
+        self.bookmark.clicked.connect(self.handle_action_button_click)
         self.copy_field.clicked.connect(self.handle_copy_fields)
 
-        self.clone.clicked.connect(self.handle_clone_rule)
-        self.validate.clicked.connect(self.handle_validate_rules)
-        self.download.clicked.connect(self.handle_user_save)
-        self.save.clicked.connect(self.handle_sys_save)
-        self.start.clicked.connect(self.handle_start_runner)
-        self.stop.clicked.connect(self.handle_stop_runner)
-        self.monitor.clicked.connect(self.handle_display_monitor)
+        self.validate_open_dialog.clicked.connect(self.display_errors_dialog)
+
+        self.delete_all.clicked.connect(self.handle_action_button_click)
+        self.trash.clicked.connect(self.handle_action_button_click)
+        self.clone.clicked.connect(self.handle_action_button_click)
+        self.validate.clicked.connect(self.handle_action_button_click)
+        self.download.clicked.connect(self.handle_action_button_click)
+        self.save.clicked.connect(self.handle_action_button_click)
+        self.start.clicked.connect(self.handle_action_button_click)
+        self.stop.clicked.connect(self.handle_action_button_click)
+        self.monitor.clicked.connect(self.handle_action_button_click)
         self.rule_set_dialog.send_form.connect(self.handle_bookmark_rules)
         self.event_filter.event_changed.connect(self.focus_changed)
 
@@ -234,57 +233,66 @@ class RulesPageView(QWidget):
             (
                 self.save,
                 "Save",
+                RULESPAGEEVENT.SYS_SAVE_RULES,
                 ":/images/save_off_b.png",
                 ":/images/save_on.png",
             ),
             (
                 self.validate,
                 "Validate Fields",
+                RULESPAGEEVENT.VALIDATE_RULES,
                 ":/images/validate_off_b.png",
                 ":/images/validate_on.png",
             ),
             (
                 self.clone,
                 "Clone Rule",
+                RULESPAGEEVENT.CLONE_RULE,
                 ":/images/clone_off_b.png",
                 ":/images/clone_on.png",
             ),
             (
                 self.copy_field,
                 "Apply Field Value Across Rules",
+                RULESPAGEEVENT.COPY_RULE_FIELD,
                 ":/images/copy_field_off_b.png",
                 ":/images/copy_field_on.png",
             ),
             (
                 self.trash,
                 "Delete Rule",
+                RULESPAGEEVENT.DELETE_RULE,
                 ":/images/trash_off_b.png",
                 ":/images/trash_on.png",
             ),
             (
                 self.download,
                 "Save to File",
+                RULESPAGEEVENT.USER_SAVE_RULES,
                 ":/images/download_off_b.png",
                 ":/images/download_on.png",
             ),
             (
                 self.delete_all,
                 "Delete All Rules",
+                RULESPAGEEVENT.DELETE_ALL_RULES,
                 ":/images/delete_all_off_b.png",
                 ":/images/delete_all_on.png",
             ),
             (
                 self.bookmark,
                 "Save Rules to Rule Sets",
+                RULESPAGEEVENT.BOOKMARK_RULES,
                 ":/images/bookmark_off_b.png",
                 ":/images/bookmark_on.png",
             ),
         ]
 
         for index, btn in enumerate(actionBtns):
-            btn_ref, tool_tip, image_loc1, image_loc2 = btn
+            btn_ref, tool_tip, object_name, image_loc1, image_loc2 = btn
 
             btn_ref.setFixedWidth(40)
+            btn_ref.setProperty("page_action", object_name)
             style = ""
             if index == 0:
                 style = "border-top-left-radius: 3px; border-top-right-radius: 3px; border-bottom-left-radius: 0px; border-bottom-right-radius: 0px;"
@@ -367,11 +375,14 @@ class RulesPageView(QWidget):
 
         self.monitor.setFixedWidth(50)
         self.monitor.setFixedHeight(30)
+        self.monitor.setObjectName(RULESPAGEEVENT.TOGGLE_DISPLAY_MONITOR)
         self.stop.setFixedWidth(30)
         self.stop.setFixedHeight(30)
+        self.stop.setObjectName(RULESPAGEEVENT.STOP_RUNNER)
         self.start.setFixedHeight(30)
         self.stop.setHidden(True)
         self.start.setChecked(True)
+        self.start.setObjectName(RULESPAGEEVENT.START_RUNNER)
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setHidden(True)
         bottom_h_layout = QHBoxLayout()
@@ -393,12 +404,12 @@ class RulesPageView(QWidget):
         self.main_layout.addLayout(bottom_h_layout)
 
     @Slot(object)
-    def handle_rule_runner_state_update(self, state: RULERUNNERLIFECYLE) -> None:
-        if state == RULERUNNERLIFECYLE.STARTED:
+    def handle_rule_runner_state_update(self, state: RULERUNNERLIFECYCLE) -> None:
+        if state == RULERUNNERLIFECYCLE.STARTED:
             self.stop.setHidden(False)
             self.progress_bar.setHidden(False)
             self.start.setDisabled(True)
-        if state == RULERUNNERLIFECYLE.FINISHED:
+        if state == RULERUNNERLIFECYCLE.FINISHED:
             self.stop.setHidden(True)
             self.start.setDisabled(False)
 
@@ -415,46 +426,83 @@ class RulesPageView(QWidget):
 
     @Slot(object)
     def update_form_validation(self, errors_result: ValidationRulesResult):
+        all_errors = []
         for guid, errors in errors_result.errors_by_rule.items():
             form = self.stacked_widget.get_form_by_guid(guid)
             if form:
+                all_errors.extend(errors)
                 form.highlight_errors(errors)
 
-    def handle_delete_all(self):
-        self.delete_all_forms()
-        self.delete_all_rules.emit()
+        self._form_errors = all_errors
+        if all_errors:
+            self.validate_feedback.setText(f" Total Errors : {len(all_errors)}")
+            self.validate_feedback.setIcon(self.error_icon)
+        else:
+            self.validate_feedback.setText(" No Errors Found")
+            self.validate_feedback.setIcon(self.no_error_icon)
+        self.set_hidden_errors_dialog_btn(True if not all_errors else False)
 
-    def handle_clone_rule(self) -> None:
-        """Clones the currently selected rule and adds it to the rule list."""
-        form = self.stacked_widget.get_form_by_index(self.stacked_widget.currentIndex())
+    def handle_action_button_click(self):
+        sender = self.sender()
+        if sender is None:
+            return
 
-        self.clone_rule.emit(form.guid)
+        raw_action = sender.property("page_action")
+        if raw_action is None:
+            return
 
-    def handle_display_monitor(self):
-        self.display_monitor.emit()
+        action = RULESPAGEEVENT(raw_action)
+        payload = self._build_action_payload(action)
+        if payload is None:
+            return
+        self.rules_page_action.emit(payload)
 
-    def handle_stop_runner(self):
-        self.stop_runner.emit()
+    def _build_action_payload(self, action: RULESPAGEEVENT):
 
-    def handle_start_runner(self):
-        self.start_runner.emit(self.extract_forms_to_dict())
+        validate_actions = (
+            RULESPAGEEVENT.START_RUNNER,
+            RULESPAGEEVENT.SYS_SAVE_RULES,
+            RULESPAGEEVENT.USER_SAVE_RULES,
+            RULESPAGEEVENT.VALIDATE_RULES,
+        )
 
-    def handle_sys_save(self):
-        self.sys_save_rules.emit(self.extract_forms_to_dict())
+        if action in validate_actions:
+            return RulesPageAction[object](action, self.extract_forms_to_dict())
 
-    def handle_user_save(self):
-        self.user_save_rules.emit(self.extract_forms_to_dict())
+        if action == RULESPAGEEVENT.DELETE_ALL_RULES:
+            self.delete_all_forms()
+            return RulesPageAction[None](action, None)
 
-    def handle_validate_rules(self):
-        self.validate_rules.emit(self.extract_forms_to_dict())
+        if action == RULESPAGEEVENT.DELETE_RULE:
+            guid = self.on_delete_rule()
+            return RulesPageAction[str](action, guid)
 
-    def handle_bookmark_click(self):
-        self.rule_set_dialog.show()
+        if action == RULESPAGEEVENT.CLONE_RULE:
+            form = self.stacked_widget.get_form_by_index(
+                self.stacked_widget.currentIndex()
+            )
+            return RulesPageAction[str](action, form.guid)
+
+        if action == RULESPAGEEVENT.BOOKMARK_RULES:
+            self.rule_set_dialog.show()
+            return
+
+        if action == RULESPAGEEVENT.STOP_RUNNER:
+            return RulesPageAction[None](action, None)
+
+        if action == RULESPAGEEVENT.TOGGLE_DISPLAY_MONITOR:
+            return RulesPageAction[None](action, None)
 
     def handle_bookmark_rules(self, rule_set_name, rule_set_desc):
-        self.bookmark_rules.emit(
-            rule_set_name, rule_set_desc, self.extract_forms_to_dict()
+        payload = RulesPageAction[str](
+            RULESPAGEEVENT.BOOKMARK_RULES,
+            {
+                "rule_set_name": rule_set_name,
+                "rule_set_description": rule_set_desc,
+                "rules": self.extract_forms_to_dict(),
+            },
         )
+        self.rules_page_action.emit(payload)
 
     @Slot(str, str)
     def focus_changed(self, rule_guid: str, full_path: str) -> None:
@@ -519,7 +567,7 @@ class RulesPageView(QWidget):
         """Repaint shadow of widget. Used for repainting shadow after the scroll bar moves"""
         self.editor_widget.update()
 
-    def on_delete_rule(self) -> None:
+    def on_delete_rule(self) -> str:
         """Handles the deletion of a rule from the UI."""
         if self.stacked_widget.get_form_factories():
             current_index = self.stacked_widget.currentIndex()
@@ -529,7 +577,7 @@ class RulesPageView(QWidget):
                 self.previous_guid = previous_form.guid
             guid = rule_form.guid
             self.delete_all_forms()
-            self.delete_rule.emit(guid)
+        return guid
 
     def set_disable_action_btns(self) -> None:
         """Enables or disables the action buttons based on the presence of rules.
@@ -633,3 +681,12 @@ class RulesPageView(QWidget):
 
             self.prev_button.setDisabled(False)
         self.update_navigation_buttons()
+
+    def display_errors_dialog(self) -> None:
+        """
+        Display the error dialog if validation errors are found in the form fields.
+        """
+        print("here")
+        add = SchemaErrorDialog(self._form_errors, self)
+        self.set_hidden_errors_dialog_btn(False)
+        add.show()
