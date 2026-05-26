@@ -16,6 +16,7 @@ from base.events import (
     MonitorRowUpsertEvent,
     MonitorSummaryUpdateEvent,
     RulesLoadedEvent,
+    RuleRunnerStateEvent,
 )
 from controllers.rules.enums import VALIDATIONBATCHTYPE
 from views.components.dialogs import RuleSetDialog, SchemaErrorDialog
@@ -40,6 +41,7 @@ class RulesPage(QWidgetBase):
     monitor_upsert_row = Signal(object)
     monitor_summary_update = Signal(object)
     progress_bar_update = Signal(int, int)
+    rule_runner_state_update = Signal(object)
 
     def __init__(self, controllers: RulesPageControllers):
         """
@@ -80,6 +82,7 @@ class RulesPage(QWidgetBase):
         self.ui.display_monitor.connect(self.handle_display_monitor)
         self.send_rules.connect(self.ui.rules_changed)
         self.ui.validate_open_dialog.clicked.connect(self.display_errors_dialog)
+        self.rule_runner_state_update.connect(self.ui.handle_rule_runner_state_update)
 
         self.dialog = RuleSetDialog()
         self.dialog.send_form.connect(self.save_rule_set)
@@ -113,6 +116,8 @@ class RulesPage(QWidgetBase):
                 event.payload.summary.completed, event.payload.summary.total
             )
             self.monitor_summary_update.emit(event.payload.summary)
+        elif isinstance(event.payload, RuleRunnerStateEvent):
+            self.rule_runner_state_update.emit(event.payload.state)
 
     @Slot(str)
     def handle_delete_rule(self, guid: str):

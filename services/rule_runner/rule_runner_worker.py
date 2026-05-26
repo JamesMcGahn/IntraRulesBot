@@ -24,7 +24,7 @@ from services.auth.enums import PROVIDERS
 
 from ..auth.enums import AUTHSTATUS
 from ..auth.models.auth_result import AuthResult
-from .enums import RULEEXECSTATUS, RULERUNSTATUS
+from .enums import RULEEXECSTATUS, RULERUNSTATUS, RULERUNNERLIFECYLE
 
 # from rulerunner.rule_worker import RuleWorker
 from .executors import RuleExecutor
@@ -41,7 +41,7 @@ class RuleRunnerWorker(QObject):
     progress = Signal(int, int)
     runner_result = Signal(object)
     task_progress = Signal(object)
-    run_started = Signal()
+    runner_life_cyle = Signal(object)
 
     def __init__(
         self,
@@ -96,8 +96,11 @@ class RuleRunnerWorker(QObject):
             self.run_queue()
 
         except Exception as e:
-            print(e)
+            self.logging(f"{e}", "DEBUG")
             self.logging("Fatal Error", "ERROR")
+        finally:
+            self.runner_life_cyle.emit(RULERUNNERLIFECYLE.FINISHED)
+            self.clean_up()
 
     def _init_browser(self, load_session_cookies=False) -> None:
         """
@@ -171,7 +174,7 @@ class RuleRunnerWorker(QObject):
     def run_queue(self):
 
         try:
-            self.run_started.emit()
+            self.runner_life_cyle.emit(RULERUNNERLIFECYLE.STARTED)
             self._send_batch_progress(RULEEXECSTATUS.PENDING, "Rule queued.")
             auth_result = self._authenticate()
             if auth_result.status == AUTHSTATUS.STOPPED_REQUESTED:
@@ -235,7 +238,6 @@ class RuleRunnerWorker(QObject):
             self.logging(f"{e}", "ERROR")
         finally:
             self.create_rule_summary()
-            self.close()
 
     def _send_result_progress(
         self,
@@ -352,7 +354,7 @@ class RuleRunnerWorker(QObject):
         self.logging("Shutting down", "INFO")
         self._shut_down.set()
 
-    def close(self) -> None:
+    def clean_up(self) -> None:
         """
         Closes the thread and ensures proper shutdown of all resources.
         """

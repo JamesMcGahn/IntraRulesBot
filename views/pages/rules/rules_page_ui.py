@@ -28,6 +28,7 @@ from views.components.layouts import ScrollArea, StackedFormWidget
 from ...components.dialogs import RuleSetDialog
 from ...components.rules import RuleAdapter, RuleEventFilter, RuleFactory
 from ...components.rules.rule_registry import RuleFieldRegistry
+from services.rule_runner.enums.rule_runner_lifecycle import RULERUNNERLIFECYLE
 
 
 class RulesPageView(QWidget):
@@ -369,7 +370,7 @@ class RulesPageView(QWidget):
         self.stop.setFixedWidth(30)
         self.stop.setFixedHeight(30)
         self.start.setFixedHeight(30)
-        # self.stop.setHidden(True)
+        self.stop.setHidden(True)
         self.start.setChecked(True)
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setHidden(True)
@@ -390,6 +391,16 @@ class RulesPageView(QWidget):
         bottom_h_layout.setAlignment(Qt.AlignmentFlag.AlignRight)
         bottom_h_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.addLayout(bottom_h_layout)
+
+    @Slot(object)
+    def handle_rule_runner_state_update(self, state: RULERUNNERLIFECYLE) -> None:
+        if state == RULERUNNERLIFECYLE.STARTED:
+            self.stop.setHidden(False)
+            self.progress_bar.setHidden(False)
+            self.start.setDisabled(True)
+        if state == RULERUNNERLIFECYLE.FINISHED:
+            self.stop.setHidden(True)
+            self.start.setDisabled(False)
 
     @Slot(int, int)
     def set_progress_bar(self, current: int, total: int) -> None:

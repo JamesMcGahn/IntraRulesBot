@@ -21,8 +21,7 @@ class RuleRunnerService(QObject):
     stop_run = Signal()
     task_progress = Signal(object)
 
-    run_started = Signal()
-    run_finished = Signal()
+    runner_life_cyle = Signal(object)
     shutdown_ready = Signal(str)
 
     def __init__(
@@ -60,8 +59,7 @@ class RuleRunnerService(QObject):
         self._worker.moveToThread(self._thread)
 
         self._thread.started.connect(self._worker.do_work)
-        self._worker.run_started.connect(self.run_started)
-        self._worker.done.connect(self.run_finished)
+        self._worker.runner_life_cyle.connect(self.runner_life_cyle)
         self._worker.done.connect(self._thread.quit)
         self._worker.done.connect(self._worker.deleteLater)
         self._worker.progress.connect(self.progress)

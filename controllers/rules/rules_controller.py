@@ -16,9 +16,16 @@ from PySide6.QtCore import Signal, Slot
 from copy import deepcopy
 from base import QObjectBase
 from base.enums import UIEVENTTYPE, LOGLEVEL
-from base.events import ToastEvent, UIEvent, SchemaErrorDialogEvent, RulesLoadedEvent
+from base.events import (
+    ToastEvent,
+    UIEvent,
+    SchemaErrorDialogEvent,
+    RulesLoadedEvent,
+    RuleRunnerStateEvent,
+)
 from views.components.toasts.qtoast.enums import QTOASTSTATUS
 from services.base.models import JobRequest
+from services.rule_runner.enums import RULERUNNERLIFECYLE
 
 # TODO Create Rule Runner Response
 from services.rule_runner.models import (
@@ -60,7 +67,9 @@ class RulesController(QObjectBase):
 
         # TODO convert to ui_event
         self.rule_runner_service.progress.connect(self.runner_progress)
+        self.rule_runner_service.runner_life_cyle.connect(self.handle_runner_lifecycle)
         self.stop_runner_service.connect(self.rule_runner_service.stop_current_run)
+
         ## RULES
         self.validation_coordinator.batch_complete.connect(self.on_validation_complete)
         self.batch_dispatchers = {
@@ -99,6 +108,18 @@ class RulesController(QObjectBase):
             return
 
         self.validate_rules(data, VALIDATIONBATCHTYPE.IMPORT)
+
+    # **********************************
+    # RULE RUNNER
+
+    def handle_runner_lifecycle(self, status: RULERUNNERLIFECYLE):
+        print("**********", status)
+        self.ui_event.emit(
+            UIEvent(
+                event_type=UIEVENTTYPE.DISPLAY,
+                payload=RuleRunnerStateEvent(state=status),
+            )
+        )
 
     # **********************************
     # RULE PAGE ACTIONS
@@ -303,7 +324,7 @@ class RulesController(QObjectBase):
             message=message,
             title=title,
             toast_level=QTOASTSTATUS.ERROR,
-            log_level=LOGLEVEL.ERROR,
+            log_level=LOGLEVEL.INFO,
         )
         event = UIEvent(UIEVENTTYPE.DISPLAY, payload=toast)
         self.ui_event.emit(event)

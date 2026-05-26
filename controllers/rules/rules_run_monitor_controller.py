@@ -11,10 +11,13 @@ from PySide6.QtCore import Signal, Slot
 
 from base import QObjectBase
 from base.enums import UIEVENTTYPE
-from base.events import MonitorRowUpsertEvent, MonitorSummaryUpdateEvent, UIEvent
+from base.events import (
+    MonitorRowUpsertEvent,
+    MonitorSummaryUpdateEvent,
+    UIEvent,
+)
 from services.rule_monitor.models import RuleRunRow, RunSummary
-
-# TODO Create Rule Runner Response
+from services.rule_runner.enums import RULERUNNERLIFECYLE
 
 
 class RulesRunMonitorController(QObjectBase):
@@ -25,17 +28,11 @@ class RulesRunMonitorController(QObjectBase):
         self.run_store = run_store
 
     # FROM RULERUNNER
-    def handle_runner_started(self):
-        print("Runner Started")
-        pass
-
-    def handle_runner_finished(self):
-        print("Runner Finished")
+    def handle_runner_lifecyle(self, status: RULERUNNERLIFECYLE):
         pass
 
     @Slot(object)
     def handle_task_progress_event(self, event: RuleProgressEvent):
-        print("**** controller", event)
         row = RuleRunRow(
             rule_guid=event.rule_guid,
             rule_name=event.rule_name,

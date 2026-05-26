@@ -152,11 +152,8 @@ class AppContext(QObject, metaclass=QSingleton):
             self.rules_monitor_controller.handle_task_progress_event
         )
 
-        self.rule_runner_service.run_started.connect(
-            self.rules_monitor_controller.handle_runner_started
-        )
-        self.rule_runner_service.run_finished.connect(
-            self.rules_monitor_controller.handle_runner_finished
+        self.rule_runner_service.runner_life_cyle.connect(
+            self.rules_monitor_controller.handle_runner_lifecyle
         )
 
         ## SETTINGS
