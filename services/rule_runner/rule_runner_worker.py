@@ -65,8 +65,8 @@ class RuleRunnerWorker(QObject):
         self.driver = None
         self.driver_adapter = None
         self.current_executor: RuleExecutor | None = None
-        self.errored_rules = []
-        self.success_rules = []
+        self.errored_rules: list[RuleRunItem] = []
+        self.success_rules: list[RuleRunItem] = []
         self.completed_count = 0
         self.total_count = len(self.rule_queue)
         self._shut_down = Event()
@@ -254,7 +254,7 @@ class RuleRunnerWorker(QObject):
                 status=result.status if use_exec_status else item.status,
                 message=message,
                 started_at=None,
-                finished_at=time.time(),
+                finished_at=int(time.time()),
             )
         )
 
@@ -323,11 +323,15 @@ class RuleRunnerWorker(QObject):
         """
         errored_rules_msg = f"ERRORED RULES TOTAL: {len(self.errored_rules)} \n"
         succeeded_rules_msg = f"SUCCEEDED RULES TOTAL: {len(self.success_rules)} \n"
-        tabs = "\t" * 4
-        for e_rule_name in self.errored_rules:
-            errored_rules_msg += f"{tabs}- {e_rule_name} \n"
-        for s_rule_rume in self.success_rules:
-            succeeded_rules_msg += f"{tabs}- {s_rule_rume} \n"
+        tabs = "\t" * 3
+        for error_rule in self.errored_rules:
+            errored_rules_msg += (
+                f"{tabs}- {error_rule.rule.rule_name} - {error_rule.rule_guid} \n"
+            )
+        for succeed_rule in self.success_rules:
+            succeeded_rules_msg += (
+                f"{tabs}- {succeed_rule.rule.rule_name} - {succeed_rule.rule_guid} \n"
+            )
         self.logging(succeeded_rules_msg, "INFO")
         self.logging(errored_rules_msg, "ERROR")
 

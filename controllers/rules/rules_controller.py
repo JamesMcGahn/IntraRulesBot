@@ -121,7 +121,6 @@ class RulesController(QObjectBase):
     # RULE RUNNER
 
     def handle_runner_lifecycle(self, status: RULERUNNERLIFECYCLE):
-        print("**********", status)
         self.ui_event.emit(
             UIEvent(
                 event_type=UIEVENTTYPE.DISPLAY,
