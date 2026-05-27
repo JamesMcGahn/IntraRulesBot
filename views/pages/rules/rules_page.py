@@ -16,6 +16,7 @@ from base.events import (
     MonitorSummaryUpdateEvent,
     RulesLoadedEvent,
     RuleRunnerStateEvent,
+    MonitorSnapShotEvent,
 )
 from controllers.rules.enums import VALIDATIONBATCHTYPE
 from views.components.toasts.qtoast.enums import QTOASTSTATUS
@@ -23,7 +24,7 @@ from views.components.toasts.qtoast.enums import QTOASTSTATUS
 from .rules_monitor.rule_runner_monitor import RuleRunnerMonitor
 from .rules_page_css import STYLES
 from .rules_page_ui import RulesPageView
-from .enums import RULESPAGEEVENT
+from .enums import RULESPAGEEVENT, MONITOREVENT
 from .models import RulesPageAction
 
 
@@ -41,6 +42,7 @@ class RulesPage(QWidgetBase):
     monitor_summary_update = Signal(object)
     progress_bar_update = Signal(int, int)
     rule_runner_state_update = Signal(object)
+    monitor_snapshot_update = Signal(object)
 
     def __init__(self, controllers: RulesPageControllers):
         """
@@ -65,6 +67,9 @@ class RulesPage(QWidgetBase):
         # Controllers connections
         self.rules_controller.ui_event.connect(self.receive_ui_event)
         self.monitor_controller.ui_event.connect(self.receive_ui_event)
+        self.monitor_snapshot_update.connect(
+            self.rule_runner_monitor.update_from_snapshot
+        )
         self.rules_controller.display_validation_result.connect(
             self.ui.update_form_validation
         )
@@ -80,6 +85,7 @@ class RulesPage(QWidgetBase):
         self.monitor_summary_update.connect(
             self.rule_runner_monitor.handle_summary_update
         )
+        self.rule_runner_monitor.monitor_action.connect(self.hand_monitor_actions)
 
         self.check_for_saved_rules()
 
@@ -102,15 +108,24 @@ class RulesPage(QWidgetBase):
                 event.payload.summary.completed, event.payload.summary.total
             )
             self.monitor_summary_update.emit(event.payload.summary)
+        elif isinstance(event.payload, MonitorSnapShotEvent):
+            self.monitor_snapshot_update.emit(event.payload)
         elif isinstance(event.payload, RuleRunnerStateEvent):
             self.rule_runner_state_update.emit(event.payload.state)
+
+    def hand_monitor_actions(self, action: MONITOREVENT):
+        if action == MONITOREVENT.MONITOR_CLEAR_ALL:
+            self.monitor_controller.clear_all()
+            return
+        if action == MONITOREVENT.MONITOR_REMOVE_SUCCEED:
+            self.monitor_controller.remove_succeed()
 
     # ***********************************
     # RULES PAGE - BUTTON ACTIONS
 
     @Slot(object)
     def handle_rule_page_action(self, action: RulesPageAction):
-
+        print(action)
         action_handlers = {
             RULESPAGEEVENT.START_RUNNER: self._handle_send_validation,
             RULESPAGEEVENT.SYS_SAVE_RULES: self._handle_send_validation,

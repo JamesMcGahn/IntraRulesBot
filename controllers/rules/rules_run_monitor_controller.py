@@ -14,6 +14,7 @@ from base.enums import UIEVENTTYPE
 from base.events import (
     MonitorRowUpsertEvent,
     MonitorSummaryUpdateEvent,
+    MonitorSnapShotEvent,
     UIEvent,
 )
 from services.rule_monitor.models import RuleRunRow, RunSummary
@@ -22,6 +23,8 @@ from services.rule_runner.enums import RULERUNNERLIFECYCLE
 
 class RulesRunMonitorController(QObjectBase):
     ui_event = Signal(object)
+    request_remove = Signal(list)
+    snapshot_update = Signal(list)
 
     def __init__(self, run_store: RunMonitorStore):
         super().__init__()
@@ -64,3 +67,21 @@ class RulesRunMonitorController(QObjectBase):
                 payload=MonitorSummaryUpdateEvent(summary=summary),
             )
         )
+
+    def _emit_snap_shot(self, summary: RunSummary, rows: list[RuleRunRow]):
+        self.ui_event.emit(
+            UIEvent(
+                event_type=UIEVENTTYPE.DISPLAY,
+                payload=MonitorSnapShotEvent(summary=summary, rows=rows),
+            )
+        )
+
+    def clear_all(self):
+        self.run_store.reset()
+        self._emit_snap_shot(self.run_store.get_summary(), [])
+
+    def remove_succeed(self):
+        succeed_guids = self.run_store.remove_succeeded()
+        snap_shot = self.run_store.get_rows_snapshot()
+        self.request_remove.emit(succeed_guids)
+        self._emit_snap_shot(self.run_store.get_summary(), snap_shot)

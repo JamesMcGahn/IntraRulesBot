@@ -6,6 +6,7 @@ from .schema_error_dialog_event import SchemaErrorDialogEvent
 from .toast_event import ToastEvent
 from .ui_event import UIEvent
 from .rule_runner_state_event import RuleRunnerStateEvent
+from .monitor_snapshot import MonitorSnapShotEvent
 
 __all__ = [
     "UIEvent",
@@ -16,4 +17,5 @@ __all__ = [
     "MonitorRowUpsertEvent",
     "MonitorSummaryUpdateEvent",
     "RuleRunnerStateEvent",
+    "MonitorSnapShotEvent",
 ]

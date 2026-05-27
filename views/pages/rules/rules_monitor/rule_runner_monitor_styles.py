@@ -28,7 +28,7 @@ QPushButton#cancel-btn {
   border-radius: 3px;
 }
 
-QPushButton#close-btn{
+QPushButton{
   background-color: #f58220;
   color: black;
   padding: 5px 20px;
@@ -44,5 +44,12 @@ QTextEdit:focus {
 QLabel {
   color: white;
   font-weight: bold;
+  font-size: 15px;
+}
+
+QLabel#title {
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
 }
 """

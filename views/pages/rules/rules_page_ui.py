@@ -375,14 +375,14 @@ class RulesPageView(QWidget):
 
         self.monitor.setFixedWidth(50)
         self.monitor.setFixedHeight(30)
-        self.monitor.setObjectName(RULESPAGEEVENT.TOGGLE_DISPLAY_MONITOR)
+        self.monitor.setProperty("page_action", RULESPAGEEVENT.TOGGLE_DISPLAY_MONITOR)
         self.stop.setFixedWidth(30)
         self.stop.setFixedHeight(30)
-        self.stop.setObjectName(RULESPAGEEVENT.STOP_RUNNER)
+        self.stop.setProperty("page_action", RULESPAGEEVENT.STOP_RUNNER)
         self.start.setFixedHeight(30)
         self.stop.setHidden(True)
         self.start.setChecked(True)
-        self.start.setObjectName(RULESPAGEEVENT.START_RUNNER)
+        self.start.setProperty("page_action", RULESPAGEEVENT.START_RUNNER)
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setHidden(True)
         bottom_h_layout = QHBoxLayout()
@@ -686,7 +686,6 @@ class RulesPageView(QWidget):
         """
         Display the error dialog if validation errors are found in the form fields.
         """
-        print("here")
         add = SchemaErrorDialog(self._form_errors, self)
         self.set_hidden_errors_dialog_btn(False)
         add.show()

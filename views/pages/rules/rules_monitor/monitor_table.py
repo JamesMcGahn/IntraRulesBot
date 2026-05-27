@@ -31,6 +31,9 @@ class MonitorTableModel(QAbstractTableModel):
         ]
         self.update_data(filtered_list)
 
+    def clear_model(self):
+        self.update_data([])
+
     def update_data(self, rule_rows: list[RuleRunRow]):
         self.beginResetModel()
         self.rule_rows = rule_rows

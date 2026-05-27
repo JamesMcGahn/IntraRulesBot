@@ -110,6 +110,14 @@ class RulesController(QObjectBase):
         self.validate_rules(data, VALIDATIONBATCHTYPE.IMPORT)
 
     # **********************************
+    # MONITOR ACTIONS
+    @Slot(list)
+    def remove_rules_by_guids(self, guids: list[str]) -> None:
+        for guid in guids:
+            self.rules_registry.delete(guid)
+        self._emit_rules_updated()
+
+    # **********************************
     # RULE RUNNER
 
     def handle_runner_lifecycle(self, status: RULERUNNERLIFECYCLE):

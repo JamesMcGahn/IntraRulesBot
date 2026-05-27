@@ -24,6 +24,9 @@ class RunMonitorStore:
     def get_summary(self) -> RunSummary:
         return self.summary
 
+    def get_rows_snapshot(self) -> list[RuleRunRow]:
+        return list(self.rows.values())
+
     def _recalculate_summary(self) -> None:
         summary = RunSummary(total=len(self.rows))
 
@@ -54,3 +57,17 @@ class RunMonitorStore:
                 summary.pending += 1
 
         self.summary = summary
+
+    def remove_succeeded(self) -> list[str]:
+        succeed = []
+        for row in self.rows.values():
+            if (
+                row.status == RULEEXECSTATUS.SUCCESS
+                or row.status == RULERUNSTATUS.SUCCESS
+            ):
+                succeed.append(row.rule_guid)
+
+        for guid in succeed:
+            self.rows.pop(guid)
+        self._recalculate_summary()
+        return succeed

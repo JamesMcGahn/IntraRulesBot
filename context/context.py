@@ -156,6 +156,9 @@ class AppContext(QObject, metaclass=QSingleton):
             self.rules_monitor_controller.handle_runner_lifecyle
         )
 
+        self.rules_monitor_controller.request_remove.connect(
+            self.rules_controller.remove_rules_by_guids
+        )
         ## SETTINGS
         self.settings_controller.setting_updated.connect(self.setting_updated)
         self.setting_updated.connect(self.logger.received_settings_change)
