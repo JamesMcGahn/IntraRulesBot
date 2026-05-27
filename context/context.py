@@ -50,12 +50,12 @@ class AppContext(QObject, metaclass=QSingleton):
 
     def __init__(self):
         super().__init__()
-
+        self.preparing_for_shutdown = False
         self.logger = Logger()
 
         self.send_logs.connect(self.logger.insert)
         self.log_adapter = LogAdapter(self.logger)
-        self.shut_down_coord = ShutdownCoordinator(self.log_adapter)
+        self.shut_down_coord = ShutdownCoordinator("APP", self.log_adapter)
         self.settings = AppSettings()
         self.secure_settings = SecureCredentials()
         self.settings_repo = SettingsRepository(self.settings, self.secure_settings)
@@ -189,18 +189,22 @@ class AppContext(QObject, metaclass=QSingleton):
 
     ## App shutdown
     def handle_app_shut_down(self):
+        if self.preparing_for_shutdown:
+            return
+        self.preparing_for_shutdown = True
+        self._services_save()
         self.log_adapter(
             f"{self.__class__.__name__}: Checking Services before shut down.", "INFO"
         )
         self.shut_down_coord.request_shutdown()
 
-    def _finalize_app_shut_down(self):
-
+    def _services_save(self):
         self.log_adapter(
-            f"{self.__class__.__name__}: Requesting Services to Save and Shutdown.",
-            "INFO",
+            f"{self.__class__.__name__}: Saving Services before shut down.", "INFO"
         )
         self.settings_manager.save_settings()
         self.session_registry.save_all()
-        self.logger.close()
+
+    def _finalize_app_shut_down(self):
+        self.logger.request_stop()
         self.app_shut_down_confirmed.emit()

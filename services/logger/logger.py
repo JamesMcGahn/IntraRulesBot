@@ -23,34 +23,19 @@ class Logger(QObject, metaclass=QSingleton):
     """
     Logger class responsible for managing log file creation, rotation, and cleanup.
     It interacts with a background worker thread to handle logging asynchronously.
-
-    Attributes:
-        log_file_path (str): The directory path where logs are stored.
-        log_file_name (str): The name of the log file.
-        log_file_max_mbs (int): The maximum size of a log file in megabytes.
-        log_backup_count (int): The number of backup log files to keep.
-        log_keep_files_days (int): The number of days to keep old log files before deletion.
-        log_turn_off_print (bool): Whether to disable printing log messages to the console.
-        settings (LogSettingsModel): The settings model for managing logging configurations.
-        log_worker (LogWorker): The worker thread responsible for handling log file operations.
-
-    Signals:
-        send_log (Signal[str]): Signal emitted when a log message is sent out.
-        submit_log (Signal[tuple]): Signal emitted when a log entry needs to be inserted.
-
     """
 
     send_log = Signal(str)
     submit_log = Signal(tuple)
+    shutdown_ready = Signal(str)
 
     def __init__(self):
-        """
-        Initialize the logger by loading settings, starting the logging thread, and cleaning up old logs.
-        """
         super().__init__()
         self._settings_loaded = False
         self._logger_started = False
         self.logs_queue_before_start = []
+
+        self._shut_down_in_requested = False
 
         # SETTINGS Fields
         self.log_file_path = None
@@ -81,9 +66,6 @@ class Logger(QObject, metaclass=QSingleton):
     def start_logging_thread(self) -> None:
         """
         Starts the log worker thread responsible for handling log file writing and rotation.
-
-        Returns:
-            None: This function does not return a value.
         """
         if self._logger_started:
             return
@@ -100,6 +82,7 @@ class Logger(QObject, metaclass=QSingleton):
         self.submit_log.connect(self.log_worker.insert_log)
         self.log_worker.started.connect(lambda: self.set_log_service_started(True))
         self.log_worker.started.connect(lambda: self.flush_boot_logs())
+        self.log_worker.finished.connect(self.on_logger_finished)
         self.log_worker.start()
 
     def set_log_service_started(self, status: bool):
@@ -108,12 +91,6 @@ class Logger(QObject, metaclass=QSingleton):
     def send_logs_out(self, msg: str) -> None:
         """
         Emits the send_log signal with the given log message.
-
-        Args:
-            msg (str): The log message to be emitted.
-
-        Returns:
-            None: This function does not return a value.
         """
         self.send_log.emit(msg)
 
@@ -128,9 +105,6 @@ class Logger(QObject, metaclass=QSingleton):
             msg (str): The log message to be inserted.
             level (LOGLEVEL): The log level (e.g., "INFO", "ERROR").
             print_msg (bool): Whether to print the log message to the console.
-
-        Returns:
-            None: This function does not return a value.
         """
 
         if self._logger_started:
@@ -158,7 +132,7 @@ class Logger(QObject, metaclass=QSingleton):
         self.close()
         self.start_logging_thread()
 
-    def flush_boot_logs(self):
+    def flush_boot_logs(self) -> None:
         for log in self.logs_queue_before_start:
             self.submit_log.emit(log)
         self.logs_queue_before_start.clear()
@@ -166,9 +140,6 @@ class Logger(QObject, metaclass=QSingleton):
     def cleanup_old_logs(self) -> None:
         """
         Deletes log files older than the specified number of days.
-
-        Returns:
-            None: This function does not return a value.
         """
         log_dir = self.log_file_path
 
@@ -207,13 +178,11 @@ class Logger(QObject, metaclass=QSingleton):
                     )
 
     @Slot()
-    def close(self) -> None:
+    def request_stop(self) -> None:
         """
-        Closes the log worker thread and shuts down logging.
-
-        Returns:
-            None: This function does not return a value.
+        requests the log worker thread to stop.
         """
+        self._shut_down_in_requested = True
         self.submit_log.emit(
             (
                 LOGLEVEL.INFO,
@@ -222,7 +191,11 @@ class Logger(QObject, metaclass=QSingleton):
             )
         )
         self.log_worker.stop()
+
+    def on_logger_finished(self) -> None:
         self.log_worker.cleanup()
-        self.log_worker.quit()
-        self.log_worker.wait()
         self.set_log_service_started(False)
+
+        if self._shut_down_in_requested:
+            self._shut_down_in_requested = False
+            self.shutdown_ready.emit("logger")

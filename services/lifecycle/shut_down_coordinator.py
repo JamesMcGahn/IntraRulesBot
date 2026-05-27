@@ -12,17 +12,23 @@ from PySide6.QtCore import Signal, QObject
 class ShutdownCoordinator(QObject):
     shutdown_confirmed = Signal()
 
-    def __init__(self, logger: LogAdapter):
+    def __init__(self, shutdown_name: str, logger: LogAdapter):
         super().__init__()
+        self.shutdown_name = shutdown_name
         self.logger = logger
         self._services: dict[str, ShutdownAware] = {}
         self._pending: set[str] = set()
         self._shutdown_started = False
+        self._collecting_shutdown_votes = False
 
     def register_service(self, service_name: str, service: ShutdownAware) -> None:
         self._services[service_name] = service
         service.shutdown_ready.connect(
             lambda service_name: self._on_service_ready(service_name)
+        )
+        self.logger(
+            f"{self.__class__.__name__}({self.shutdown_name}): Registered {service_name} for safe shutdown",
+            "INFO",
         )
 
     def request_shutdown(self) -> bool:
@@ -32,15 +38,20 @@ class ShutdownCoordinator(QObject):
         self._shutdown_started = True
         self._pending.clear()
 
+        self._collecting_shutdown_votes = True
+        self._pending = set(self._services.keys())
+
         for service_name, service in self._services.items():
             ready_for_shutdown = service.request_app_shutdown()
 
-            if not ready_for_shutdown:
-                self._pending.add(service_name)
+            if ready_for_shutdown:
+                self._pending.discard(service_name)
+
+        self._collecting_shutdown_votes = False
 
         if self._pending:
             self.logger(
-                f"{self.__class__.__name__}: Defering Shutdown. Waiting on services: {self._pending}",
+                f"{self.__class__.__name__}({self.shutdown_name}): Defering Shutdown. Waiting on services: {self._pending}",
                 "WARN",
             )
             return False
@@ -54,12 +65,15 @@ class ShutdownCoordinator(QObject):
 
         self._pending.discard(service_name)
 
+        if self._collecting_shutdown_votes:
+            return
+
         if not self._pending:
             self._clear_to_shut_down()
 
     def _clear_to_shut_down(self):
         self.logger(
-            f"{self.__class__.__name__}: No Threaded Services Running. Clear for Shutdown.",
+            f"{self.__class__.__name__}({self.shutdown_name}): No Threaded Services Running. Clear for Shutdown.",
             "INFO",
         )
         self.shutdown_confirmed.emit()

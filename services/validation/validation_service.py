@@ -39,7 +39,9 @@ class ValidationService(QObjectBase):
     ):
         super().__init__()
         self._logger = logger
-        self.shut_down_coordinator = ShutdownCoordinator(self._logger)
+        self.shut_down_coordinator = ShutdownCoordinator(
+            "Validation Services", self._logger
+        )
         self.settings_validation = SettingsValidationService(
             settings_meta_provider=settings_meta_provider,
             session=session,
