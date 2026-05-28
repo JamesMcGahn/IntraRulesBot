@@ -4,11 +4,12 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .rules_validation_coordinator import RulesValidationCoordinator
-    from services.rules import RuleRegistry, RuleStore, RuleBuilder
+    from services.rules import RuleRegistry, RuleBuilder
     from services.validation.models import SchemaError
     from services.rule_runner import RuleRunnerService
     from services.rule_runner.interfaces import RuleRunnerConfigProvider
     from services.rule_sets.models import RuleSet
+    from services.files import JSONFileService
 from datetime import datetime
 from uuid import uuid4
 from pathlib import Path
@@ -50,7 +51,7 @@ class RulesController(QObjectBase):
         validation_coordinator: RulesValidationCoordinator,
         rules_registry: RuleRegistry,
         rule_builder: RuleBuilder,
-        rule_store: RuleStore,
+        json_file_service: JSONFileService,
         rule_runner_service: RuleRunnerService,
         settings_provider: RuleRunnerConfigProvider,
     ):
@@ -58,7 +59,7 @@ class RulesController(QObjectBase):
         self.validation_coordinator = validation_coordinator
         self.rules_registry = rules_registry
         self.rule_builder = rule_builder
-        self.rules_store = rule_store
+        self.json_file_service = json_file_service
         self.rule_runner_service = rule_runner_service
         self._settings_provider = settings_provider
 
@@ -96,18 +97,18 @@ class RulesController(QObjectBase):
     # FEATURE Add an Import File Type - Right now active guids will overwrite.
     def import_from_file(self, file_path: str):
         self.logging(f"Opening file - {file_path} to load json data.", LOGLEVEL.INFO)
-        data, error = self.rules_store.load_from_json(file_path=file_path)
+        res = self.json_file_service.load(file_path=file_path)
 
-        if error:
-            self.send_toast_failure(title="Error Loading File", message=error)
+        if not res.ok:
+            self.send_toast_failure(title="Error Loading File", message=res.message)
             return
 
-        if not data.get("rules"):
+        if not res.data.get("rules"):
             message = f"Error in the file {file_path} - File has no data."
             self.send_toast_failure(title="Error Loading File", message=message)
             return
 
-        self.validate_rules(data, VALIDATIONBATCHTYPE.IMPORT)
+        self.validate_rules(res.data, VALIDATIONBATCHTYPE.IMPORT)
 
     # **********************************
     # MONITOR ACTIONS
@@ -138,11 +139,11 @@ class RulesController(QObjectBase):
         path = PathManager.create_folder_in_app_data("rule_editor_state")
         base_dir = Path(path)
         file_path = base_dir / "rule_editor_state.json"
-        data, error = self.rules_store.load_from_json(file_path=file_path)
-        if not data:
+        res = self.json_file_service.load(file_path=file_path)
+        if not res.data:
             return
 
-        raw_rules = data.get("rules", None)
+        raw_rules = res.data.get("rules", None)
         if not raw_rules:
             return
 
@@ -241,8 +242,8 @@ class RulesController(QObjectBase):
             "rules": batch.valid_rules,
         }
 
-        is_saved, error = self.rules_store.save(rules, batch.file_path)
-        if is_saved:
+        res = self.json_file_service.save(rules, batch.file_path)
+        if res.ok:
             toast = ToastEvent(
                 message="File Saved",
                 title=f"File Saved to {batch.file_path}",
@@ -283,8 +284,8 @@ class RulesController(QObjectBase):
         }
         base_dir = Path(path)
         file_path = base_dir / "rule_editor_state.json"
-        is_saved, error = self.rules_store.save(rules, file_path)
-        if is_saved:
+        res = self.json_file_service.save(rules, file_path)
+        if res.ok:
             toast = ToastEvent(
                 message="Rules Saved",
                 title="Rules Saved to System",

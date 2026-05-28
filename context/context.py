@@ -29,8 +29,9 @@ from services.rule_sets import (
     RuleSetBuilder,
     RuleSetRegistry,
     RuleSetSerializer,
-    RuleSetStore,
+    DefaultRuleSetProvider,
 )
+from services.files import JSONFileService
 from services.rules import RuleBuilder, RuleRegistry, RuleSerializer, RuleStore
 from services.settings import (
     AppSettings,
@@ -69,17 +70,19 @@ class AppContext(QObject, metaclass=QSingleton):
 
         self.schema_registry = SchemaRegistry()
 
+        self.json_file_service = JSONFileService(self.log_adapter)
+
         self.rules_registry = RuleRegistry()
         self.rule_store = RuleStore()
         self.rule_builder = RuleBuilder()
         self.rule_serializer = RuleSerializer()
 
         self.rule_set_registry = RuleSetRegistry()
-        self.rule_set_store = RuleSetStore()
         self.rule_set_builder = RuleSetBuilder(rule_builder=self.rule_builder)
         self.rule_set_serializer = RuleSetSerializer(
             rule_serializer=self.rule_serializer
         )
+        self.rule_set_default_provider = DefaultRuleSetProvider()
 
         self.browser_session_factory = BrowserSessionFactory(
             session_registry=self.session_registry, logger=self.log_adapter
@@ -120,8 +123,9 @@ class AppContext(QObject, metaclass=QSingleton):
         self.rule_sets_controller = RuleSetsController(
             rules_set_registry=self.rule_set_registry,
             rule_set_builder=self.rule_set_builder,
-            rule_set_store=self.rule_set_store,
+            json_file_service=self.json_file_service,
             rule_set_serializer=self.rule_set_serializer,
+            default_rule_set_provider=self.rule_set_default_provider,
         )
 
         self.rules_validation_coord = RulesValidationCoordinator(
@@ -130,7 +134,7 @@ class AppContext(QObject, metaclass=QSingleton):
         self.rules_controller = RulesController(
             validation_coordinator=self.rules_validation_coord,
             rules_registry=self.rules_registry,
-            rule_store=self.rule_store,
+            json_file_service=self.json_file_service,
             rule_builder=self.rule_builder,
             rule_runner_service=self.rule_runner_service,
             settings_provider=self.rule_settings_provider,

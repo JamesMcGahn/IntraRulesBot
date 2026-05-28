@@ -50,6 +50,7 @@ class ControllerFactory:
             rules_page=self.create_rules_page(),
             settings_page=self.create_settings_page(),
             ui=self.ctx.ui_controller,
+            queues=self.create_queues_page(),
         )
 
     def create_queues_page(self) -> QueuesPageControllers:

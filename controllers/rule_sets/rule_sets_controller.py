@@ -3,9 +3,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from services.rule_sets import RuleSetRegistry, RuleSetStore, RuleSetSerializer
+    from services.rule_sets import (
+        RuleSetRegistry,
+        RuleSetSerializer,
+        DefaultRuleSetProvider,
+    )
     from services.rule_sets import RuleSetBuilder
     from services.rule_sets.models import RuleSet
+    from services.files import JSONFileService
+
 
 from PySide6.QtCore import Signal
 from base import QObjectBase
@@ -24,14 +30,16 @@ class RuleSetsController(QObjectBase):
         self,
         rules_set_registry: RuleSetRegistry,
         rule_set_builder: RuleSetBuilder,
-        rule_set_store: RuleSetStore,
+        json_file_service: JSONFileService,
         rule_set_serializer: RuleSetSerializer,
+        default_rule_set_provider: DefaultRuleSetProvider,
     ):
         super().__init__()
         self.rule_set_registry = rules_set_registry
         self.rule_set_builder = rule_set_builder
-        self.rule_set_store = rule_set_store
+        self.json_file_service = json_file_service
         self.rule_serializer = rule_set_serializer
+        self.default_provider = default_rule_set_provider
 
     def hydrate_rule_set_page(self):
         self._emit_rule_sets_updated()
@@ -41,11 +49,11 @@ class RuleSetsController(QObjectBase):
         files = [f for f in Path(path).iterdir() if f.is_file()]
         raw_rulesets = []
         for file in files:
-            raw, message = self.rule_set_store.load_from_json(file)
-            if raw is None:
+            res = self.json_file_service.load(file)
+            if not res.ok or res.data is None:
                 continue
-            raw_rulesets.append(raw)
-        raw_rulesets.extend(self.rule_set_store.load_from_internal())
+            raw_rulesets.append(res.data)
+        raw_rulesets.extend(self.default_provider.load())
 
         built_rule_sets = self.rule_set_builder.build_rule_sets(raw_rulesets)
         self.rule_set_registry.add_rule_sets(built_rule_sets)
@@ -77,11 +85,14 @@ class RuleSetsController(QObjectBase):
         self.rule_set_registry.upsert(rule_set)
         self._emit_rule_sets_updated()
 
+    # TODO TOASTs
     def rule_set_to_file(self, guid: str, file_path: str):
+        print("here")
         rule_set = self.rule_set_registry.get(guid)
         dict_rule_set = self.rule_serializer.to_schema_dict(rule_set)
-        self.rule_set_store.save(dict_rule_set, file_path)
+        self.json_file_service.save(dict_rule_set, file_path)
 
+    # TODO TOASTs
     def rule_set_delete(self, rule_set: RuleSet):
 
         if rule_set.default:
@@ -106,8 +117,11 @@ class RuleSetsController(QObjectBase):
         self.ui_event.emit(event)
 
     def rule_set_added(self, rule_set: dict):
-        built_rule_set = self.rule_set_builder.build_rule_sets([rule_set])
-        self.rule_set_registry.add_rule_sets(built_rule_set)
+        built_rule_set = self.rule_set_builder.build_rule_set(rule_set)
+        path = PathManager.create_folder_in_app_data("user_rule_sets")
+        file_path = Path(path) / f"{built_rule_set.guid}.json"
+        self.json_file_service.save(rule_set, file_path)
+        self.rule_set_registry.add_rule_sets([built_rule_set])
         self._emit_rule_sets_updated()
 
     def load_to_editor(self, guid: str):
