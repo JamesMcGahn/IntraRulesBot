@@ -12,6 +12,7 @@ from .models import (
     RulesPageControllers,
     SettingsPageControllers,
     TopNavControllers,
+    QueuesPageControllers,
 )
 
 
@@ -50,3 +51,6 @@ class ControllerFactory:
             settings_page=self.create_settings_page(),
             ui=self.ctx.ui_controller,
         )
+
+    def create_queues_page(self) -> QueuesPageControllers:
+        return QueuesPageControllers(queues=self.ctx.queues_controller)

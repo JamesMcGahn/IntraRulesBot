@@ -7,3 +7,4 @@ class PAGE(StrEnum):
     BOOKMARK = "bookmark"
     LOG = "log"
     EXIT = "exit"
+    QUEUES = "queues"

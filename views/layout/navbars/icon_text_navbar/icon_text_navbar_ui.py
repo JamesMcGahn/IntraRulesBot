@@ -64,6 +64,13 @@ class IconTextNavBarView(QWidget):
                 ":/images/bookmark_off.png",
                 ":/images/bookmark_on.png",
             ),
+            (
+                PAGE.QUEUES,
+                " Queues",
+                self.icon_btn_layout,
+                ":/images/queues_off.png",
+                ":/images/queues_on.png",
+            ),
         ]
 
         lower_buttons = [

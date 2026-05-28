@@ -11,7 +11,7 @@ from PySide6.QtCore import Signal, Slot
 from base import QWidgetBase
 
 from .main_screen_ui import MainScreenView
-from views.pages import BookMarksPage, LogsPage, RulesPage, SettingsPage
+from views.pages import BookMarksPage, LogsPage, RulesPage, SettingsPage, QueuesPage
 from ...base.enums import PAGE
 
 
@@ -39,11 +39,12 @@ class MainScreen(QWidgetBase):
         self.settings_page = SettingsPage(controllers=self.controllers.settings_page)
         self.logs_page = LogsPage()
         self.bookmarks_page = BookMarksPage(controllers=self.controllers.bookmark_page)
-
+        self.queues_page = QueuesPage(controllers=self.controllers.queues)
         # Add pages to stacked widget
         self.ui.add_page_to_stacked_widget(PAGE.EDITOR, self.rules_page)
         self.ui.add_page_to_stacked_widget(PAGE.LOG, self.logs_page)
         self.ui.add_page_to_stacked_widget(PAGE.BOOKMARK, self.bookmarks_page)
+        self.ui.add_page_to_stacked_widget(PAGE.QUEUES, self.queues_page)
         self.ui.add_page_to_stacked_widget(PAGE.SETTINGS, self.settings_page)
 
         self.ui_controller.page_changed.connect(self.change_page)

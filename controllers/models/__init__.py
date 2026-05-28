@@ -4,6 +4,7 @@ from .main_screen_controllers import MainScreenControllers
 from .rules_page_controllers import RulesPageControllers
 from .settings_page_controllers import SettingsPageControllers
 from .top_nav_controllers import TopNavControllers
+from .queues_page_controllers import QueuesPageControllers
 
 __all__ = [
     "SettingsPageControllers",
@@ -12,4 +13,5 @@ __all__ = [
     "BookmarksPageControllers",
     "TopNavControllers",
     "MainScreenControllers",
+    "QueuesPageControllers",
 ]

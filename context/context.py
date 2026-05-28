@@ -12,6 +12,7 @@ from controllers import (
     RulesValidationCoordinator,
     SettingsController,
     UIController,
+    QueuesController,
 )
 from schemas.registry import SchemaRegistry
 from services.auth.auth_service import AuthService
@@ -134,6 +135,8 @@ class AppContext(QObject, metaclass=QSingleton):
             rule_runner_service=self.rule_runner_service,
             settings_provider=self.rule_settings_provider,
         )
+
+        self.queues_controller = QueuesController()
 
         folder = PathManager.create_folder_in_app_data("playwright")
         self.rules_controller.load_editor_state()

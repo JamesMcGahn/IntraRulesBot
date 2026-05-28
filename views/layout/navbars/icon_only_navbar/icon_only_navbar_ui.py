@@ -59,6 +59,12 @@ class IconOnlyNavBarView(QWidget):
                 ":/images/bookmark_off.png",
                 ":/images/bookmark_on.png",
             ),
+            (
+                PAGE.QUEUES,
+                self.icon_btn_layout,
+                ":/images/queues_off.png",
+                ":/images/queues_on.png",
+            ),
         ]
 
         lower_buttons = [

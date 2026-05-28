@@ -13,7 +13,7 @@ class WidgetFactory:
     def create_form_box(
         title,
         parent_layout,
-        gradient_box=False,
+        gradient_box: None | list[tuple[float, str]] = None,
         border_color=None,
         drop_shadow_effect=True,
         object_name="",

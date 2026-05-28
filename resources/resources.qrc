@@ -70,5 +70,7 @@
         <file>images/toast/success.png</file>
         <file>images/toast/information.png</file>
         <file>images/monitor.png</file>
+        <file>images/queues_on.png</file>
+        <file>images/queues_off.png</file>
     </qresource>
 </RCC>
