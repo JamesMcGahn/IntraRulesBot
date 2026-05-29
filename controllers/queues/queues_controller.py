@@ -20,3 +20,8 @@ class QueuesController(QObjectBase):
 
     def __init__(self):
         super().__init__()
+
+    def import_file(
+        self,
+    ):
+        pass

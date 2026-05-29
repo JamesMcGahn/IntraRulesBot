@@ -15,6 +15,7 @@ from PySide6.QtCore import QMutex, QMutexLocker
 
 from ..enums import PROVIDERS
 from utils.files import PathManager
+from ..models.provider_session_data import ProviderSessionData
 
 
 class BaseProviderSession:
@@ -72,52 +73,6 @@ class BaseProviderSession:
     @token.setter
     def token(self, new_token):
         self._token = new_token
-
-    def load_token(self):
-        if not self.has_token:
-            return
-
-        self.logging(f"{self.provider_name.upper()} checking for a stored token.")
-        path = PathManager.create_folder_in_app_data(f"session/{self.provider_name}")
-        file = Path(path) / "token.json"
-        token = None
-        if file.exists():
-            with open(file, "r") as file:
-                token = json.loads(file.read())
-
-        if token and token.get("token"):
-            self.token = token["token"]
-            self.logging(
-                f"{self.provider_name.upper()} Token Loaded Successfully...", "INFO"
-            )
-            return True
-        else:
-            self.token = None
-            self.logging(f"{self.provider_name.upper()} No Token Found", "WARN")
-            return False
-
-    def save_token(self):
-        if not self.has_token:
-            return
-
-        if self.token is None:
-            self.logging(
-                f"{self.provider_name.upper()} skipping saving token. Token is None.",
-                "INFO",
-            )
-            return
-
-        self.logging(f"{self.provider_name.upper()} saving token...", "INFO")
-        path = PathManager.create_folder_in_app_data(f"session/{self.provider_name}")
-
-        with open(f"{path}/token.json", "w") as f:
-            f.write(
-                json.dumps(
-                    {"token": self.token},
-                    indent=2,
-                )
-            )
-        self.logging(f"{self.provider_name.upper()} token saved successfully.", "INFO")
 
     def _copy_cookie_jar(self, session):
         with QMutexLocker(self.cookie_lock):
@@ -234,25 +189,6 @@ class BaseProviderSession:
             f"{self.provider_name.upper()} Session Loaded Successfully...", "INFO"
         )
 
-    def save_cookies(self):
-        if not self.has_cookies:
-            return
-        self.logging(f"{self.provider_name.upper()} saving cookies...", "INFO")
-        path = PathManager.create_folder_in_app_data(f"session/{self.provider_name}")
-        cookies = self.convert_jar_to_cookie_list()
-        cookies = self.filter_cookies_by_domain(cookies)
-
-        with open(f"{path}/session.json", "w") as f:
-            f.write(
-                json.dumps(
-                    cookies,
-                    indent=2,
-                )
-            )
-        self.logging(
-            f"{self.provider_name.upper()} cookies saved successfully.", "INFO"
-        )
-
     def build_session(self):
         session = requests.Session()
         session = self._copy_cookie_jar(session)
@@ -267,25 +203,6 @@ class BaseProviderSession:
         if res and res.cookies:
             cookies = res.cookies
             self._update_cookie_jar(cookies)
-
-    def load_session(self):
-        if self.loaded_session:
-            self.logging(f"{self.provider_name.upper()} Session Already Loaded", "INFO")
-            return
-
-        self.logging(
-            f"{self.provider_name.upper()} Try to Load Session From File", "INFO"
-        )
-        self.load_cookies()
-        self.load_token()
-
-    def save_session(self):
-        self.logging(f"{self.provider_name.upper()} saving session...", "INFO")
-        self.save_cookies()
-        self.save_token()
-        self.logging(
-            f"{self.provider_name.upper()} session saved successfully.", "INFO"
-        )
 
     def get_auth_cookies(self):
         if not self.Config.auth_cookies:
@@ -312,3 +229,14 @@ class BaseProviderSession:
             if cookie.expires and cookie.expires > 0 and cookie.expires < time():
                 return False
         return True
+
+    def session_snapshot(self) -> ProviderSessionData:
+        cookies = self.convert_jar_to_cookie_list()
+        cookies = self.filter_cookies_by_domain(cookies)
+        return ProviderSessionData(cookies, self.token)
+
+    def hydrate(self, snap_shot: ProviderSessionData) -> None:
+        self.token = snap_shot.token
+        cookies = self.filter_cookies_by_domain(snap_shot.cookies)
+        jar = self.convert_cookies_to_jar(cookies)
+        self._update_cookie_jar(jar)

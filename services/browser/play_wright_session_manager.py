@@ -64,7 +64,6 @@ class PlaywrightSessionManager:
 
         cookies = self.context.cookies()
         self.provider_session.update_cookies_from_list(cookies)
-        self.provider_session.save_session()
 
     def close(self) -> None:
         self.save_cookies()

@@ -40,7 +40,7 @@ class JSONFileService:
             self._logging(f"{e}", "DEBUG")
             return JSONLoadResult(
                 ok=False,
-                data=data,
+                data=None,
                 file_path=file_path,
                 message=message,
             )
@@ -50,7 +50,7 @@ class JSONFileService:
             self._logging(f"{e}", "DEBUG")
             return JSONLoadResult(
                 ok=False,
-                data=data,
+                data=None,
                 file_path=file_path,
                 message=message,
             )
@@ -61,7 +61,7 @@ class JSONFileService:
             self._logging(f"{e}", "DEBUG")
             return JSONLoadResult(
                 ok=False,
-                data=data,
+                data=None,
                 file_path=file_path,
                 message=message,
             )

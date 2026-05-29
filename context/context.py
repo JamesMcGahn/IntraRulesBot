@@ -17,7 +17,7 @@ from controllers import (
 from schemas.registry import SchemaRegistry
 from services.auth.auth_service import AuthService
 from services.auth.enums import PROVIDERS
-from services.auth.session import SessionRegistry
+from services.auth.session import SessionRegistry, SessionStore
 from services.browser import BrowserSessionFactory
 from services.lifecycle import ShutdownCoordinator
 from services.logger import Logger
@@ -62,15 +62,17 @@ class AppContext(QObject, metaclass=QSingleton):
         self.secure_settings = SecureCredentials()
         self.settings_repo = SettingsRepository(self.settings, self.secure_settings)
         self.settings_manager = SettingsService(repo=self.settings_repo)
-        self.session_registry = SessionRegistry(self.log_adapter)
+
+        self.json_file_service = JSONFileService(self.log_adapter)
+
+        self.session_store = SessionStore(self.json_file_service, self.log_adapter)
+        self.session_registry = SessionRegistry(self.session_store, self.log_adapter)
         self.prolife_registry = ProfileRegistry()
         self.auth_service = AuthService(
             self.session_registry, self.prolife_registry, self.log_adapter
         )
 
         self.schema_registry = SchemaRegistry()
-
-        self.json_file_service = JSONFileService(self.log_adapter)
 
         self.rules_registry = RuleRegistry()
         self.rule_store = RuleStore()
