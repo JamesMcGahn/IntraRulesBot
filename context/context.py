@@ -1,8 +1,4 @@
-import os
-import subprocess
-import sys
-
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal, QThread
 
 from base import QSingleton
 from controllers import (
@@ -19,7 +15,7 @@ from services.auth.auth_service import AuthService
 from services.auth.enums import PROVIDERS
 from services.auth.session import SessionRegistry, SessionStore
 from services.browser import BrowserSessionFactory
-from services.lifecycle import ShutdownCoordinator
+from services.lifecycle import ShutdownCoordinator, StartUpCoordinator
 from services.logger import Logger
 from services.logger.adapters import LogAdapter
 from services.profiles import ProfileRegistry
@@ -42,13 +38,14 @@ from services.settings import (
 from services.settings.enums import SETTINGSCATEGORIES
 from services.settings.providers import SettingsRuleRunnerConfigProvider
 from services.validation import ValidationService
-from utils.files import PathManager
+from services.lifecycle.models import StartUpContainer
 
 
 class AppContext(QObject, metaclass=QSingleton):
     app_shut_down_confirmed = Signal()
     setting_updated = Signal(object)
     send_logs = Signal(str, str, bool)
+    start_up_completed = Signal(bool)
 
     def __init__(self):
         super().__init__()
@@ -62,6 +59,10 @@ class AppContext(QObject, metaclass=QSingleton):
         self.secure_settings = SecureCredentials()
         self.settings_repo = SettingsRepository(self.settings, self.secure_settings)
         self.settings_manager = SettingsService(repo=self.settings_repo)
+
+        log_settings = self.settings_manager.get_category(SETTINGSCATEGORIES.LOG)
+        self.logger.load_settings(log_settings)
+        self.logger.start_up()
 
         self.json_file_service = JSONFileService(self.log_adapter)
 
@@ -108,9 +109,6 @@ class AppContext(QObject, metaclass=QSingleton):
             logger=self.log_adapter,
             profile_registry=self.prolife_registry,
         )
-        log_settings = self.settings_manager.get_category(SETTINGSCATEGORIES.LOG)
-        self.logger.load_settings(log_settings)
-        self.logger.start_up()
 
         self.run_monitor_store = RunMonitorStore()
         ## Controllers
@@ -144,11 +142,14 @@ class AppContext(QObject, metaclass=QSingleton):
 
         self.queues_controller = QueuesController()
 
-        folder = PathManager.create_folder_in_app_data("playwright")
-        self.rules_controller.load_editor_state()
-        self.rule_sets_controller.load_editor_state()
-        self.ensure_playwright_browsers(folder)
-        self.session_registry.pre_load_providers([PROVIDERS.INTRA])
+        self.start_up_coord = StartUpCoordinator(
+            StartUpContainer(
+                logger=self.log_adapter,
+                rules_controller=self.rules_controller,
+                rule_sets_controller=self.rule_sets_controller,
+                session_registry=self.session_registry,
+            )
+        )
 
         self.shut_down_coord.register_service("rule_runner", self.rule_runner_service)
         self.shut_down_coord.register_service(
@@ -186,15 +187,17 @@ class AppContext(QObject, metaclass=QSingleton):
 
         self.shut_down_coord.shutdown_confirmed.connect(self._finalize_app_shut_down)
 
-    def ensure_playwright_browsers(self, app_data_path):
-        env = os.environ.copy()
-        env["PLAYWRIGHT_BROWSERS_PATH"] = app_data_path
-
-        subprocess.run(
-            [sys.executable, "-m", "playwright", "install", "chromium"],
-            env=env,
-            check=True,
+    def start_up(self):
+        self.start_up_thread = QThread()
+        self.start_up_coord.moveToThread(self.start_up_thread)
+        self.start_up_thread.started.connect(self.start_up_coord.run_start_checks)
+        self.start_up_coord.done.connect(
+            lambda success: self.start_up_completed.emit(success)
         )
+        self.start_up_coord.done.connect(self.start_up_coord.deleteLater)
+        self.start_up_coord.done.connect(self.start_up_thread.quit)
+        self.start_up_thread.finished.connect(self.start_up_thread.deleteLater)
+        self.start_up_thread.start()
 
     ## App shutdown
     def handle_app_shut_down(self):

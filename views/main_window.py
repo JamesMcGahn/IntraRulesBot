@@ -1,6 +1,6 @@
 from PySide6.QtCore import QSize, Signal, Slot, QTimer
 from PySide6.QtGui import QAction, QCloseEvent, QFontDatabase, QIcon
-from PySide6.QtWidgets import QMainWindow, QMenu, QSystemTrayIcon
+from PySide6.QtWidgets import QMainWindow, QMenu, QSystemTrayIcon, QApplication
 import threading
 from views.components.dialogs import ConfirmationDialog
 from views.components.helpers import StyleHelper
@@ -17,11 +17,13 @@ class MainWindow(QMainWindow):
     appshutdown = Signal()
     send_logs = Signal(str, str, bool)
 
-    def __init__(self, app):
+    def __init__(self, app: QApplication, context: AppContext):
         super().__init__()
-        self.context = AppContext()
-        self.send_logs.connect(self.context.send_logs)
         self.app = app
+        self._startup_completed = False
+        self.context = context
+        self.send_logs.connect(self.context.send_logs)
+
         self.prompted_user_for_close = False
 
         self.setWindowTitle("IntraRulesBot")

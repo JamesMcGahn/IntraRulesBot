@@ -4,6 +4,7 @@ from .error_dialog import SchemaErrorDialog
 from .gradient_dialog import GradientDialog
 from .message_dialog import MessageDialog
 from .rule_set_dialog import RuleSetDialog
+from .loading_dialog import LoadingDialog
 
 __all__ = [
     "GradientDialog",
@@ -12,4 +13,5 @@ __all__ = [
     "AddRuleWizard",
     "ConfirmationDialog",
     "RuleSetDialog",
+    "LoadingDialog",
 ]
