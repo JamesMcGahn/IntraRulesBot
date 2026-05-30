@@ -6,6 +6,7 @@ from PySide6.QtCore import QObject
 from views import MainWindow
 from views.components.dialogs import LoadingDialog, MessageDialog
 from context import AppContext
+from app_styles_css import STYLES
 
 # faulthandler.enable(file=sys.stderr)
 # faulthandler.enable()
@@ -44,6 +45,7 @@ class ApplicationBootStrap(QObject):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    app.setStyleSheet(STYLES)
     app_boot = ApplicationBootStrap(app)
     app_boot.start_up()
 

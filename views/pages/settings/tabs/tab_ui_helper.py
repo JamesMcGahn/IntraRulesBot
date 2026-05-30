@@ -18,7 +18,9 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QTextEdit,
     QVBoxLayout,
+    QListView,
 )
+from ....components.buttons import GradientButton
 
 
 # TODO Combine with tab settings UI
@@ -114,9 +116,19 @@ class SettingsUIHelper(QObject):
             f"{tab}/label_{key}_verified_icon", verify_icon_button
         )
         verify_icon_button.setMaximumWidth(40)
-        verify_icon_button.setStyleSheet("background:transparent;border: none;")
+        verify_icon_button.setStyleSheet("background:transparent;border:none;")
         verify_icon_button.setIcon(self.check_icon if verified else self.x_icon)
-        verify_button = QPushButton(meta.verify_btn_text)
+        verify_button = GradientButton(
+            meta.verify_btn_text,
+            "black",
+            [(0.05, "#FEB220"), (0.50, "#f58220"), (1, "#f58220")],
+            "#f58220",
+            1,
+            3,
+        )
+
+        # QPushButton()
+        verify_button.setStyleSheet("color: black;")
         self.field_registery.register_field(f"{tab}/btn_{key}_verify", verify_button)
         verify_button.setCursor(Qt.PointingHandCursor)
 
@@ -160,10 +172,10 @@ class SettingsUIHelper(QObject):
         if meta.widget_type == "line_edit":
             field_type = type(value)
             line_edit_field = QLineEdit()
+            line_edit_field.setFixedHeight(20)
             self.field_registery.register_field(
                 f"{tab}/line_edit_{key}", line_edit_field
             )
-
             line_edit_field.setText(str(value))
             line_edit_field.setMinimumWidth(200)
             line_edit_field.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -182,11 +194,15 @@ class SettingsUIHelper(QObject):
         elif meta.widget_type == "combo_box":
             if meta.combo_box and len(meta.combo_box) > 0:
                 comboBox_widget = QComboBox()
+                comboBox_widget.setFixedHeight(20)
                 self.field_registery.register_field(
                     f"{tab}/combo_box_{key}", comboBox_widget
                 )
                 comboBox_widget.addItems([str(x) for x in meta.combo_box])
                 comboBox_widget.setCurrentText(str(value))
+                view = QListView()
+
+                comboBox_widget.setView(view)
                 types = set(get_args(meta.combo_box))
 
                 if len(types) == 1:

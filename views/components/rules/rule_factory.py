@@ -632,7 +632,13 @@ class RuleFactory:
             email_body_input = QTextEdit(str(details.email_body))
             email_body_label = QLabel("Email Body:")
             email_body_label.setStyleSheet("background-color: transparent")
-            email_body_input.setStyleSheet("background-color: #FCFCFC")
+            email_body_input.setStyleSheet("""background-color: #FCFCFC;
+                            color: black;
+                            border-radius:3px;
+                            font-size: 1em;
+                            padding 8px;
+                            padding-left: 10px;
+                            """)
             details_layout.addRow(email_body_label, email_body_input)
 
             self.register_field(

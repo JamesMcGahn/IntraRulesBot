@@ -75,7 +75,14 @@ class WidgetFactory:
         objectId="",
     ):
         field = QLineEdit(initial_value)
-        field.setStyleSheet(f"background-color: {background_color} ")
+        field.setStyleSheet(f"""
+                            background-color: {background_color};
+                            color: black;
+                            border-radius:3px;
+                            font-size: 1em;
+                            padding 8px;
+                            padding-left: 10px;
+                            """)
         field.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         field.setObjectName(objectId)
         if validator is not None:
@@ -98,7 +105,7 @@ class WidgetFactory:
             line_edit_value, background_color, validator, objectID
         )
         label = QLabel(label_text)
-        label.setStyleSheet("background-color: transparent;")
+        label.setStyleSheet("background-color: transparent; color; black;")
         parent_layout.addRow(label, el)
         return el
 

@@ -31,4 +31,8 @@ QPushButton#close-btn {
 QTextEdit:focus {
   border: none;
 }
+
+QTextEdit {
+  color: black;
+}
 """
