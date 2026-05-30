@@ -34,7 +34,7 @@ class Logger(QObject, metaclass=QSingleton):
         self._settings_loaded = False
         self._logger_started = False
         self.logs_queue_before_start = []
-
+        self._restart_activated = False
         self._shut_down_in_requested = False
 
         # SETTINGS Fields
@@ -129,8 +129,8 @@ class Logger(QObject, metaclass=QSingleton):
             self.submit_log.disconnect()
         except Exception:
             pass
-        self.close()
-        self.start_logging_thread()
+        self._restart_activated = True
+        self.request_stop()
 
     def flush_boot_logs(self) -> None:
         for log in self.logs_queue_before_start:
@@ -194,8 +194,16 @@ class Logger(QObject, metaclass=QSingleton):
 
     def on_logger_finished(self) -> None:
         self.log_worker.cleanup()
+        self.log_worker.deleteLater()
         self.set_log_service_started(False)
 
         if self._shut_down_in_requested:
             self._shut_down_in_requested = False
             self.shutdown_ready.emit("logger")
+
+        if self._restart_activated:
+            self._handle_restart()
+
+    def _handle_restart(self):
+        self._restart_activated = False
+        self.start_logging_thread()
