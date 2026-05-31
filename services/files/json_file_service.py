@@ -8,16 +8,13 @@ if TYPE_CHECKING:
 from pathlib import Path
 import json
 from .models import JSONLoadResult, JSONSaveResult
+from base.service_base import ServiceBase
 
 
-class JSONFileService:
+class JSONFileService(ServiceBase):
 
     def __init__(self, logger: LogAdapter):
-        self.logger = logger
-
-    def _logging(self, msg, level="INFO", print_msg=True) -> None:
-        msg = f"{self.__class__.__name__}: {msg}"
-        self.logger(msg, level, print_msg)
+        super().__init__(logger)
 
     def load(self, file_path: str | Path) -> JSONLoadResult:
         path = Path(file_path)
