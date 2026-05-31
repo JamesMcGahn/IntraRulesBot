@@ -39,7 +39,7 @@ QComboBox::down-arrow {
  border-bottom-right-radius:3px;
  width:20px;
  height:20px;
- image: url(resources/images/down_arrow_on.png);
+ image: url(:/images/down_arrow_on.png);
 margin-right: 5px
 }
 QComboBox::down-arrow:on {
@@ -48,7 +48,7 @@ QComboBox::down-arrow:on {
  border-bottom-right-radius:3px;
  width:20px;
  height:20px;
- image: url(resources/images/up_arrow_on.png);
+ image: url(:/images/up_arrow_on.png);
  margin-right: 5px
 }
 
