@@ -11,30 +11,31 @@ if TYPE_CHECKING:
     from services.rule_sets import RuleSetBuilder
     from services.rule_sets.models import RuleSet
     from services.files import JSONFileService
+    from services.logger.adapters import LogAdapter
 
 
 from PySide6.QtCore import Signal
-from base import QObjectBase
 from utils.files import PathManager
 from pathlib import Path
 from base.enums import UIEVENTTYPE, LOGLEVEL
 from base.events import ToastEvent, UIEvent, RuleSetsLoadedEvent
 from views.components.toasts.qtoast.enums import QTOASTSTATUS
+from base import ControllerBase
 
 
-class RuleSetsController(QObjectBase):
-    ui_event = Signal(object)
+class RuleSetsController(ControllerBase):
     load_rule_set_from_bookmark = Signal(object)
 
     def __init__(
         self,
+        logger: LogAdapter,
         rules_set_registry: RuleSetRegistry,
         rule_set_builder: RuleSetBuilder,
         json_file_service: JSONFileService,
         rule_set_serializer: RuleSetSerializer,
         default_rule_set_provider: DefaultRuleSetProvider,
     ):
-        super().__init__()
+        super().__init__(logger)
         self.rule_set_registry = rules_set_registry
         self.rule_set_builder = rule_set_builder
         self.json_file_service = json_file_service
@@ -87,7 +88,6 @@ class RuleSetsController(QObjectBase):
 
     # TODO TOASTs
     def rule_set_to_file(self, guid: str, file_path: str):
-        print("here")
         rule_set = self.rule_set_registry.get(guid)
         dict_rule_set = self.rule_serializer.to_schema_dict(rule_set)
         self.json_file_service.save(dict_rule_set, file_path)

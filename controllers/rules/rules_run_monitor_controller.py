@@ -6,10 +6,10 @@ if TYPE_CHECKING:
 
     from services.rule_runner.models import RuleProgressEvent
     from services.rule_monitor import RunMonitorStore
+    from services.logger.adapters import LogAdapter
 
 from PySide6.QtCore import Signal, Slot
 
-from base import QObjectBase
 from base.enums import UIEVENTTYPE
 from base.events import (
     MonitorRowUpsertEvent,
@@ -19,15 +19,15 @@ from base.events import (
 )
 from services.rule_monitor.models import RuleRunRow, RunSummary
 from services.rule_runner.enums import RULERUNNERLIFECYCLE
+from base import ControllerBase
 
 
-class RulesRunMonitorController(QObjectBase):
-    ui_event = Signal(object)
+class RulesRunMonitorController(ControllerBase):
     request_remove = Signal(list)
     snapshot_update = Signal(list)
 
-    def __init__(self, run_store: RunMonitorStore):
-        super().__init__()
+    def __init__(self, logger: LogAdapter, run_store: RunMonitorStore):
+        super().__init__(logger)
         self.run_store = run_store
 
     # FROM RULERUNNER

@@ -10,12 +10,12 @@ if TYPE_CHECKING:
     from services.rule_runner.interfaces import RuleRunnerConfigProvider
     from services.rule_sets.models import RuleSet
     from services.files import JSONFileService
+    from services.logger.adapters import LogAdapter
 from datetime import datetime
 from uuid import uuid4
 from pathlib import Path
 from PySide6.QtCore import Signal, Slot
 from copy import deepcopy
-from base import QObjectBase
 from base.enums import UIEVENTTYPE, LOGLEVEL
 from base.events import (
     ToastEvent,
@@ -36,10 +36,10 @@ from services.rule_runner.models import (
 from .models import ValidationBatch, ValidationRulesResult
 from .enums import VALIDATIONBATCHTYPE
 from utils.files import PathManager
+from base import ControllerBase
 
 
-class RulesController(QObjectBase):
-    ui_event = Signal(object)
+class RulesController(ControllerBase):
     display_validation_result = Signal(object)
     rule_set_bookmarked = Signal(object)
     # TODO convert to ui_event
@@ -48,6 +48,7 @@ class RulesController(QObjectBase):
 
     def __init__(
         self,
+        logger: LogAdapter,
         validation_coordinator: RulesValidationCoordinator,
         rules_registry: RuleRegistry,
         rule_builder: RuleBuilder,
@@ -55,7 +56,7 @@ class RulesController(QObjectBase):
         rule_runner_service: RuleRunnerService,
         settings_provider: RuleRunnerConfigProvider,
     ):
-        super().__init__()
+        super().__init__(logger)
         self.validation_coordinator = validation_coordinator
         self.rules_registry = rules_registry
         self.rule_builder = rule_builder
@@ -96,7 +97,7 @@ class RulesController(QObjectBase):
     # TOP NAV ACTIONS
     # FEATURE Add an Import File Type - Right now active guids will overwrite.
     def import_from_file(self, file_path: str):
-        self.logging(f"Opening file - {file_path} to load json data.", LOGLEVEL.INFO)
+        self._logging(f"Opening file - {file_path} to load json data.", LOGLEVEL.INFO)
         res = self.json_file_service.load(file_path=file_path)
 
         if not res.ok:
@@ -199,7 +200,7 @@ class RulesController(QObjectBase):
 
         if dispatcher is None:
             msg = f"{batch.batch_type} doesnt have a handler implemented"
-            self.logging(msg, "ERROR")
+            self._logging(msg, "ERROR")
             raise NotImplementedError(msg)
 
         dispatcher(batch)

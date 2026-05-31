@@ -9,16 +9,16 @@ if TYPE_CHECKING:
 
 from PySide6.QtCore import Signal, Slot
 
-from base import QObjectBase
 from base.enums import LOGLEVEL
 from base.events import SchemaErrorDialogEvent, ToastEvent, UIEvent
 from views.base.enums import PAGE
 from views.components.dialogs import SchemaErrorDialog
 from views.components.toasts import QToast
 from views.components.toasts.qtoast.enums import QTOASTSTATUS
+from base import ControllerBase
 
 
-class UIController(QObjectBase):
+class UIController(ControllerBase):
     page_changed = Signal(object)
     side_bar_changed = Signal(bool)
 
@@ -29,7 +29,7 @@ class UIController(QObjectBase):
         self.page_changed.emit(page)
 
     def __init__(self, logger: LogAdapter):
-        super().__init__()
+        super().__init__(logger)
         self.logger = logger
         self.parent_widget = None
 
@@ -37,10 +37,6 @@ class UIController(QObjectBase):
         if self.parent_widget is not None:
             return
         self.parent_widget = widget
-
-    def logging(self, msg, level="INFO", print_msg=True) -> None:
-        msg = f"{self.__class__.__name__}: {msg}"
-        self.logger(msg, level, print_msg)
 
     @Slot(object)
     def handle_ui_event(self, event: UIEvent):

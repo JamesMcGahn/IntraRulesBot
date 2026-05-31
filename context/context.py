@@ -27,7 +27,7 @@ from services.rule_sets import (
     RuleSetSerializer,
     DefaultRuleSetProvider,
 )
-from services.files import JSONFileService
+from services.files import JSONFileService, SpreadsheetFileService
 from services.rules import RuleBuilder, RuleRegistry, RuleSerializer, RuleStore
 from services.settings import (
     AppSettings,
@@ -65,6 +65,7 @@ class AppContext(QObject, metaclass=QSingleton):
         self.logger.start_up()
 
         self.json_file_service = JSONFileService(self.log_adapter)
+        self.spread_sheet_file_service = SpreadsheetFileService(self.log_adapter)
 
         self.session_store = SessionStore(self.json_file_service, self.log_adapter)
         self.session_registry = SessionRegistry(self.session_store, self.log_adapter)
@@ -114,13 +115,15 @@ class AppContext(QObject, metaclass=QSingleton):
         ## Controllers
         self.ui_controller = UIController(logger=self.log_adapter)
         self.rules_monitor_controller = RulesRunMonitorController(
-            run_store=self.run_monitor_store
+            logger=self.log_adapter, run_store=self.run_monitor_store
         )
         self.settings_controller = SettingsController(
+            logger=self.log_adapter,
             settings_service=self.settings_manager,
             validation_service=self.validation_service,
         )
         self.rule_sets_controller = RuleSetsController(
+            logger=self.log_adapter,
             rules_set_registry=self.rule_set_registry,
             rule_set_builder=self.rule_set_builder,
             json_file_service=self.json_file_service,
@@ -129,9 +132,10 @@ class AppContext(QObject, metaclass=QSingleton):
         )
 
         self.rules_validation_coord = RulesValidationCoordinator(
-            validation_service=self.validation_service
+            logger=self.log_adapter, validation_service=self.validation_service
         )
         self.rules_controller = RulesController(
+            logger=self.log_adapter,
             validation_coordinator=self.rules_validation_coord,
             rules_registry=self.rules_registry,
             json_file_service=self.json_file_service,
@@ -140,7 +144,9 @@ class AppContext(QObject, metaclass=QSingleton):
             settings_provider=self.rule_settings_provider,
         )
 
-        self.queues_controller = QueuesController()
+        self.queues_controller = QueuesController(
+            logger=self.log_adapter, spread_sheet_service=self.spread_sheet_file_service
+        )
 
         self.start_up_coord = StartUpCoordinator(
             StartUpContainer(

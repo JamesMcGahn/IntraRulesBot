@@ -13,6 +13,7 @@ class ControllerBase(QObject):
     ui_event = Signal(object)
 
     def __init__(self, logger: LogAdapter):
+        super().__init__()
         self.logger = logger
 
     def _logging(self, msg, level="INFO", print_msg=True) -> None:

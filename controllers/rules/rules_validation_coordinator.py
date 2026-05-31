@@ -6,10 +6,10 @@ if TYPE_CHECKING:
     from services.validation import ValidationService
     from services.base.models import JobResponse
     from services.validation.models import ValidationResponse, SchemaValidateResponse
+    from services.logger.adapters import LogAdapter
 
 from uuid import uuid4
 from PySide6.QtCore import Signal, Slot
-from base import QObjectBase
 from base.enums import LOGLEVEL
 from schemas.enums import SCHEMATYPE
 from services.base.models import JobRequest
@@ -26,13 +26,14 @@ from services.rule_runner.models import (
 )
 from .models import ValidationBatch
 from .enums import VALIDATIONBATCHTYPE
+from base import ControllerBase
 
 
-class RulesValidationCoordinator(QObjectBase):
+class RulesValidationCoordinator(ControllerBase):
     batch_complete = Signal(object)
 
-    def __init__(self, validation_service: ValidationService):
-        super().__init__()
+    def __init__(self, logger: LogAdapter, validation_service: ValidationService):
+        super().__init__(logger)
         self.validation_service = validation_service
 
         self._active_jobs: dict[str, SchemaValidatePayload] = {}
@@ -101,13 +102,13 @@ class RulesValidationCoordinator(QObjectBase):
         if is_valid:
             batch.valid_rules.append(data)
             batch.validation_total += 1
-            self.logging(f"{rule_name}: 0 errors found.", LOGLEVEL.INFO)
+            self._logging(f"{rule_name}: 0 errors found.", LOGLEVEL.INFO)
         else:
             batch.invalid_rules.append(data)
             batch.validation_total += 1
             batch.total_errors += 1
             batch.rule_errors.extend(errors)
-            self.logging(
+            self._logging(
                 f"{rule_name}: {total_errors} errors found in rule.", LOGLEVEL.ERROR
             )
 

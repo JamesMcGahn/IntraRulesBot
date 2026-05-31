@@ -9,12 +9,11 @@ if TYPE_CHECKING:
     from services.settings.models import AppSettings
     from services.base.models import JobResponse
     from services.validation.models import ValidationResponse, SettingsValidateResponse
-
+    from services.logger.adapters import LogAdapter
 from uuid import uuid4
 
 from PySide6.QtCore import Signal, Slot
 
-from base import QObjectBase
 from base.enums import UIEVENTTYPE, LOGLEVEL
 from services.base.enums import JOBSTATUS
 
@@ -32,19 +31,20 @@ from services.validation.models import (
     ValidationBatchResponse,
 )
 from views.components.toasts.qtoast.enums import QTOASTSTATUS
+from base import ControllerBase
 
 
-class SettingsController(QObjectBase):
+class SettingsController(ControllerBase):
     verify_response_update = Signal(object)
     setting_updated = Signal(object)
-    ui_event = Signal(object)
 
     def __init__(
         self,
+        logger: LogAdapter,
         settings_service: SettingsService,
         validation_service: ValidationService,
     ):
-        super().__init__()
+        super().__init__(logger)
         self.settings_service = settings_service
         self.validation_service = validation_service
 
