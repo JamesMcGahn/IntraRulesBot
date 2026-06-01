@@ -85,7 +85,7 @@ class SchemaErrorDialog(GradientDialog):
 
         for err in errors:
             err_outter_layout = WidgetFactory.create_form_box(
-                err.rule_name,
+                err.name,
                 error_container_layout,
                 False,
                 object_name="Error-Outer",

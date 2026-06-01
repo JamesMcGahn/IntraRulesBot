@@ -33,4 +33,12 @@ QPushButton#close-btn {
   margin-bottom: 5px;
   border-radius: 3px;
 }
+
+QLabel {
+  color: black;
+}
+
+QLineEdit {
+  color: black;
+}
 """

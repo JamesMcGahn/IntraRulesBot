@@ -6,26 +6,32 @@ if TYPE_CHECKING:
     from ..base.models import JobRequest
     from .models import ValidationRequest, SchemaValidatePayload
     from jsonschema import ValidationError
-
+    from services.logger.adapters import LogAdapter
     from .interfaces.schema_meta_provider import SchemaMetaProvider
 
 from PySide6.QtCore import Signal
 
-from base import QObjectBase
+from .base_validator import BaseValidator
 from ..base.enums import JOBSTATUS
 from ..base.models import JobRef, JobResponse
 
 from .enums import VALIDATEJOBTYPE
 from .models import SchemaValidateResponse, ValidationResponse, SchemaError
+from schemas.enums import SCHEMATYPE
 
 
-class SchemaValidationService(QObjectBase):
+class SchemaValidationService(BaseValidator):
     task_complete = Signal(object)
 
-    def __init__(self, schema_meta_provider: SchemaMetaProvider):
-        super().__init__()
+    def __init__(self, logger: LogAdapter, schema_meta_provider: SchemaMetaProvider):
+        super().__init__(logger)
         self.schema_meta_provider = schema_meta_provider
         self._pending_jobs = {}
+
+        self._schema_dispatcher = {
+            SCHEMATYPE.RULES: self._validate_rules,
+            SCHEMATYPE.QUEUES: self._validate_queues,
+        }
 
     def validate(
         self, job: JobRequest[ValidationRequest[SchemaValidatePayload]]
@@ -34,38 +40,70 @@ class SchemaValidationService(QObjectBase):
 
         payload = job.payload.data
 
-        validator = self.schema_meta_provider.get_validator(payload.schema_type)
+        dispatcher = self._schema_dispatcher.get(payload.schema_type, None)
+        if dispatcher is None:
+            msg = f"Validator for {payload.schema_type} has not been implemented."
+            self._logging(msg, "ERROR")
+            raise NotImplementedError(msg)
 
-        rule_errors = []
-        total_errors = 0
+        dispatcher(job.id, payload)
+
+    def _validate_queues(self, job_id: str, payload: SchemaValidatePayload):
+
+        queue_guid = payload.data.get("guid")
+        queue_name = payload.data.get("row_name")
+        payload_errors = self._validate_payload(
+            queue_name, queue_guid, SCHEMATYPE.QUEUES, payload.data
+        )
+        total_errors = len(payload_errors)
+        valid = total_errors == 0
+        result = SchemaValidateResponse(
+            guid=queue_guid,
+            schema_type=payload.schema_type,
+            valid=valid,
+            total_errors=total_errors,
+            errors=payload_errors,
+        )
+        self.send_validation_response(job_id, result)
+
+    def _validate_rules(self, job_id: str, payload: SchemaValidatePayload):
         rule_name = payload.data.get("rule_name")
         rule_guid = payload.data.get("guid")
         rule_name = rule_name or "Rule has no Name"
-        for error in validator.iter_errors(payload.data):
-            total_errors = total_errors + 1
+        payload_errors = self._validate_payload(
+            rule_name, rule_guid, SCHEMATYPE.RULES, payload.data
+        )
+        total_errors = len(payload_errors)
+        valid = total_errors == 0
+        result = SchemaValidateResponse(
+            guid=rule_guid,
+            schema_type=payload.schema_type,
+            valid=valid,
+            total_errors=total_errors,
+            errors=payload_errors,
+        )
+        self.send_validation_response(job_id, result)
+
+    def _validate_payload(
+        self, name: str, guid: str, schema_type: SCHEMATYPE, data: object
+    ) -> list[SchemaError]:
+        validator = self.schema_meta_provider.get_validator(schema_type)
+        rule_errors = []
+        for error in validator.iter_errors(data):
             failed_feild, error_path_msg, error_msg = self.format_validation_error(
                 error
             )
             rule_errors.append(
                 SchemaError(
-                    rule_name=rule_name,
-                    rule_guid=rule_guid,
+                    name=name,
+                    guid=guid,
                     message=error_msg,
                     error_path=error.path,
                     error_path_msg=error_path_msg,
                     failed_field=failed_feild,
                 )
             )
-
-        valid = total_errors == 0
-        result = SchemaValidateResponse(
-            rule_guid=payload.data["guid"],
-            schema_type=payload.schema_type,
-            valid=valid,
-            total_errors=total_errors,
-            errors=rule_errors,
-        )
-        self.send_validation_response(job.id, result)
+        return rule_errors
 
     def send_validation_response(self, job_id, res: SchemaValidateResponse):
         job = self._pending_jobs.get(job_id)

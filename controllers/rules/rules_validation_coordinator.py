@@ -88,7 +88,7 @@ class RulesValidationCoordinator(ControllerBase):
         total_errors = payload.total_errors
         errors = payload.errors
         is_valid = payload.valid
-        rule_guid = payload.rule_guid
+        rule_guid = payload.guid
 
         batch = self._active_batches.get(job_id)
         data = self._active_jobs.get(rule_guid)

@@ -8,7 +8,7 @@ from .validation_schema_error import SchemaError
 @dataclass
 class SchemaValidateResponse:
     schema_type: SCHEMATYPE
-    rule_guid: str
+    guid: str
     valid: bool
     total_errors: int = 0
     errors: list[SchemaError] = field(default_factory=list)
