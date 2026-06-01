@@ -4,14 +4,15 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .models import Rule
+    from services.logger.adapters import LogAdapter
 
-from base import QObjectBase
+from base import ServiceBase
 
 
-class RuleRegistry(QObjectBase):
+class RuleRegistry(ServiceBase):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, logger: LogAdapter):
+        super().__init__(logger)
         self.rules: dict[str, Rule] = {}
 
     def upsert(self, rule: Rule):

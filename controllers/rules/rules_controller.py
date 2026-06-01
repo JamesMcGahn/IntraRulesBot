@@ -318,26 +318,6 @@ class RulesController(ControllerBase):
         self.send_toast_failure(title=title, message=message)
         self.ui_event.emit(error_event)
 
-    def send_toast_failure(self, title, message):
-        toast = ToastEvent(
-            message=message,
-            title=title,
-            toast_level=QTOASTSTATUS.SUCCESS,
-            log_level=LOGLEVEL.INFO,
-        )
-        event = UIEvent(UIEVENTTYPE.DISPLAY, payload=toast)
-        self.ui_event.emit(event)
-
-    def send_toast_success(self, title, message):
-        toast = ToastEvent(
-            message=message,
-            title=title,
-            toast_level=QTOASTSTATUS.ERROR,
-            log_level=LOGLEVEL.INFO,
-        )
-        event = UIEvent(UIEVENTTYPE.DISPLAY, payload=toast)
-        self.ui_event.emit(event)
-
     def _emit_rules_updated(self):
         self.ui_event.emit(
             UIEvent(
@@ -352,9 +332,9 @@ class RulesController(ControllerBase):
         errors_grouped_dict: dict[str, list[SchemaError]] = {}
 
         for error in batch.rule_errors:
-            if error.rule_guid not in errors_grouped_dict:
-                errors_grouped_dict[error.rule_guid] = []
-            errors_grouped_dict[error.rule_guid].append(error)
+            if error.guid not in errors_grouped_dict:
+                errors_grouped_dict[error.guid] = []
+            errors_grouped_dict[error.guid].append(error)
         for valid in batch.valid_rules:
             errors_grouped_dict[valid["guid"]] = []
         return errors_grouped_dict

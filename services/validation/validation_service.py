@@ -37,20 +37,20 @@ class ValidationService(QObjectBase):
         browser_session_factory: BrowserSessionFactory,
         logger: LogAdapter,
     ):
-        super().__init__()
+        super().__init__(logger)
         self._logger = logger
         self.shut_down_coordinator = ShutdownCoordinator(
             "Validation Services", self._logger
         )
         self.settings_validation = SettingsValidationService(
+            logger=self._logger,
             settings_meta_provider=settings_meta_provider,
             session=session,
             auth_service=auth_service,
             browser_session_factory=browser_session_factory,
-            logger=self._logger,
         )
         self.schema_validation = SchemaValidationService(
-            schema_meta_provider=schema_meta_provider
+            logger=self._logger, schema_meta_provider=schema_meta_provider
         )
 
         self._validators: dict[VALIDATEJOBTYPE, BaseValidator] = {

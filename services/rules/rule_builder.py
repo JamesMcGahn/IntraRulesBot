@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .models import Rule
-
+    from services.logger.adapters import LogAdapter
 from .models.triggers import FrequencyTrigger
 from .models import Rule
 
@@ -22,15 +22,15 @@ from .models.conditions import Condition, ConditionStatsDetails
 from .models.actions import Action, ActionsEmailDetails
 from .enums import ACTIONDETAILTYPE, CONDITIONDETAILTYPE, ACTIONTRIGGERDETAILTYPE
 
-from base import QObjectBase
+from base import ServiceBase
 from base.enums import LOGLEVEL
 from uuid import uuid4
 
 
-class RuleBuilder(QObjectBase):
+class RuleBuilder(ServiceBase):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, logger: LogAdapter):
+        super().__init__(logger)
 
         self.ACTION_DETAIL_BUILDERS = {"email": self._build_action_email}
         self.ACTION_DETAIL_TRIGGER_BUILDERS = {

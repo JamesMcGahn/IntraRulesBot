@@ -6,14 +6,14 @@ from base import QObjectBase
 
 if TYPE_CHECKING:
     from ..base.models import JobRequest, JobResponse
-
+    from services.logger.adapters import LogAdapter
     from .models import ValidationRequest, ValidationResponse
 
 
 class BaseValidator(QObjectBase):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, logger: LogAdapter):
+        super().__init__(logger)
 
     def validate(
         self, job: JobRequest[ValidationRequest]

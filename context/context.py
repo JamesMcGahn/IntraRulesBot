@@ -9,6 +9,7 @@ from controllers import (
     SettingsController,
     UIController,
     QueuesController,
+    QueuesValidationCoordinator,
 )
 from schemas.registry import SchemaRegistry
 from services.auth.auth_service import AuthService
@@ -56,9 +57,11 @@ class AppContext(QObject, metaclass=QSingleton):
         self.log_adapter = LogAdapter(self.logger)
         self.shut_down_coord = ShutdownCoordinator("APP", self.log_adapter)
         self.settings = AppSettings()
-        self.secure_settings = SecureCredentials()
+        self.secure_settings = SecureCredentials(self.log_adapter)
         self.settings_repo = SettingsRepository(self.settings, self.secure_settings)
-        self.settings_manager = SettingsService(repo=self.settings_repo)
+        self.settings_manager = SettingsService(
+            self.log_adapter, repo=self.settings_repo
+        )
 
         log_settings = self.settings_manager.get_category(SETTINGSCATEGORIES.LOG)
         self.logger.load_settings(log_settings)
@@ -76,12 +79,12 @@ class AppContext(QObject, metaclass=QSingleton):
 
         self.schema_registry = SchemaRegistry()
 
-        self.rules_registry = RuleRegistry()
+        self.rules_registry = RuleRegistry(self.log_adapter)
         self.rule_store = RuleStore()
-        self.rule_builder = RuleBuilder()
+        self.rule_builder = RuleBuilder(self.log_adapter)
         self.rule_serializer = RuleSerializer()
 
-        self.rule_set_registry = RuleSetRegistry()
+        self.rule_set_registry = RuleSetRegistry(self.log_adapter)
         self.rule_set_builder = RuleSetBuilder(rule_builder=self.rule_builder)
         self.rule_set_serializer = RuleSetSerializer(
             rule_serializer=self.rule_serializer
@@ -144,8 +147,13 @@ class AppContext(QObject, metaclass=QSingleton):
             settings_provider=self.rule_settings_provider,
         )
 
+        self.queues_validation_coord = QueuesValidationCoordinator(
+            logger=self.log_adapter, validation_service=self.validation_service
+        )
         self.queues_controller = QueuesController(
-            logger=self.log_adapter, spread_sheet_service=self.spread_sheet_file_service
+            logger=self.log_adapter,
+            spread_sheet_service=self.spread_sheet_file_service,
+            validation_coordinator=self.queues_validation_coord,
         )
 
         self.start_up_coord = StartUpCoordinator(
@@ -190,7 +198,7 @@ class AppContext(QObject, metaclass=QSingleton):
         self.rules_controller.ui_event.connect(self.ui_controller.handle_ui_event)
         self.rule_sets_controller.ui_event.connect(self.ui_controller.handle_ui_event)
         self.settings_controller.ui_event.connect(self.ui_controller.handle_ui_event)
-
+        self.queues_controller.ui_event.connect(self.ui_controller.handle_ui_event)
         self.shut_down_coord.shutdown_confirmed.connect(self._finalize_app_shut_down)
 
     def start_up(self):

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .settings_repository import SettingsRepository
     from .models import SettingUpdatedPayload, SettingValidatedPayload
+    from services.logger.adapters import LogAdapter
 from copy import deepcopy
 
 from PySide6.QtCore import Slot
@@ -21,8 +22,8 @@ from .models.map_login_settings import LoginSettings
 
 class SettingsService(QObjectBase):
 
-    def __init__(self, repo: SettingsRepository):
-        super().__init__()
+    def __init__(self, logger: LogAdapter, repo: SettingsRepository):
+        super().__init__(logger)
         self._repo = repo
         self._settings: AppSettingsMap = None
         self._validated: dict[SETTINGSCATEGORIES, dict[str, bool]] = {}
@@ -40,25 +41,25 @@ class SettingsService(QObjectBase):
 
         self._settings = AppSettings()
         self._validated = {}
-        self.logging("Loading Settings from Repository")
+        self._logging("Loading Settings from Repository")
         for category, dc in self.sections.items():
-            self.logging(f"Loading {dc} settings.", "DEBUG")
+            self._logging(f"Loading {dc} settings.", "DEBUG")
             cat_settings, validated = self._repo.load_section(dc)
             attr = category.value
             setattr(self._settings, attr, cat_settings)
             self._validated[category] = validated
-        self.logging("Successfully Loaded Settings from Repository")
+        self._logging("Successfully Loaded Settings from Repository")
         self._settings_loaded = True
 
     @Slot()
     def save_settings(self):
-        self.logging("Saving Settings.")
+        self._logging("Saving Settings.")
         for category, dc in self.sections.items():
             validated = self._validated.get(category, {})
-            self.logging(f"Saving {dc} settings.", "DEBUG")
+            self._logging(f"Saving {dc} settings.", "DEBUG")
             section = getattr(self._settings, category)
             self._repo.save_section(section, validated)
-        self.logging("Settings save sucessfully.")
+        self._logging("Settings save sucessfully.")
 
     def get_settings(self) -> AppSettingsMap:
         return deepcopy(self._settings)
@@ -70,7 +71,7 @@ class SettingsService(QObjectBase):
         section = getattr(self._settings, event.category, None)
         if section is None:
             msg = "{event.category} does not exist"
-            self.logging(msg, "ERROR")
+            self._logging(msg, "ERROR")
             raise ValueError(msg)
         setattr(section, event.field, event.value)
         self._validated.setdefault(event.category, {})
@@ -89,7 +90,7 @@ class SettingsService(QObjectBase):
         cat = getattr(self._settings, category, None)
         if not cat:
             msg = f"Cannot Find Category: {category}"
-            self.logging(msg)
+            self._logging(msg)
             raise ValueError(msg)
         return cat
 
@@ -97,7 +98,7 @@ class SettingsService(QObjectBase):
         cat = self._validated.get(category)
         if not cat:
             msg = f"Cannot Find Category: {category}"
-            self.logging(msg)
+            self._logging(msg)
             raise ValueError(msg)
         return cat
 
@@ -106,6 +107,6 @@ class SettingsService(QObjectBase):
         meta = field_category.get_field_meta(field)
         if not meta:
             msg = f"Cannot find {field} in {category} meta dictionary"
-            self.logging(msg, "ERROR")
+            self._logging(msg, "ERROR")
             raise ValueError(msg)
         return meta

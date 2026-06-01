@@ -20,8 +20,7 @@ if TYPE_CHECKING:
 
 from PySide6.QtCore import QThread, Signal
 
-from base import QObjectBase
-
+from .base_validator import BaseValidator
 from ..base.enums import JOBSTATUS
 from ..base.models import JobRef, JobResponse
 from ..intra.login_worker import IntraLoginWorker
@@ -34,20 +33,20 @@ from .models import (
 )
 
 
-class SettingsValidationService(QObjectBase):
+class SettingsValidationService(BaseValidator):
     task_complete = Signal(object)
     shut_down_requested = Signal()
     shutdown_ready = Signal(str)
 
     def __init__(
         self,
+        logger: LogAdapter,
         settings_meta_provider: SettingsMetaProvider,
         session: IntraProviderSession,
         auth_service: AuthService,
         browser_session_factory: BrowserSessionFactory,
-        logger: LogAdapter,
     ):
-        super().__init__()
+        super().__init__(logger)
         self._logger = logger
         self.settings_meta_provider = settings_meta_provider
         self._session = session
