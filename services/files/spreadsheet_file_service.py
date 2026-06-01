@@ -67,13 +67,13 @@ class SpreadsheetFileService(ServiceBase):
         except FileNotFoundError:
             message = f"File not found: {file_path}"
             self._logging(message, "ERROR")
-            return SheetsLoadResult(ok=False, path=file_path, message=message)
+            return SheetsLoadResult(ok=False, file_path=file_path, message=message)
 
         except InvalidFileException as e:
             message = "Invalid Excel file"
             self._logging(message, "ERROR")
             self._logging(f"Invalid Excel file: {e}", "DEBUG")
-            return SheetsLoadResult(ok=False, path=file_path, message=message)
+            return SheetsLoadResult(ok=False, file_path=file_path, message=message)
 
         except PermissionError:
             message = f"Permission denied while reading file: {file_path}"
