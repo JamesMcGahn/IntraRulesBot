@@ -36,8 +36,13 @@ from services.settings import (
     SettingsRepository,
     SettingsService,
 )
+from services.queues import QueueBuilder
+from services.queue_runner import QueueRunnerService
 from services.settings.enums import SETTINGSCATEGORIES
-from services.settings.providers import SettingsRuleRunnerConfigProvider
+from services.settings.providers import (
+    SettingsRuleRunnerConfigProvider,
+    SettingsQueueRunnerConfigProvider,
+)
 from services.validation import ValidationService
 from services.lifecycle.models import StartUpContainer
 
@@ -91,6 +96,8 @@ class AppContext(QObject, metaclass=QSingleton):
         )
         self.rule_set_default_provider = DefaultRuleSetProvider()
 
+        self.queue_builder = QueueBuilder(self.log_adapter)
+
         self.browser_session_factory = BrowserSessionFactory(
             session_registry=self.session_registry, logger=self.log_adapter
         )
@@ -106,7 +113,19 @@ class AppContext(QObject, metaclass=QSingleton):
         self.rule_settings_provider = SettingsRuleRunnerConfigProvider(
             settings_service=self.settings_manager
         )
+        self.queue_settings_provider = SettingsQueueRunnerConfigProvider(
+            settings_service=self.settings_manager
+        )
+
         self.rule_runner_service = RuleRunnerService(
+            session=self.session_registry.for_provider(PROVIDERS.INTRA),
+            auth_service=self.auth_service,
+            browser_session_factory=self.browser_session_factory,
+            logger=self.log_adapter,
+            profile_registry=self.prolife_registry,
+        )
+
+        self.queue_runner_service = QueueRunnerService(
             session=self.session_registry.for_provider(PROVIDERS.INTRA),
             auth_service=self.auth_service,
             browser_session_factory=self.browser_session_factory,
@@ -154,6 +173,9 @@ class AppContext(QObject, metaclass=QSingleton):
             logger=self.log_adapter,
             spread_sheet_service=self.spread_sheet_file_service,
             validation_coordinator=self.queues_validation_coord,
+            queue_builder=self.queue_builder,
+            queue_runner_service=self.queue_runner_service,
+            settings_provider=self.queue_settings_provider,
         )
 
         self.start_up_coord = StartUpCoordinator(
@@ -166,6 +188,7 @@ class AppContext(QObject, metaclass=QSingleton):
         )
 
         self.shut_down_coord.register_service("rule_runner", self.rule_runner_service)
+        self.shut_down_coord.register_service("queue_runner", self.rule_runner_service)
         self.shut_down_coord.register_service(
             "validation_service", self.validation_service
         )
