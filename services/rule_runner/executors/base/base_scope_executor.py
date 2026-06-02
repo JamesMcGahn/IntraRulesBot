@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from ....browser.ports import InteractionPort
 
 from ...enums import EXECUTORSCOPE, EXECUTORTASK, RULEEXECSTATUS
-from ...errors import StoppedRequestException
+from base.errors import StoppedRequestException
 from ...models import (
     EXECSTEPCALL,
     ExecutorTaskRef,

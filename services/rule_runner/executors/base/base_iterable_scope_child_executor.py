@@ -10,7 +10,7 @@ from ...enums import EXECUTORSCOPE, EXECUTORTASK, RULEEXECSTATUS
 from ...models import EXECSTEPCALL
 from ..base import BaseScopeExecutor
 from ...models.executor_item_context import ExecutorItemContext
-from ...errors import StoppedRequestException
+from base.errors import StoppedRequestException
 from enum import Enum
 
 ItemT = TypeVar("ItemT")

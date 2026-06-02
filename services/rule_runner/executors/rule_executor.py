@@ -12,8 +12,8 @@ from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from ..enums import EXECUTORSCOPE, EXECUTORTASK, RULEEXECSTATUS
-from ..errors import (
-    DuplicateRuleNameException,
+from base.errors import (
+    DuplicateNameException,
     PlaywrightSessionLostException,
     StoppedRequestException,
 )
@@ -101,7 +101,7 @@ class RuleExecutor(BaseScopeExecutor):
                 message="Stopped Requested.",
             )
 
-        except DuplicateRuleNameException:
+        except DuplicateNameException:
             return self._build_error_result(
                 ctx=self._ctx,
                 state=self._state,
@@ -282,7 +282,7 @@ class RuleExecutor(BaseScopeExecutor):
                 f"Rule '{state.rule_name}' could not be submitted after multiple retries.",
                 "ERROR",
             )
-            raise DuplicateRuleNameException
+            raise DuplicateNameException
 
         self.success_message(ctx, state)
 

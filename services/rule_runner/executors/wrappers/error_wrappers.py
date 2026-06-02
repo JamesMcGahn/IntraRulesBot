@@ -1,6 +1,6 @@
 from typing import Callable
 
-from ...errors import StoppedRequestException, PlaywrightSessionLostException
+from base.errors import StoppedRequestException, PlaywrightSessionLostException
 
 
 from functools import wraps
