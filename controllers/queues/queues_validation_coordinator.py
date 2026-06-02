@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from services.base.models import JobResponse
     from services.validation.models import ValidationResponse, SchemaValidateResponse
     from services.logger.adapters import LogAdapter
-    from services.files.models import SheetsLoadResult, ImportedSheetsRow
+    from services.files.models import ImportedSheetsRow
 
 from uuid import uuid4
 from PySide6.QtCore import Signal, Slot
@@ -22,10 +22,7 @@ from services.validation.models import (
 )
 
 
-from services.rule_runner.models import (
-    RuleRunnerRequestPayload,
-)
-from .models import ValidationQueueBatch
+from .models import ValidationQueueBatch, ValidationQueues
 from .enums import VALIDATIONBATCHTYPE
 from base import ControllerBase
 from pathlib import Path
@@ -40,14 +37,15 @@ class QueuesValidationCoordinator(ControllerBase):
 
         self._active_jobs: dict[str, ImportedSheetsRow] = {}
         self._active_batches: dict[str, ValidationQueueBatch] = {}
-        self._active_runners: dict[str, RuleRunnerRequestPayload] = {}
         # CONNECTIONS
         self.validation_service.task_complete.connect(self.on_validation_complete)
 
-    def validate_queues(self, data: SheetsLoadResult, batch_type: VALIDATIONBATCHTYPE):
+    def validate_queues(self, data: ValidationQueues, batch_type: VALIDATIONBATCHTYPE):
         file_name = Path(data.file_path).name
         batch_id = str(uuid4())
         batch = ValidationQueueBatch(
+            provider_name=data.provider_name,
+            provider_instance=data.provider_instance,
             batch_type=batch_type,
             batch_name=file_name,
             batch_id=batch_id,
