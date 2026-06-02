@@ -169,7 +169,7 @@ class SettingsValidationService(BaseValidator):
             self._browser_session_factory,
             self._session,
             self._auth_service,
-            self.logger.insert,
+            self._logger,
         )
 
         self._intra_worker.moveToThread(self._intra_login_thread)
@@ -229,9 +229,6 @@ class SettingsValidationService(BaseValidator):
         if self._intra_worker:
             self._intra_worker.request_shut_down()
 
-        self._logger(
-            f"{self.__class__.__name__}: IntraLoginWorker still active. Deferring app shutdown.",
-            "WARN",
-        )
+        self._logging("IntraLoginWorker still active. Deferring app shutdown.", "WARN")
 
         return False
