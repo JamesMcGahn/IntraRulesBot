@@ -10,10 +10,11 @@ if TYPE_CHECKING:
     from services.queues import QueueBuilder
     from services.settings.providers import SettingsQueueRunnerConfigProvider
     from services.queue_runner import QueueRunnerService
+from PySide6.QtCore import Signal, Slot
 from base.enums import UIEVENTTYPE
-from base.events import UIEvent, SchemaErrorDialogEvent
+from base.events import UIEvent, SchemaErrorDialogEvent, QueueRunnerStateEvent
 from services.queue_runner.models import QueueRunItem, QueueRunnerRequestPayload
-
+from services.queue_runner.enums import QUEUERUNNERLIFECYCLE
 from services.files.spreadsheet_file_service import SpreadsheetFileService
 from base import ControllerBase
 from .models import ValidationQueueBatch, ValidationQueues
@@ -24,6 +25,9 @@ from dataclasses import fields
 
 
 class QueuesController(ControllerBase):
+    # TODO convert to ui_event
+    runner_progress = Signal(int, int)
+    stop_runner_service = Signal()
 
     def __init__(
         self,
@@ -42,6 +46,21 @@ class QueuesController(ControllerBase):
         self._queue_runner_service = queue_runner_service
         self._validation_coordinator.batch_complete.connect(self.on_validation_complete)
         self._active_runners: dict[str, QueueRunnerRequestPayload] = {}
+
+        # TODO convert to ui_event
+        self._queue_runner_service.progress.connect(self.runner_progress)
+        self._queue_runner_service.runner_life_cyle.connect(
+            self.handle_runner_lifecycle
+        )
+        self.stop_runner_service.connect(self._queue_runner_service.stop_current_run)
+
+    def handle_runner_lifecycle(self, status: QUEUERUNNERLIFECYCLE):
+        self.ui_event.emit(
+            UIEvent(
+                event_type=UIEVENTTYPE.DISPLAY,
+                payload=QueueRunnerStateEvent(state=status),
+            )
+        )
 
     def import_file(self, action: SpreadSheetImport):
         if any(not getattr(action, field.name) for field in fields(action)):
@@ -110,3 +129,6 @@ class QueuesController(ControllerBase):
         error_event = UIEvent(UIEVENTTYPE.DISPLAY, payload=error)
         self.send_toast_failure(title=title, message=message)
         self.ui_event.emit(error_event)
+
+    def handle_stop_runner(self):
+        self.stop_runner_service.emit()

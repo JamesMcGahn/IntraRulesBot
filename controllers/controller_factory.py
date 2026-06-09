@@ -54,4 +54,7 @@ class ControllerFactory:
         )
 
     def create_queues_page(self) -> QueuesPageControllers:
-        return QueuesPageControllers(queues=self.ctx.queues_controller)
+        return QueuesPageControllers(
+            queues=self.ctx.queues_controller,
+            monitor=self.ctx.queues_monitor_controller,
+        )

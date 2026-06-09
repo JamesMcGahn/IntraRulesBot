@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
 
     from services.rule_runner.models import RuleProgressEvent
-    from services.rule_monitor import RunMonitorStore
+    from services.monitor.rule_monitor import RunMonitorStore
     from services.logger.adapters import LogAdapter
 
 from PySide6.QtCore import Signal, Slot
@@ -17,7 +17,8 @@ from base.events import (
     MonitorSnapShotEvent,
     UIEvent,
 )
-from services.rule_monitor.models import RuleRunRow, RunSummary
+from services.monitor.rule_monitor.models import RuleRunRow
+from services.monitor.models import RunSummary
 from services.rule_runner.enums import RULERUNNERLIFECYCLE
 from base import ControllerBase
 
@@ -52,11 +53,11 @@ class RulesRunMonitorController(ControllerBase):
         self._emit_row_updated(row)
         self._emit_summary_updated(self.run_store.get_summary())
 
-    def _emit_row_updated(self, row):
+    def _emit_row_updated(self, row: RuleRunRow):
         self.ui_event.emit(
             UIEvent(
                 event_type=UIEVENTTYPE.DISPLAY,
-                payload=MonitorRowUpsertEvent(row=row),
+                payload=MonitorRowUpsertEvent[RuleRunRow](row=row),
             )
         )
 
@@ -72,7 +73,7 @@ class RulesRunMonitorController(ControllerBase):
         self.ui_event.emit(
             UIEvent(
                 event_type=UIEVENTTYPE.DISPLAY,
-                payload=MonitorSnapShotEvent(summary=summary, rows=rows),
+                payload=MonitorSnapShotEvent[RuleRunRow](summary=summary, rows=rows),
             )
         )
 
