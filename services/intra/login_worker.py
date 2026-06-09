@@ -121,6 +121,7 @@ class IntraLoginWorker(QObject):
                 return self.is_valid.emit(self.job_id, result.success)
             self.logging("Received Failure Authentication.", "WARN")
             if result.status == AUTHSTATUS.BROWSER_ERROR:
+                self._close_down_browser()
                 self._init_browser()
             auth_attempts += 1
         self.logging(

@@ -145,7 +145,9 @@ class IntraAuthService(BaseAuthService):
         browser_port.fill(selectors.user_name_input, creds.user_name)
         browser_port.fill(selectors.password_input, creds.password)
 
-        alert = browser_port.click_and_accept_alert_if_appears(selectors.submit_button)
+        alert = browser_port.click_and_accept_alert_if_appears(
+            selectors.submit_button, timeout=5000
+        )
         if alert:
             self.logging(
                 "Session open elsewhere alert was present. Accepted alert to proceed with this session.",
