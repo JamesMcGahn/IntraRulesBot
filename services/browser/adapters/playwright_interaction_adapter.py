@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import re
 
 from playwright.sync_api import (
-    Page,
     FrameLocator,
     Locator,
-    TimeoutError as PlaywrightTimeoutError,
+    Page,
 )
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 
 class PlaywrightInteractionAdapter:
@@ -153,3 +154,79 @@ class PlaywrightInteractionAdapter:
 
         for index in range(count):
             items.nth(index).click(timeout=timeout)
+
+    def find_by_has_text(
+        self,
+        base_selector: str,
+        has_selector: str,
+        text: str,
+        strict_exact: bool = False,
+    ) -> Locator:
+        has_text = re.compile(rf"^{re.escape(text)}$") if strict_exact else text
+        return self.container.locator(base_selector).filter(
+            has=self.container.locator(has_selector, has_text=has_text)
+        )
+
+    def find_child_by_has_text(
+        self,
+        parent: Locator,
+        base_selector: str,
+        has_selector: str,
+        text: str,
+        strict_exact: bool = False,
+    ) -> Locator:
+        has_text = re.compile(rf"^{re.escape(text)}$") if strict_exact else text
+        return parent.locator(base_selector).filter(
+            has=self.container.locator(has_selector, has_text=has_text)
+        )
+
+    def click_inside_parent(
+        self,
+        parent: Locator,
+        selector: str,
+        timeout: int = 30000,
+        no_wait_after: bool = False,
+    ) -> None:
+        parent.locator(selector).click(timeout=timeout, no_wait_after=no_wait_after)
+
+    def wait_for_locator_visible(
+        self,
+        locator: Locator,
+        timeout: int = 30000,
+    ) -> None:
+        locator.wait_for(state="visible", timeout=timeout)
+
+    def frame_locator(self, selector: str) -> PlaywrightInteractionAdapter:
+        frame = self.container.frame_locator(selector)
+        if frame is None:
+            raise ValueError(f"Frame not found: {selector}")
+
+        return PlaywrightInteractionAdapter(frame)
+
+    def wait_for_loading_cycle(
+        self,
+        selector: str,
+        appear_timeout: int = 1000,
+        disappear_timeout: int = 30000,
+    ) -> None:
+
+        loader = self.container.locator(selector)
+        try:
+            loader.wait_for(state="visible", timeout=appear_timeout)
+        except PlaywrightTimeoutError:
+            print("loader wasnt there")
+            return
+        print("loader was there")
+        loader.wait_for(state="hidden", timeout=disappear_timeout)
+
+    def find_by_has_selector(self, base_selector: str, has_selector: str) -> Locator:
+
+        return self.container.locator(base_selector).filter(
+            has=self.container.locator(has_selector)
+        )
+
+    def get_attribute_inside_parent(
+        self, parent: Locator, selector: str, attribute: str, timeout: int = 30000
+    ) -> str:
+        value = parent.locator(selector).get_attribute(attribute, timeout=timeout)
+        return value or ""

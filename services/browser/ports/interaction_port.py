@@ -79,3 +79,51 @@ class InteractionPort(Protocol):
         selector: str,
         timeout: int = 30000,
     ) -> None: ...
+
+    def find_by_has_text(
+        self,
+        base_selector: str,
+        has_selector: str,
+        text: str,
+        strict_exact: bool = False,
+    ) -> Locator: ...
+
+    def find_child_by_has_text(
+        self,
+        parent: Locator,
+        base_selector: str,
+        has_selector: str,
+        text: str,
+        strict_exact: bool = False,
+    ) -> Locator: ...
+
+    def click_inside_parent(
+        self,
+        parent: Locator,
+        selector: str,
+        timeout: int = 30000,
+        no_wait_after: bool = False,
+    ) -> None: ...
+
+    def wait_for_locator_visible(
+        self,
+        locator: Locator,
+        timeout: int = 30000,
+    ) -> None: ...
+
+    def frame_locator(self, selector: str) -> InteractionPort: ...
+
+    def wait_for_loading_cycle(
+        self,
+        selector: str,
+        appear_timeout: int = 1000,
+        disappear_timeout: int = 30000,
+    ) -> None: ...
+
+    def find_by_has_selector(
+        self, base_selector: str, has_selector: str
+    ) -> Locator: ...
+
+    def get_attribute_inside_parent(
+        self, parent: Locator, selector: str, attribute: str, timeout: int = 30000
+    ) -> str: ...
