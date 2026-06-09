@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Deque
 
 if TYPE_CHECKING:
     from ..auth.auth_service import AuthService
-
     from ..intra.intra_provider_session import IntraProviderSession
     from services.logger.adapters import LogAdapter
     from ..base.models import JobRequest
@@ -25,14 +24,13 @@ from services.auth.enums import PROVIDERS
 from ..auth.enums import AUTHSTATUS
 from ..auth.models.auth_result import AuthResult
 from .enums import QUEUEEXECSTATUS, QUEUERUNNERLIFECYCLE, QUEUERUNSTATUS
-
-
 from .executors import QueueExecutor
 from .models import (
     QueueExecutionContext,
     QueueExecutionResult,
     QueueProgressEvent,
     QueueRunItem,
+    QueueRunnerState,
 )
 
 
@@ -73,8 +71,10 @@ class QueueRunnerWorker(QObject):
 
         self.playwright_session_manager = None
         self.playwright_session: PlaywrightSession | None = None
-
         self.profile_registry = profile_registry
+
+        self.provider_name = job.payload.provider_name
+        self.provider_instance = job.payload.provider_instance
 
     def should_stop(self) -> bool:
         return self._shut_down.is_set()
@@ -189,8 +189,7 @@ class QueueRunnerWorker(QObject):
                 )
                 return
 
-            # TODO:  navigate to queue input
-
+            state = QueueRunnerState()
             while self.q_item_queue and not self.should_stop():
                 self.progress.emit(self.completed_count, self.total_count)
                 try:
@@ -198,7 +197,10 @@ class QueueRunnerWorker(QObject):
                     item.status = QUEUERUNSTATUS.RUNNING
                     context = QueueExecutionContext(
                         tenant=self.creds.tenant,
+                        provider_instance=self.provider_instance,
+                        provider_name=self.provider_name,
                         browser_port=self.playwright_session.browser_adapter,
+                        state=state,
                         queue=item.queue,
                         logger=self.logger,
                         should_stop=self.should_stop,
