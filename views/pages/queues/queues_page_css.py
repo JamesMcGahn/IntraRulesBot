@@ -40,4 +40,16 @@ QGroupBox#Login-Information::title {
   font-weight: bold;
   font-family: "Open Sans";
 }
+
+QProgressBar {
+        background-color: #aaaaaa;
+        border: 2px solid #014637;
+        border-radius: 5px;
+        text-align: center;
+        color: #fcfcfc;
+    }
+QProgressBar::chunk {
+        background-color:  #f58220;
+        width: 20px;
+    }
 """

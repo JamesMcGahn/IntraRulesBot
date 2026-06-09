@@ -1,19 +1,14 @@
-from typing import Tuple
-
-from PySide6.QtCore import QObject, QSize, Qt, QTimer, Signal, Slot
-from PySide6.QtGui import QIcon
+from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtWidgets import (
-    QComboBox,
     QFileDialog,
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton,
     QSizePolicy,
-    QTextEdit,
     QVBoxLayout,
     QWidget,
     QGridLayout,
+    QProgressBar,
 )
 
 
@@ -22,6 +17,8 @@ from views.components.helpers import WidgetFactory
 
 from .enums.queues_page_event import QUEUESPAGEEVENT
 from .models.queues_page_action import QueuesPageAction
+from controllers.queues.models.spread_sheet_import import SpreadSheetImport
+from services.queue_runner.enums.queue_runner_lifecyle import QUEUERUNNERLIFECYCLE
 
 
 class QueuesPageView(QWidget):
@@ -138,7 +135,7 @@ class QueuesPageView(QWidget):
             self.prod_inst_line_edit_field, 2, 1, Qt.AlignTop
         )
 
-        run_button = GradientButton(
+        self.run_button = GradientButton(
             "",
             "black",
             [(0.05, "#FEB220"), (0.50, "#f58220"), (1, "#f58220")],
@@ -147,7 +144,7 @@ class QueuesPageView(QWidget):
             3,
         )
 
-        monitor_button = GradientButton(
+        self.monitor_button = GradientButton(
             "",
             "black",
             [(0.05, "#FEB220"), (0.50, "#f58220"), (1, "#f58220")],
@@ -155,7 +152,7 @@ class QueuesPageView(QWidget):
             1,
             3,
         )
-        stop_button = GradientButton(
+        self.stop_button = GradientButton(
             "",
             "black",
             [(0.05, "#FEB220"), (0.50, "#f58220"), (1, "#f58220")],
@@ -165,7 +162,7 @@ class QueuesPageView(QWidget):
         )
 
         WidgetFactory.create_icon(
-            run_button,
+            self.run_button,
             ":/images/play.png",
             15,
             15,
@@ -174,7 +171,7 @@ class QueuesPageView(QWidget):
         )
 
         WidgetFactory.create_icon(
-            monitor_button,
+            self.monitor_button,
             ":/images/monitor.png",
             15,
             15,
@@ -182,7 +179,7 @@ class QueuesPageView(QWidget):
             False,
         )
         WidgetFactory.create_icon(
-            stop_button,
+            self.stop_button,
             ":/images/stop.png",
             15,
             15,
@@ -190,19 +187,29 @@ class QueuesPageView(QWidget):
             False,
         )
 
-        run_button.setProperty("page_action", QUEUESPAGEEVENT.START_RUNNER)
-        monitor_button.setProperty(
+        self.run_button.setProperty("page_action", QUEUESPAGEEVENT.START_RUNNER)
+        self.monitor_button.setProperty(
             "page_action", QUEUESPAGEEVENT.TOGGLE_DISPLAY_MONITOR
         )
-        stop_button.setProperty("page_action", QUEUESPAGEEVENT.STOP_RUNNER)
+        self.stop_button.setProperty("page_action", QUEUESPAGEEVENT.STOP_RUNNER)
+        self.stop_button.setHidden(True)
+        self.monitor_button.setProperty(
+            "page_action", QUEUESPAGEEVENT.TOGGLE_DISPLAY_MONITOR
+        )
         thread_layout = QHBoxLayout()
-        thread_layout.addWidget(monitor_button)
-        thread_layout.addWidget(run_button)
-        thread_layout.addWidget(stop_button)
+        thread_layout.addWidget(self.monitor_button)
+        thread_layout.addWidget(self.run_button)
+        thread_layout.addWidget(self.stop_button)
 
         self.settings_grid_layout.addLayout(thread_layout, 3, 1)
-
-        run_button.clicked.connect(self.handle_action_button_click)
+        self.progress_bar = QProgressBar(self)
+        self.progress_bar.setHidden(False)
+        self.progress_bar.setRange(0, 10)
+        self.progress_bar.setValue(5)
+        self.settings_grid_layout.addWidget(self.progress_bar, 4, 1)
+        self.run_button.clicked.connect(self.handle_action_button_click)
+        self.stop_button.clicked.connect(self.handle_action_button_click)
+        self.monitor_button.clicked.connect(self.handle_action_button_click)
 
     def handle_action_button_click(self):
         sender = self.sender()
@@ -222,13 +229,17 @@ class QueuesPageView(QWidget):
     def _build_action_payload(self, action: QUEUESPAGEEVENT):
         if action == QUEUESPAGEEVENT.START_RUNNER:
             return QueuesPageAction[dict[str, str]](action, self._get_form_inputs())
+        elif action == QUEUESPAGEEVENT.STOP_RUNNER:
+            return QueuesPageAction(action, None)
+        elif action == QUEUESPAGEEVENT.TOGGLE_DISPLAY_MONITOR:
+            return QueuesPageAction(action, None)
 
     def _get_form_inputs(self) -> dict[str, str]:
-        return {
-            "file_location": self.file_loc_line_edit_field.text(),
-            "provider_name": self.prod_name_line_edit_field.text(),
-            "provider_instance": self.prod_inst_line_edit_field.text(),
-        }
+        return SpreadSheetImport(
+            file_location=self.file_loc_line_edit_field.text(),
+            provider_name=self.prod_name_line_edit_field.text(),
+            provider_instance=self.prod_inst_line_edit_field.text(),
+        )
 
     def open_folder_dialog(self) -> None:
         """
@@ -249,3 +260,23 @@ class QueuesPageView(QWidget):
         self.file_loc_line_edit_field.blockSignals(True)
         self.file_loc_line_edit_field.setText(file_name)
         self.file_loc_line_edit_field.blockSignals(False)
+
+    @Slot(object)
+    def handle_queue_runner_state_update(self, state: QUEUERUNNERLIFECYCLE) -> None:
+        if state == QUEUERUNNERLIFECYCLE.STARTED:
+            self.stop_button.setHidden(False)
+            self.progress_bar.setHidden(False)
+            self.run_button.setDisabled(True)
+        if state == QUEUERUNNERLIFECYCLE.FINISHED:
+            self.stop_button.setHidden(True)
+            self.run_button.setDisabled(False)
+            QTimer.singleShot(5000, lambda: self.progress_bar.setHidden(True))
+
+    @Slot(int, int)
+    def set_progress_bar(self, current: int, total: int) -> None:
+        """
+        Updates the rules progress bar.
+        """
+        self.progress_bar.setHidden(False)
+        self.progress_bar.setRange(0, total)
+        self.progress_bar.setValue(current)
