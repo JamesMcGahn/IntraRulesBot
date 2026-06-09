@@ -10,6 +10,7 @@ from controllers import (
     UIController,
     QueuesController,
     QueuesValidationCoordinator,
+    QueuesRunMonitorController,
 )
 from schemas.registry import SchemaRegistry
 from services.auth.auth_service import AuthService
@@ -20,7 +21,8 @@ from services.lifecycle import ShutdownCoordinator, StartUpCoordinator
 from services.logger import Logger
 from services.logger.adapters import LogAdapter
 from services.profiles import ProfileRegistry
-from services.rule_monitor import RunMonitorStore
+from services.monitor.rule_monitor import RunMonitorStore
+from services.monitor.queue_monitor import QueueMonitorStore
 from services.rule_runner import RuleRunnerService
 from services.rule_sets import (
     RuleSetBuilder,
@@ -134,10 +136,14 @@ class AppContext(QObject, metaclass=QSingleton):
         )
 
         self.run_monitor_store = RunMonitorStore()
+        self.queue_run_monitor_store = QueueMonitorStore()
         ## Controllers
         self.ui_controller = UIController(logger=self.log_adapter)
         self.rules_monitor_controller = RulesRunMonitorController(
             logger=self.log_adapter, run_store=self.run_monitor_store
+        )
+        self.queues_monitor_controller = QueuesRunMonitorController(
+            logger=self.log_adapter, run_store=self.queue_run_monitor_store
         )
         self.settings_controller = SettingsController(
             logger=self.log_adapter,
@@ -188,7 +194,7 @@ class AppContext(QObject, metaclass=QSingleton):
         )
 
         self.shut_down_coord.register_service("rule_runner", self.rule_runner_service)
-        self.shut_down_coord.register_service("queue_runner", self.rule_runner_service)
+        self.shut_down_coord.register_service("queue_runner", self.queue_runner_service)
         self.shut_down_coord.register_service(
             "validation_service", self.validation_service
         )
@@ -206,6 +212,15 @@ class AppContext(QObject, metaclass=QSingleton):
         self.rules_monitor_controller.request_remove.connect(
             self.rules_controller.remove_rules_by_guids
         )
+
+        self.queue_runner_service.task_progress.connect(
+            self.queues_monitor_controller.handle_task_progress_event
+        )
+
+        self.queue_runner_service.runner_life_cyle.connect(
+            self.queues_monitor_controller.handle_runner_lifecyle
+        )
+
         ## SETTINGS
         self.settings_controller.setting_updated.connect(self.setting_updated)
         self.setting_updated.connect(self.logger.received_settings_change)
