@@ -1,35 +1,40 @@
-from .rule_form_selectors import RuleFormSelectors
-from .executor_selectors import ExecutorSelectors
-from .trigger_selectors import (
-    TriggerSelectors,
-    TriggerDetailSelectors,
-    TriggerCommonSelectors,
-    TriggerStateChangedSelectors,
-    TriggerUserLoggedInSelectors,
-    TriggerUserLoggedOutSelectors,
-    TriggerTimeInStateSelectors,
-    TriggerQuickActionSelectors,
-)
-from .condition_selectors import (
-    ConditionSelectors,
-    ConditionCommonSelectors,
-    ConditionStatsSelectors,
-    ConditionDetailSelectors,
-)
-
 from .action_selectors import (
     ActionCommonSelectors,
     ActionDetailSelectors,
-    ActionSelectors,
     ActionEmailSelectors,
+    ActionSelectors,
 )
-from .login_selectors import LoginSelectors
 from .browser_profile import BrowserProfile
+from .condition_selectors import (
+    ConditionCommonSelectors,
+    ConditionDetailSelectors,
+    ConditionSelectors,
+    ConditionStatsSelectors,
+)
+from .executor_selectors import ExecutorSelectors
+from .login_selectors import LoginSelectors
+from .provider_instance_selectors import ProviderInstanceSelectors
+from .providers_selectors import ProviderSelectors
+from .queue_selectors import QueueSelectors
+from .rule_form_selectors import RuleFormSelectors
+from .trigger_selectors import (
+    TriggerCommonSelectors,
+    TriggerDetailSelectors,
+    TriggerQuickActionSelectors,
+    TriggerSelectors,
+    TriggerStateChangedSelectors,
+    TriggerTimeInStateSelectors,
+    TriggerUserLoggedInSelectors,
+    TriggerUserLoggedOutSelectors,
+)
 
 __all__ = [
     "LoginSelectors",
     "RuleFormSelectors",
     "ExecutorSelectors",
+    "ProviderSelectors",
+    "ProviderInstanceSelectors",
+    "QueueSelectors",
     "TriggerSelectors",
     "TriggerDetailSelectors",
     "TriggerCommonSelectors",
