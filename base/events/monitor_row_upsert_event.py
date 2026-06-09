@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from services.rule_monitor.models import RuleRunRow
-
+from typing import Generic, TypeVar
 from dataclasses import dataclass
+
+P = TypeVar("P")
 
 
 @dataclass
-class MonitorRowUpsertEvent:
-    row: RuleRunRow
+class MonitorRowUpsertEvent(Generic[P]):
+    row: P

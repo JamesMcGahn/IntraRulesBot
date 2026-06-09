@@ -7,6 +7,7 @@ from .toast_event import ToastEvent
 from .ui_event import UIEvent
 from .rule_runner_state_event import RuleRunnerStateEvent
 from .monitor_snapshot import MonitorSnapShotEvent
+from .queue_runner_state_event import QueueRunnerStateEvent
 
 __all__ = [
     "UIEvent",
@@ -18,4 +19,5 @@ __all__ = [
     "MonitorSummaryUpdateEvent",
     "RuleRunnerStateEvent",
     "MonitorSnapShotEvent",
+    "QueueRunnerStateEvent",
 ]

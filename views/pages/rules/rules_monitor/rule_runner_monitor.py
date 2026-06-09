@@ -14,14 +14,15 @@ from PySide6.QtWidgets import (
     QSpacerItem,
 )
 
-from services.rule_monitor.models import RuleRunRow, RunSummary
+from services.monitor.rule_monitor.models import RuleRunRow
+from services.monitor.models import RunSummary
 from base.events import MonitorSnapShotEvent
 from ....components.dialogs import GradientDialog
 from ....components.helpers import WidgetFactory
 from ....components.buttons import GradientButton
 from .monitor_table import MonitorTableModel
 from .rule_runner_monitor_styles import STYLES
-from ..enums.monitor_event import MONITOREVENT
+from ....base.enums.monitor_event import MONITOREVENT
 
 
 class RuleRunnerMonitor(GradientDialog):
@@ -159,7 +160,7 @@ class RuleRunnerMonitor(GradientDialog):
             lambda: self.monitor_action.emit(MONITOREVENT.MONITOR_REMOVE_SUCCEED)
         )
 
-    def update_from_snapshot(self, snapshot: MonitorSnapShotEvent) -> None:
+    def update_from_snapshot(self, snapshot: MonitorSnapShotEvent[RuleRunRow]) -> None:
         self.monitor_table_model.clear_model()
         self.monitor_table_model.update_data(snapshot.rows)
         self.handle_summary_update(snapshot.summary)

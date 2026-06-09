@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 from typing import List
 
-from PySide6.QtCore import QSize, Qt, Signal, Slot
+from PySide6.QtCore import QSize, Qt, Signal, Slot, QTimer
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -412,6 +412,7 @@ class RulesPageView(QWidget):
         if state == RULERUNNERLIFECYCLE.FINISHED:
             self.stop.setHidden(True)
             self.start.setDisabled(False)
+            QTimer.singleShot(5000, lambda: self.progress_bar.setHidden(True))
 
     @Slot(int, int)
     def set_progress_bar(self, current: int, total: int) -> None:
@@ -419,8 +420,6 @@ class RulesPageView(QWidget):
         Updates the rules progress bar.
         """
         self.progress_bar.setHidden(False)
-
-        self.progress_bar.setHidden(True)
         self.progress_bar.setRange(0, total)
         self.progress_bar.setValue(current)
 

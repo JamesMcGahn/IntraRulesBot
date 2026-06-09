@@ -1,5 +1,5 @@
 from time import time
-from services.rule_monitor.models import RuleRunRow
+from services.monitor.rule_monitor.models import RuleRunRow
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
 from dataclasses import fields
 from datetime import datetime
