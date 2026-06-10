@@ -203,9 +203,7 @@ class QueuesPageView(QWidget):
 
         self.settings_grid_layout.addLayout(thread_layout, 3, 1)
         self.progress_bar = QProgressBar(self)
-        self.progress_bar.setHidden(False)
-        self.progress_bar.setRange(0, 10)
-        self.progress_bar.setValue(5)
+        self.progress_bar.setHidden(True)
         self.settings_grid_layout.addWidget(self.progress_bar, 4, 1)
         self.run_button.clicked.connect(self.handle_action_button_click)
         self.stop_button.clicked.connect(self.handle_action_button_click)
