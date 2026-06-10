@@ -1,7 +1,14 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from controllers import UIController
+
 from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import QPushButton, QWidget
 
-from components.helpers import StyleHelper
+from views.components.helpers import StyleHelper
 
 from .icon_only_navbar_css import STYLES
 from .icon_only_navbar_ui import IconOnlyNavBarView
@@ -12,19 +19,12 @@ class IconOnlyNavBar(QWidget):
     Controller for the compressed side navigation bar with icon-only buttons.
     This class manages the behavior of the navigation buttons, including toggling
     and page changes.
-
-    Signals:
-        btn_checked_ico (Signal[bool, QPushButton]): Emitted when a button is toggled.
-        btn_clicked_page (Signal[QPushButton]): Emitted when a button is clicked to change the page.
-
-    Attributes:
-        ui (IconOnlyNavBarView): The view component that defines the layout and widgets.
     """
 
     btn_checked_ico = Signal(bool, QPushButton)
     btn_clicked_page = Signal(QPushButton)
 
-    def __init__(self):
+    def __init__(self, ui_controller: UIController):
         """
         Initializes the IconOnlyNavBar controller, connects signals to handle button interactions,
         and sets default states for the buttons.
@@ -33,86 +33,22 @@ class IconOnlyNavBar(QWidget):
         self.setObjectName("icon_only_widget")
         self.setMaximumSize(QSize(70, 16777215))
         self.setAttribute(Qt.WA_StyledBackground, True)
-
         self.setStyleSheet(STYLES)
+        self.ui_controller = ui_controller
         # Set up the UI
         self.ui = IconOnlyNavBarView()
         self.layout = self.ui.layout()
         self.setLayout(self.layout)
 
         StyleHelper.drop_shadow(self)
-        # Connect buttons to toggle and click events
-        self.ui.keys_btn_ico.toggled.connect(self.btn_checked)
-        self.ui.keys_btn_ico.clicked.connect(self.btn_clicked)
 
-        self.ui.rules_btn_ico.toggled.connect(self.btn_checked)
-        self.ui.rules_btn_ico.clicked.connect(self.btn_clicked)
-
-        self.ui.logs_btn_ico.toggled.connect(self.btn_checked)
-        self.ui.logs_btn_ico.clicked.connect(self.btn_clicked)
-
-        self.ui.settings_btn_ico.toggled.connect(self.btn_checked)
-        self.ui.settings_btn_ico.clicked.connect(self.btn_clicked)
-
-        self.ui.signout_btn_ico.toggled.connect(self.btn_checked)
-        self.ui.signout_btn_ico.clicked.connect(self.btn_clicked)
-
-        self.ui.rules_btn_ico.setChecked(True)
+        self.ui.page_change_request.connect(self.ui_controller.set_active_page)
+        self.ui_controller.page_changed.connect(self.ui.sync_page)
+        self.ui_controller.side_bar_changed.connect(self.hide_nav)
 
     @Slot(bool)
-    def hide_nav(self, checked) -> None:
+    def hide_nav(self, checked: bool) -> None:
         """
         Slot to hide or show the navigation bar based on the checked state.
-
-        Args:
-            checked (bool): If True, the navigation bar will be hidden; if False, it will be shown.
-
-        Returns:
-            None: This function does not return a value.
         """
         self.setHidden(checked)
-
-    def btn_checked(self, checked) -> None:
-        """
-        Slot that handles when a button is toggled, emitting a signal with the button's checked state.
-
-        Args:
-            checked (bool): The checked state of the button.
-
-        Returns:
-            None: This function does not return a value.
-        """
-        self.btn_checked_ico.emit(checked, self.sender())
-
-    def btn_clicked(self) -> None:
-        """
-        Slot that handles when a button is clicked, emitting a signal to change the page.
-
-        Returns:
-            None: This function does not return a value.
-        """
-        self.btn_clicked_page.emit(self.sender())
-
-    @Slot(bool, QPushButton)
-    def btns_set_checked(self, checked, btn) -> None:
-        """
-        Slot that sets the checked state of a button based on its object name.
-
-        Args:
-            checked (bool): The checked state to set for the button.
-            btn (QPushButton): The button to be checked.
-
-        Returns:
-            None: This function does not return a value.
-        """
-        match btn.objectName():
-            case "keys_btn_ict":
-                self.ui.keys_btn_ico.setChecked(checked)
-            case "rules_btn_ict":
-                self.ui.rules_btn_ico.setChecked(checked)
-            case "logs_btn_ict":
-                self.ui.logs_btn_ico.setChecked(checked)
-            case "settings_btn_ict":
-                self.ui.settings_btn_ico.setChecked(checked)
-            case "signout_btn_ict":
-                self.ui.signout_btn_ico.setChecked(checked)

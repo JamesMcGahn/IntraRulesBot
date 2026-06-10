@@ -76,3 +76,40 @@ In the spec file, update the paths to exec_directory, icon and python_path. Then
 ```bash
 pyside6-deploy
 ```
+
+## Supported Use Cases:
+
+### Triggers:
+
+    - Frequency Based
+    - Action Triggers:
+        - ACD
+            - Agent Changed State Trigger
+            - Agent Logged In
+            - Agent Logged Out
+            - Time in State
+        - Intradiem
+            - Users
+                - Quick Action Clicked
+
+### Condition:
+
+    - ACD:
+        - Statistic
+
+### Actions:
+
+    - Communications
+        - Email
+
+## How To Add Rule Use Case
+
+- update schema
+- add scope detailed dataclass
+- update detail enum
+- update services/rules/rule_builder
+- update views/rules/rule_factory
+- update services/profiles/rules dc
+- update the profile implementation with selectors
+- add detailed executor
+- update scope executor

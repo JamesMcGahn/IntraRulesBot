@@ -1,0 +1,7 @@
+from enum import StrEnum
+
+
+class SETTINGSCATEGORIES(StrEnum):
+    LOG = "log"
+    WHISPER = "whisper"
+    LOGIN = "login"

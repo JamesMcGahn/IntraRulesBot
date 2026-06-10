@@ -1,0 +1,36 @@
+{
+  "rules": [
+    {
+      "rule_name": "Condition ACD - Queue Stats",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "Avaya Test ACD",
+          "provider_condition": "Agents in Other - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        },
+        {
+          "provider_category": "ACD",
+          "provider_instance": "Avaya Test ACD",
+          "provider_condition": "Agents in Other - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": []
+    }
+  ]
+}

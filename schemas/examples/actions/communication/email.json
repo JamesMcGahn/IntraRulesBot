@@ -1,0 +1,25 @@
+{
+  "rules": [
+    {
+      "rule_name": "Communications - Email",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "Test Subject",
+            "email_body": "Test body",
+            "email_address": "test@example.com"
+          }
+        }
+      ]
+    }
+  ]
+}

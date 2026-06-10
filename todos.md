@@ -2,20 +2,47 @@
 
 #### TO-DO NOW
 
+- [ ] : Legacy and Modern Executor path
+- [ ] : load selectors from file(s)
+
 #### TO-DO LATER
 
-- [ ] :#TODO : Setting to turn off Toasts
+- [ ] : update schema to check for provider_condition based on provider_category
+- [ ] :#FEATURE : Setting to turn off Toasts
 - [ ] :#TODO : switch page to rules page after open file validation
-- [ ] :#FEATURE : Action Based Triggers
-  - [ ] :#TODO : Agent State Changed
-  - [ ] :#TODO : Time in Current State
-  - [ ] :#TODO : Logged In
-  - [ ] :#TODO : Logged out
+
+- [ ] : TODO : Remove implicit passing of logger to services
 - [ ] :#FEATURE : Stats Queue Selection
 - [ ] :#FEATURE : Action: Create List
 - [ ] :#FEATURE : Action: Update User
 
 ### COMPLETED
+
+#### 2.0.0
+
+- [x] : stablize app with sound architecture -> controllers, separation of services etc
+- [x] : convert to playwright
+- [x] : Default Provider Rule Sets
+- [x] : Ruleset Model
+- [x] : Ruleset Page
+- [x] : Display User Saved Rulesets
+- [x] : Display Default Rulesets
+- [x] : Allow User to Load Ruleset
+- [x] : Allow User to Save Ruleset
+- [x] : Base Executors
+  - [x] : Standarize with Flow and Task Map
+  - [x] : Implement context container
+  - [x] : Implement state container
+  - [x] : profiles for version selectors
+- [/] : Action Based Triggers - ACD
+  - [x] : Agent Changed State Trigger
+  - [x] : Agent Logged In
+  - [x] : Agent Logged Out
+  - [x] : Time in Current State
+- [/] : Intradiem
+  - [x] : Quick Action Clicked
+- Threaded Service Safe Shutdown
+- Display Rule Runner Summaries of Rule Completion
 
 #### 1.0.0
 

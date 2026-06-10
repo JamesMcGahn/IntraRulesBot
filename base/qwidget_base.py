@@ -1,9 +1,11 @@
 from typing import Optional
 
 from PySide6.QtCore import Signal, Slot
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QVBoxLayout, QWidget
 
-from components.toasts import QToast
+from views.components.toasts import QToast
+from base.enums import LOGLEVEL
+from views.components.toasts.qtoast.enums import QTOASTSTATUS
 
 
 class QWidgetBase(QWidget):
@@ -19,12 +21,15 @@ class QWidgetBase(QWidget):
     """
 
     send_logs = Signal(str, str, bool)
-    appshutdown = Signal()
+    prepare_ui_for_shutdown = Signal()
 
     def __init__(self):
         """Initialize the base class."""
         super().__init__()
         from services.logger import Logger
+
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
 
         self.logger = Logger()
         self.send_logs.connect(self.logger.insert)
@@ -50,15 +55,15 @@ class QWidgetBase(QWidget):
     @Slot()
     def notified_app_shutting(self) -> None:
         """Emits the appshutdown signal to notify other components."""
-        self.appshutdown.emit()
+        self.prepare_ui_for_shutdown.emit()
 
     @Slot()
     def log_with_toast(
         self,
         toast_title: str,
         msg: str,
-        log_level: str = "INFO",
-        toast_level: str = "INFO",
+        log_level: LOGLEVEL = LOGLEVEL.INFO,
+        toast_level: QTOASTSTATUS = QTOASTSTATUS.INFORMATION,
         print_msg: bool = True,
         parent: Optional[QWidget] = None,
     ) -> None:
@@ -79,4 +84,6 @@ class QWidgetBase(QWidget):
             None
         """
         self.logging(msg, log_level, print_msg)
-        QToast(parent, toast_level, toast_title, msg)
+        if not parent:
+            parent = self
+        QToast(parent, toast_level, toast_title, msg).show()

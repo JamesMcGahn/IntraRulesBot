@@ -1,60 +1,63 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from controllers.models import MainScreenControllers
+
+
 from PySide6.QtCore import Signal, Slot
-from PySide6.QtWidgets import QPushButton
 
 from base import QWidgetBase
 
 from .main_screen_ui import MainScreenView
+from views.pages import BookMarksPage, LogsPage, RulesPage, SettingsPage, QueuesPage
+from ...base.enums import PAGE
 
 
 class MainScreen(QWidgetBase):
     """
     MainScreen serves as the controller for the MainScreenView. It manages
-    interactions between different parts of the view, such as changing pages and
-    handling application shutdown.
-
-    Attributes:
-        ui (MainScreenView): The main screen view containing the stacked widget and its pages.
-        layout (QLayout): The layout of the main screen.
-
-    Signals:
-        close_main_window (Signal): emits a notification to close the main window
+    interactions between different parts of the view, such as changing pages
     """
 
     close_main_window = Signal()
 
-    def __init__(self):
-        """
-        Initializes the MainScreen, sets up the UI, and connects signals for handling page changes and app shutdown.
-        """
+    def __init__(self, controllers: MainScreenControllers):
         super().__init__()
         self.ui = MainScreenView()
-        self.layout = self.ui.layout()
-        self.setLayout(self.layout)
-
+        # self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.addWidget(self.ui)
         self.setObjectName("main_screen")
+        self.controllers = controllers
+        self.ui_controller = controllers.ui
 
-        self.appshutdown.connect(self.ui.rules_page.notified_app_shutting)
+        # self.appshutdown.connect(self.ui.rules_page.notified_app_shutting)
 
-    @Slot(QPushButton)
-    def change_page(self, btn: QPushButton) -> None:
+        # Pages
+        self.rules_page = RulesPage(controllers=self.controllers.rules_page)
+        self.settings_page = SettingsPage(controllers=self.controllers.settings_page)
+        self.logs_page = LogsPage()
+        self.bookmarks_page = BookMarksPage(controllers=self.controllers.bookmark_page)
+        self.queues_page = QueuesPage(controllers=self.controllers.queues)
+        # Add pages to stacked widget
+        self.ui.add_page_to_stacked_widget(PAGE.EDITOR, self.rules_page)
+        self.ui.add_page_to_stacked_widget(PAGE.LOG, self.logs_page)
+        self.ui.add_page_to_stacked_widget(PAGE.BOOKMARK, self.bookmarks_page)
+        self.ui.add_page_to_stacked_widget(PAGE.QUEUES, self.queues_page)
+        self.ui.add_page_to_stacked_widget(PAGE.SETTINGS, self.settings_page)
+
+        self.ui_controller.page_changed.connect(self.change_page)
+
+        self.ui_controller.set_active_page(PAGE.EDITOR)
+
+    @Slot(object)
+    def change_page(self, page: PAGE) -> None:
         """
         Changes the page displayed in the stacked widget based on the button clicked.
-
-        Args:
-            btn (QPushButton): The button that was clicked to trigger the page change.
-
-        Returns:
-            None: This function does not return a value.
         """
-        btn_name = btn.objectName()
 
-        if btn_name.startswith("keys_btn_"):
-            self.ui.stackedWidget.setCurrentIndex(0)
-        elif btn_name.startswith("rules_btn_"):
-            self.ui.stackedWidget.setCurrentIndex(1)
-        elif btn_name.startswith("logs_btn_"):
-            self.ui.stackedWidget.setCurrentIndex(2)
-        elif btn_name.startswith("settings_btn_"):
-            self.ui.stackedWidget.setCurrentIndex(3)
-        elif btn_name.startswith("signout_btn"):
+        if page == PAGE.EXIT:
             self.close_main_window.emit()
+            return
+        self.ui.stackedWidget.set_current_by_name(page)

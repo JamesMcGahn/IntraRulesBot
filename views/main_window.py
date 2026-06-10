@@ -1,29 +1,43 @@
-from PySide6.QtCore import QSize, Signal, Slot
+from PySide6.QtCore import QSize, Signal, Slot, QTimer
 from PySide6.QtGui import QAction, QCloseEvent, QFontDatabase, QIcon
-from PySide6.QtWidgets import QMainWindow, QMenu, QSystemTrayIcon
-
-from components.dialogs import ConfirmationDialog
-from components.helpers import StyleHelper
+from PySide6.QtWidgets import QMainWindow, QMenu, QSystemTrayIcon, QApplication
+import threading
+from views.components.dialogs import ConfirmationDialog
+from views.components.helpers import StyleHelper
 
 # trunk-ignore(ruff/F401)
 from resources import resources_rc
-from services.logger import Logger
 from views.layout import CentralWidget
+from context import AppContext
+from controllers import ControllerFactory
+from base.enums import LOGLEVEL
 
 
 class MainWindow(QMainWindow):
     appshutdown = Signal()
     send_logs = Signal(str, str, bool)
 
-    def __init__(self, app):
+    def __init__(self, app: QApplication, context: AppContext):
         super().__init__()
-
         self.app = app
+        self._startup_completed = False
+        self.context = context
+        self.send_logs.connect(self.context.send_logs)
+
+        self.prompted_user_for_close = False
+
         self.setWindowTitle("IntraRulesBot")
         self.setObjectName("MainWindow")
         self.resize(873, 800)
         self.setMaximumSize(QSize(873, 800))
         self.setMinimumSize(QSize(873, 800))
+
+        self.send_logs.emit(
+            f"Starting {self.__class__.__name__} in thread: {threading.get_ident()} - {self.thread()}",
+            "INFO",
+            True,
+        )
+        self.controller_factory = ControllerFactory(self.context)
         # Load and set fonts
         font_id_reg = QFontDatabase.addApplicationFont(":/fonts/OpenSans-Regular.ttf")
         QFontDatabase.addApplicationFont(":/fonts/OpenSans-Bold.ttf")
@@ -32,7 +46,9 @@ class MainWindow(QMainWindow):
         if font_family != -1:
             StyleHelper.dpi_scale_set_font(self.app, font_family, 13)
         # Initialize central widget
-        self.centralWidget = CentralWidget()
+        self.central_widget = CentralWidget(
+            controllers=self.controller_factory.create_central_widget()
+        )
         # Set application icon
         app_icon = QIcon()
         app_icon.addFile(":/system_icons/logo16_16.ico", QSize(16, 16))
@@ -60,21 +76,20 @@ class MainWindow(QMainWindow):
         tray_icon.activated.connect(self.on_tray_icon_click)
 
         # Set the central widget and logger
-        self.setCentralWidget(self.centralWidget)
-        self.logger = Logger(turn_off_print=False)
-        self.send_logs.connect(self.logger.insert)
-        self.centralWidget.send_logs.connect(self.logger.insert)
-        self.centralWidget.close_main_window.connect(self.close_main_window)
-        self.appshutdown.connect(self.logger.close)
-        self.appshutdown.connect(self.centralWidget.notified_app_shutting)
+        self.setCentralWidget(self.central_widget)
+
+        self.central_widget.send_logs.connect(self.context.send_logs)
+        self.central_widget.close_main_window.connect(self.close_main_window)
+        self.appshutdown.connect(self.context.handle_app_shut_down)
+        self.appshutdown.connect(self.central_widget.prepare_ui_for_shutdown)
+
+        self.context.app_shut_down_confirmed.connect(
+            lambda: QTimer.singleShot(0, self.close_down)
+        )
 
     def on_tray_icon_click(self, reason: QSystemTrayIcon.ActivationReason) -> None:
         """Handle tray icon click events. If minimized, show window as normal and bring to the font.
         If the window is already displayed, minimize the window.
-        Args:
-            reason (QSystemTrayIcon.ActivationReason): ActivationReason event when user clicks on the tray icon
-        Returns:
-            None: This function does not return a value.
         """
         if reason == QSystemTrayIcon.Trigger:
             # If the window is minimized, show it
@@ -88,9 +103,6 @@ class MainWindow(QMainWindow):
     def close_main_window(self) -> None:
         """
         Slot that shows Confirmation Dialog to ask user to confirm they want to quit the application.
-
-        Returns:
-            None: This function does not return a value.
         """
         dialog = ConfirmationDialog(
             "Close Application?",
@@ -98,21 +110,23 @@ class MainWindow(QMainWindow):
             "Close",
         )
         self.send_logs.emit("Close Application Button Clicked", "INFO", True)
-        if dialog.show():
-            self.close()
+        if dialog.exec():
+            self.prompted_user_for_close = True
+            self.appshutdown.emit()
+
         else:
             self.send_logs.emit("Cancelled Closing Application", "INFO", True)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """
         Handle the close event to emit the shutdown signals and ensure the application closes properly.
-
-        Args:
-            event (QCloseEvent): The close event triggered when the user attempts to close the window.
-
-        Returns:
-            None: This function does not return a value.
         """
-        self.send_logs.emit("Closing Application", "INFO", True)
-        self.appshutdown.emit()
-        event.accept()
+        if self.prompted_user_for_close:
+            self.send_logs.emit("Closing Application", LOGLEVEL.INFO, True)
+            event.accept()
+        else:
+            event.ignore()
+            self.close_main_window()
+
+    def close_down(self):
+        self.close()

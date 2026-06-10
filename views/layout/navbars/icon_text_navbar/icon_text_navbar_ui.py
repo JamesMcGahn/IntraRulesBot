@@ -1,4 +1,4 @@
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtWidgets import (
     QPushButton,
     QSizePolicy,
@@ -7,25 +7,19 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from components.helpers import StyleHelper, WidgetFactory
+from views.components.helpers import StyleHelper, WidgetFactory
+
+from ....base.enums import PAGE
 
 
 class IconTextNavBarView(QWidget):
     """
     Expanded side navigation bar with both icons and text buttons.
-
-    Attributes:
-        keys_btn_ict (QPushButton): Button for login credentials section.
-        rules_btn_ict (QPushButton): Button for rules section.
-        logs_btn_ict (QPushButton): Button for logs section.
-        settings_btn_ict (QPushButton): Button for settings section.
-        signout_btn_ict (QPushButton): Button for exit/sign-out section.
     """
 
+    page_change_request = Signal(object)
+
     def __init__(self):
-        """
-        Initializes the IconTextNavBarView UI, setting up the buttons and applying styles.
-        """
         super().__init__()
         self.init_ui()
         self.setObjectName("icon_text_widget_ui")
@@ -34,9 +28,6 @@ class IconTextNavBarView(QWidget):
         """
         Creates and adds the UI components, including buttons with icons and text.
         Adds shadow effects to the buttons and ensures proper layout structure.
-
-        Returns:
-            None: This function does not return a value.
         """
         self.setMaximumSize(QSize(250, 16777215))
 
@@ -50,53 +41,94 @@ class IconTextNavBarView(QWidget):
         self.icon_btn_layout = QVBoxLayout()
         self.icon_btn_layout.setObjectName("icon_btn_layout_ict")
         # Create the buttons with text and icons
-        self.keys_btn_ict = QPushButton(" Login Creds")
-        self.keys_btn_ict.setObjectName("keys_btn_ict")
-        self.icon_btn_layout.addWidget(self.keys_btn_ict)
-
-        self.rules_btn_ict = QPushButton(" Rules")
-        self.rules_btn_ict.setObjectName("rules_btn_ict")
-        self.icon_btn_layout.addWidget(self.rules_btn_ict)
-
-        self.logs_btn_ict = QPushButton(" Logs")
-        self.logs_btn_ict.setObjectName("logs_btn_ict")
-        self.icon_btn_layout.addWidget(self.logs_btn_ict)
-
         self.icon_text_nav_vlayout.addLayout(self.icon_btn_layout)
-        # Spacer to push settings and signout buttons to the bottom
-        self.verticalSpacer_3 = QSpacerItem(
-            20, 589, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
-        )
-
-        self.icon_text_nav_vlayout.addItem(self.verticalSpacer_3)
-        # Settings and sign-out buttons
-        self.settings_btn_ict = QPushButton("Settings")
-        self.settings_btn_ict.setObjectName("settings_btn_ict")
-        self.icon_text_nav_vlayout.addWidget(self.settings_btn_ict)
-
-        self.signout_btn_ict = QPushButton("Exit")
-        self.signout_btn_ict.setObjectName("signout_btn_ict")
-        self.icon_text_nav_vlayout.addWidget(self.signout_btn_ict)
-
-        icons = [
-            (self.keys_btn_ict, ":/images/key_off.png", ":/images/key_on.png"),
-            (self.rules_btn_ict, ":/images/edit_off.png", ":/images/edit_on.png"),
-            (self.logs_btn_ict, ":/images/log_off.png", ":/images/log_on.png"),
+        top_buttons = [
             (
-                self.settings_btn_ict,
+                PAGE.EDITOR,
+                " Rules",
+                self.icon_btn_layout,
+                ":/images/edit_off.png",
+                ":/images/edit_on.png",
+            ),
+            (
+                PAGE.LOG,
+                " Logs",
+                self.icon_btn_layout,
+                ":/images/log_off.png",
+                ":/images/log_on.png",
+            ),
+            (
+                PAGE.BOOKMARK,
+                " Rule Sets",
+                self.icon_btn_layout,
+                ":/images/bookmark_off.png",
+                ":/images/bookmark_on.png",
+            ),
+            (
+                PAGE.QUEUES,
+                " Queues",
+                self.icon_btn_layout,
+                ":/images/queues_off.png",
+                ":/images/queues_on.png",
+            ),
+        ]
+
+        lower_buttons = [
+            (
+                PAGE.SETTINGS,
+                "Settings",
+                self.icon_text_nav_vlayout,
                 ":/images/settings_off.png",
                 ":/images/settings_on.png",
             ),
             (
-                self.signout_btn_ict,
+                PAGE.EXIT,
+                "Exit",
+                self.icon_text_nav_vlayout,
                 ":/images/signout_off.png",
                 ":/images/signout_on.png",
             ),
         ]
-        # Apply icons and styles to each button
-        for icon in icons:
-            parent, image_loc_1, image_loc_2 = icon
+        self.set_up_page_buttons(top_buttons)
+        self.set_up_spacers()
+        self.set_up_page_buttons(lower_buttons)
+
+    def set_up_page_buttons(self, data: tuple):
+        for button_info in data:
+            parent, label_name, layout, image_loc_1, image_loc_2 = button_info
+
+            setattr(self, parent, QPushButton(label_name))
+            btn: QPushButton = getattr(self, parent)
+            btn.setObjectName(parent)
+            btn.clicked.connect(self._btn_clicked)
+            # btn.toggled.connect(self._btn_checked)
+            layout.addWidget(btn)
             WidgetFactory.create_icon(
-                parent, image_loc_1, 100, 20, True, image_loc_2, True
+                btn, image_loc_1, 100, 20, True, image_loc_2, True
             )
-            StyleHelper.drop_shadow(parent)
+            StyleHelper.drop_shadow(btn)
+
+    def set_up_spacers(self):
+        self.verticalSpacer_2 = QSpacerItem(
+            43, 589, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
+        )
+
+        self.icon_text_nav_vlayout.addItem(self.verticalSpacer_2)
+
+    def _btn_clicked(self) -> None:
+        """
+        Handles the button click event and emits the `btn_clicked_page` signal.
+        """
+        self.page_change_request.emit(PAGE(self.sender().objectName()))
+
+    def _btn_checked(self, checked: bool) -> None:
+        """
+        Handles the button toggle state and emits the `btn_checked_ict` signal.
+        """
+        if checked:
+            self.page_change_request.emit(PAGE(self.sender().objectName()))
+
+    def sync_page(self, page_name: PAGE) -> None:
+        btn = getattr(self, page_name)
+        if btn:
+            btn.setChecked(True)

@@ -1,351 +1,217 @@
-import json
-from typing import Optional, Tuple
+from __future__ import annotations
 
-from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtWidgets import QFileDialog, QLineEdit, QTextEdit
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from controllers.models import RulesPageControllers
+    from base.events import UIEvent
+
+
+from PySide6.QtCore import Signal, Slot
+from PySide6.QtWidgets import QFileDialog
 
 from base import QWidgetBase
-from components.dialogs import ErrorDialog
-from models import RulesModel
-from models.login import LoginModel
-from rulerunner import RuleRunnerThread
-from services.event_filter import EventFilter
-from services.validator import SchemaValidator
+from base.events import (
+    MonitorRowUpsertEvent,
+    MonitorSummaryUpdateEvent,
+    RulesLoadedEvent,
+    RuleRunnerStateEvent,
+    MonitorSnapShotEvent,
+)
+from controllers.rules.enums import VALIDATIONBATCHTYPE
+from views.components.toasts.qtoast.enums import QTOASTSTATUS
 
+from .rules_monitor.rule_runner_monitor import RuleRunnerMonitor
 from .rules_page_css import STYLES
 from .rules_page_ui import RulesPageView
+from .enums import RULESPAGEEVENT
+from .models import RulesPageAction
+from ...base.enums import MONITOREVENT
 
 
 class RulesPage(QWidgetBase):
     """
-    RulesPage is responsible for managing the rules displayed in the UI. It handles
+    A controller class for managing the Rules page.
+    Rules page is responsible for managing the rules displayed in the UI. It handles
     loading, validating, saving, and copying rule fields. The UI interactions are handled
     through the connected view and model components.
-
-    Signals:
-        send_rules (list): Emits the list of rules to the view.
     """
 
     send_rules = Signal(list)
+    display_validation_result = Signal(object)
+    monitor_upsert_row = Signal(object)
+    monitor_summary_update = Signal(object)
+    progress_bar_update = Signal(int, int)
+    rule_runner_state_update = Signal(object)
+    monitor_snapshot_update = Signal(object)
 
-    def __init__(self):
+    def __init__(self, controllers: RulesPageControllers):
         """
         Initialize the RulesPage, set up models, connect signals/slots, and load the saved rules.
         """
         super().__init__()
-        self.event_filter = EventFilter()
+        self.controllers = controllers
+        self.rules_controller = controllers.rules
+        self.monitor_controller = controllers.monitor
         self.setStyleSheet(STYLES)
 
         self.ui = RulesPageView()
-        self.layout = self.ui.layout()
-        self.setLayout(self.layout)
-        self.forms_errors = []
-        self.total_errors = 0
+        self.layout.addWidget(self.ui)
         self.setGraphicsEffect(None)
-        self.rulesModel = RulesModel()
 
-        self.loginModel = LoginModel()
-        self.loginModel.creds_changed.connect(self.update_credentials)
-        username, password, url, login_url = self.loginModel.get_creds()
-        self.username = username
-        self.password = password
-        self.url = url
-        self.login_url = login_url
-
-        # Signal / Slot Connections
-        self.rulesModel.data_changed.connect(self.ui.rules_changed)
-        self.ui.download.clicked.connect(self.save_rules_to_file)
-        self.ui.validate.clicked.connect(self.validate_rules)
-        self.ui.save.clicked.connect(self.save_rules_to_system)
-        self.send_rules.connect(self.ui.rules_changed)
-        self.ui.validate_open_dialog.clicked.connect(self.display_errors_dialog)
-        self.ui.copy_field.clicked.connect(self.on_copy_fields)
-        self.ui.start.clicked.connect(self.start_rule_runner)
-        self.ui.rules_form_updated.connect(self.apply_event_filter)
-
-        self.val = SchemaValidator("/schemas/main")
-        self.check_for_saved_rules()
-        
-        self.event_filter.event_changed.connect(self.focus_changed)
-        self.apply_event_filter()
         self.focus_object_name = None
         self.focus_object_text = None
 
-    @Slot()
-    def apply_event_filter(self):
-        for child in self.findChildren(QLineEdit):
-            child.setFocusPolicy(Qt.StrongFocus)
-            child.installEventFilter(self.event_filter)
+        self.rule_runner_monitor = RuleRunnerMonitor(self)
 
-    @Slot(str, str)
-    def focus_changed(self, obj_name: str, object_text: str) -> None:
-        """
-        Slot to handle when focus changes between form fields. Updates the current focused
-        object's name and text.
+        # Signal / Slot Connections
+        # Controllers connections
+        self.rules_controller.ui_event.connect(self.receive_ui_event)
+        self.monitor_controller.ui_event.connect(self.receive_ui_event)
 
-        Args:
-            obj_name (str): The name of the focused object.
-            object_text (str): The text value of the focused object.
+        self.rules_controller.display_validation_result.connect(
+            self.ui.update_form_validation
+        )
 
-        Returns:
-            None: This function does not return a value.
+        # UI Page connections
+        self.ui.rules_page_action.connect(self.handle_rule_page_action)
+        self.progress_bar_update.connect(self.ui.set_progress_bar)
+        self.send_rules.connect(self.ui.rules_changed)
+        self.rule_runner_state_update.connect(self.ui.handle_rule_runner_state_update)
 
-        """
-        field_name = obj_name.split("**")[0]
-        self.focus_object_name = field_name
-        self.focus_object_text = object_text
+        # Monitor connections
+        self.monitor_upsert_row.connect(self.rule_runner_monitor.handle_upsert_row)
+        self.monitor_summary_update.connect(
+            self.rule_runner_monitor.handle_summary_update
+        )
+        self.monitor_snapshot_update.connect(
+            self.rule_runner_monitor.update_from_snapshot
+        )
+        self.rule_runner_monitor.monitor_action.connect(self.handle_monitor_actions)
 
-    def on_copy_fields(self) -> None:
-        """
-        Copy the value from the currently focused field across all rules in the form.
-
-        Returns:
-            None: This function does not return a value.
-        """
-        if self.focus_object_name is not None and self.focus_object_text is not None:
-            rules = self.ui.get_forms()
-
-            rule_inputs = [rule.rule_inputs for rule in rules]
-            for rule in rule_inputs:
-                self.find_field_set_field(rule)
-
-    def find_field_set_field(self, rule: dict) -> None:
-        """
-        Traverse through the rule structure to find the field corresponding to the currently
-        focused field, and set its value accordingly.
-
-        Args:
-            rule (dict): A dictionary representing the rule structure with form fields.
-
-        Returns:
-            None: This function does not return a value.
-        """
-        for key, value in rule.items():
-            if key == self.focus_object_name:
-                if isinstance(value, QLineEdit) or isinstance(value, QTextEdit):
-                    value.setText(self.focus_object_text)
-            elif isinstance(value, dict):
-                self.find_field_set_field(value)
-            elif isinstance(value, list):
-                [self.find_field_set_field(item) for item in value]
-
-    @Slot(str, str, str, str)
-    def update_credentials(
-        self, username: str, password: str, url: str, login_url: str
-    ) -> None:
-        """
-        Slot to receive the user credentials used for rule processing and validation.
-
-        Args:
-            username (str): The username for login.
-            password (str): The password for login.
-            url (str): The base URL.
-            login_url (str): The URL used for login.
-
-        Returns:
-            None: This function does not return a value.
-        """
-        self.username = username
-        self.password = password
-        self.url = url
-        self.login_url = login_url
-
-    def display_errors_dialog(self) -> None:
-        """
-        Display the error dialog if validation errors are found in the form fields.
-
-        Returns:
-            None: This function does not return a value.
-        """
-        add = ErrorDialog(self.forms_errors)
-        self.ui.set_hidden_errors_dialog_btn(False)
-        add.show()
+        self.check_for_saved_rules()
 
     def check_for_saved_rules(self) -> None:
         """
         Check if there are any saved rules and emit them to the view.
-
-        Returns:
-            None: This function does not return a value.
         """
-        self.send_rules.emit(self.rulesModel.rules)
+        self.rules_controller.hydrate_rules_page()
 
-    def start_rule_runner(self) -> None:
-        """
-        Start the rule processing thread if the forms are valid and all credentials are provided.
+    # External UI Events
 
-        Returns:
-            None: This function does not return a value.
-        """
-        if self.ui.get_forms():
-
-            if None in (
-                self.username,
-                self.password,
-                self.url,
-                self.login_url,
-            ):
-                self.log_with_toast(
-                    "Missing Login Information",
-                    "Please enter the login information in the Login Information Page.",
-                    "WARN",
-                    "WARN",
-                    True,
-                    self,
-                )
-
-                return
-
-            data, _ = self.validate_rules()
-
-            if data:
-                self.rule_runner_thread = RuleRunnerThread(
-                    self.username,
-                    self.password,
-                    self.login_url,
-                    self.url,
-                    data["rules"],
-                )
-                self.rule_runner_thread.send_insert_logs.connect(self.logging)
-                self.appshutdown.connect(self.rule_runner_thread.close)
-                self.ui.stop.clicked.connect(self.rule_runner_thread.stop)
-                self.rule_runner_thread.progress.connect(self.ui.set_progress_bar)
-                self.rule_runner_thread.finished.connect(self.rule_runner_finished)
-                self.ui.start.setDisabled(True)
-                self.rule_runner_thread.start()
-    @Slot()
-    def rule_runner_finished(self):
-        """Reset Start Button to disabled False and hide the Progress Bar
-            Returns:
-                None: This function does not return a value.
-        """
-        self.ui.progress_bar.setHidden(True)
-        self.ui.start.setDisabled(False)
-
-    def validate_rules(self) -> Tuple[Optional[dict], Optional[list]]:
-        """
-        Validate all the rules in the form, returning a tuple with the valid rule data and
-        the list of rules with GUIDs.
-
-        Returns:
-            tuple: (data, rules_with_guid)
-                   - data (dict): The valid rules data.
-                   - rules_with_guid (list): The list of rules with GUIDs.
-                   Returns (None, None) if there are validation errors.
-        """
-
-        rules = []
-        rules_with_guid = []
-
-        rules_inputs = self.ui.get_forms()
-        self.total_errors = 0
-        self.forms_errors = []
-        if len(rules_inputs) == 0:
-            return (None, None)
-        self.logging("Starting Rules Validation", "INFO", True)
-        for index, rule in enumerate(rules_inputs):
-
-            error_count, form_errors, data = rule.validate_form()
-
-            rule_name = data.get("rule_name", None)
-            if not rule_name:
-                rule_name = f"Rule {index + 1}: Rule Has No Name"
-            else:
-                rule_name = f"Rule {index + 1}: {rule_name}"
-
-            self.total_errors = self.total_errors + error_count
-
-            error_dict = {"errors": form_errors, "rule_name": rule_name}
-
-            self.forms_errors.append(error_dict)
-            rules_with_guid.append(data)
-            data_copy = data.copy()
-            del data_copy["guid"]
-            rules.append(data_copy)
-
-        if self.total_errors > 0:
-            self.ui.validate_feedback.setText(f"Total Errors : {self.total_errors}")
-            self.log_with_toast(
-                "Validation Failed",
-                f"Total Errors : {self.total_errors}",
-                "WARN",
-                "WARN",
-                True,
-                self,
+    @Slot(object)
+    def receive_ui_event(self, event: UIEvent):
+        if isinstance(event.payload, RulesLoadedEvent):
+            self.ui.rules_changed(event.payload.rules)
+        elif isinstance(event.payload, MonitorRowUpsertEvent):
+            self.monitor_upsert_row.emit(event.payload.row)
+        elif isinstance(event.payload, MonitorSummaryUpdateEvent):
+            self.progress_bar_update.emit(
+                event.payload.summary.completed, event.payload.summary.total
             )
-            self.ui.validate_feedback.setIcon(self.ui.error_icon)
+            self.monitor_summary_update.emit(event.payload.summary)
+        elif isinstance(event.payload, MonitorSnapShotEvent):
+            self.monitor_snapshot_update.emit(event.payload)
+        elif isinstance(event.payload, RuleRunnerStateEvent):
+            self.rule_runner_state_update.emit(event.payload.state)
 
-            self.display_errors_dialog()
-            return (None, None)
-        else:
-            self.log_with_toast(
-                "Validation Succeeded",
-                "Validation Successful. Total Errors : 0",
-                "INFO",
-                "SUCCESS",
-                True,
-                self,
-            )
-            self.total_errors = 0
-            self.forms_errors = []
-            self.ui.set_hidden_errors_dialog_btn(True)
-            self.ui.validate_feedback.setText("No Errors Found")
-            self.ui.validate_feedback.setIcon(self.ui.no_error_icon)
-            [rule.pop("errors", None) for rule in rules]
-            data = {"rules": rules}
-            return (data, rules_with_guid)
+    def handle_monitor_actions(self, action: MONITOREVENT):
+        if action == MONITOREVENT.MONITOR_CLEAR_ALL:
+            self.monitor_controller.clear_all()
+            return
+        if action == MONITOREVENT.MONITOR_REMOVE_SUCCEED:
+            self.monitor_controller.remove_succeed()
 
-    def save_rules_to_file(self) -> None:
+    # ***********************************
+    # RULES PAGE - BUTTON ACTIONS
+
+    @Slot(object)
+    def handle_rule_page_action(self, action: RulesPageAction):
+        action_handlers = {
+            RULESPAGEEVENT.START_RUNNER: self._handle_send_validation,
+            RULESPAGEEVENT.SYS_SAVE_RULES: self._handle_send_validation,
+            RULESPAGEEVENT.VALIDATE_RULES: self._handle_send_validation,
+            RULESPAGEEVENT.USER_SAVE_RULES: self._handle_user_rules_save,
+            RULESPAGEEVENT.DELETE_ALL_RULES: self._handle_delete_all_rules,
+            RULESPAGEEVENT.DELETE_RULE: self._handle_delete_rule,
+            RULESPAGEEVENT.CLONE_RULE: self._handle_clone_rule,
+            RULESPAGEEVENT.BOOKMARK_RULES: self._handle_bookmark_rules,
+            RULESPAGEEVENT.STOP_RUNNER: self._handle_rule_runner_stop,
+            RULESPAGEEVENT.TOGGLE_DISPLAY_MONITOR: self._handle_display_monitor,
+        }
+
+        handler = action_handlers.get(action.event, None)
+        if handler is None:
+            return
+        handler(action)
+
+    # ***********************************
+    # RULE PAGE BUTTON ACTION - HANDLERS
+
+    def _handle_rule_runner_stop(self, _) -> None:
+        self.log_with_toast(
+            "Stop Runner Requested",
+            "Stopping Rule Runner.",
+            "INFO",
+            QTOASTSTATUS.WARNING,
+        )
+        self.controllers.rules.handle_stop_runner()
+
+    def _handle_display_monitor(self, _) -> None:
+        if self.rule_runner_monitor and self.rule_runner_monitor.isVisible():
+            self.rule_runner_monitor.close()
+            return
+        if self.rule_runner_monitor and not self.rule_runner_monitor.isVisible():
+            self.rule_runner_monitor.show()
+            return
+
+    def _handle_send_validation(self, action: RulesPageAction[dict]):
+        batch_type_map = {
+            RULESPAGEEVENT.VALIDATE_RULES: VALIDATIONBATCHTYPE.RUNTIME,
+            RULESPAGEEVENT.START_RUNNER: VALIDATIONBATCHTYPE.RULE_RUNNER,
+            RULESPAGEEVENT.SYS_SAVE_RULES: VALIDATIONBATCHTYPE.SYS_SAVE,
+            RULESPAGEEVENT.USER_SAVE_RULES: VALIDATIONBATCHTYPE.USER_SAVE,
+        }
+        self.controllers.rules.validate_rules(
+            action.data, batch_type=batch_type_map.get(action.event)
+        )
+
+    def _handle_bookmark_rules(self, action: RulesPageAction[object]) -> None:
+        self.controllers.rules.handle_user_book_mark(
+            action.data.get("rule_set_name"),
+            action.data.get("rule_set_description"),
+            action.data.get("rules"),
+        )
+
+    def _handle_clone_rule(self, action: RulesPageAction[str]) -> None:
+        self.rules_controller.clone_rule(action.data)
+
+    def _handle_delete_all_rules(self, _):
+        self.rules_controller.delete_all_rules()
+
+    def _handle_delete_rule(self, action: RulesPageAction[str]) -> None:
+        self.rules_controller.delete_rule(action.data)
+
+    def _handle_user_rules_save(self, action: RulesPageAction[dict]) -> None:
         """
         Save the validated rules to a JSON file selected by the user. It ensures the file has
         a `.json` extension.
-
-        Returns:
-            None: This function does not return a value.
         """
-        if self.ui.get_forms():
-            data, _ = self.validate_rules()
-            if data:
-                file_path, _ = QFileDialog.getSaveFileName(
-                    self,
-                    "Save JSON File",
-                    "",
-                    "JSON Files (*.json);;All Files (*)",
-                )
-                if file_path:
-                    # Ensure the file has a .json extension
-                    if not file_path.endswith(".json"):
-                        file_path += ".json"
+        if not action or not action.data:
+            return
+        rules = action.data
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save JSON File",
+            "",
+            "JSON Files (*.json);;All Files (*)",
+        )
+        if not file_path:
+            return
 
-                    with open(file_path, "w") as f:
-                        json.dump(data, f, indent=4)
-                    self.log_with_toast(
-                        "File Saved",
-                        "Rules JSON File Saved Successfully.",
-                        "INFO",
-                        "SUCCESS",
-                        True,
-                        self,
-                    )
-
-    def save_rules_to_system(self) -> None:
-        """
-        Save the validated rules to the internal system storage.
-
-        Returns:
-            None: This function does not return a value.
-        """
-        if self.ui.get_forms():
-            _, data = self.validate_rules()
-            if data:
-                self.rulesModel.save_rules(data)
-                self.log_with_toast(
-                    "Rules Saved",
-                    "Rules Saved Successfully.",
-                    "INFO",
-                    "SUCCESS",
-                    True,
-                    self,
-                )
-        else:
-            self.rulesModel.save_rules([])
+        # Ensure the file has a .json extension
+        if not file_path.endswith(".json"):
+            file_path += ".json"
+        self.controllers.rules.validate_rules(
+            rules, batch_type=VALIDATIONBATCHTYPE.USER_SAVE, file_path=file_path
+        )

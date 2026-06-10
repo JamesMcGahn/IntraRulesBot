@@ -1,80 +1,73 @@
-from PySide6.QtCore import Signal, Slot
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from controllers.models import SettingsPageControllers
+
+from PySide6.QtCore import Signal
 
 from base import QWidgetBase
-from models import LogSettingsModel
+from services.settings.enums import SETTINGSCATEGORIES
 
-from .settings_page_css import STYLES
-from .settings_page_ui import SettingsPageView
+from .settings_field_registry import SettingsFieldRegistry
+from .settings_page_ui import PageSettingsUI
+from .tabs import TabSettingsBase
 
 
+# TODO: Move all Settings logic to a Settings Service
 class SettingsPage(QWidgetBase):
-    send_settings = Signal(str, str, int, int, int, bool)
+    verify_response_update = Signal(str, str, bool)
+    settings_field_updated = Signal(str, str, object)
 
-    def __init__(self):
+    def __init__(self, controllers: SettingsPageControllers):
         super().__init__()
+        self.view = PageSettingsUI()
+        self.layout.addWidget(self.view)
 
-        self.setStyleSheet(STYLES)
+        self.field_registery = SettingsFieldRegistry()
+        self.controllers = controllers
+        self.settings_controller = self.controllers.settings
+        self.app_settings = self.settings_controller.get_settings()
+        self.app_verify = self.settings_controller.get_settings_validation()
 
-        self.ui = SettingsPageView()
-        self.layout = self.ui.layout()
-        self.setLayout(self.layout)
+        self.tabs_loaded = False
+        self.set_up_tabs(self.field_registery, self.app_settings, self.app_verify)
 
-        self.ui.save_btn.clicked.connect(self.save_log_settings)
+    def set_up_tabs(self, field_registry, app_settings, app_verify):
+        if self.tabs_loaded:
+            return
+        for category in app_settings.get_fields_list():
+            category_settings = getattr(app_settings, category.name, None)
+            if category_settings is None:
+                return
+            attr_name = f"{category_settings.schema_name}_tab"
+            setattr(
+                self,
+                attr_name,
+                TabSettingsBase(
+                    tab_id=SETTINGSCATEGORIES(category_settings.schema_name),
+                    settings=category_settings,
+                    settings_verify=app_verify[category_settings.schema_name],
+                    field_registry=field_registry,
+                ),
+            )
 
-        self.settings = LogSettingsModel()
-        self.settings.success.connect(self.success_save)
-        self.send_settings.connect(self.settings.save_log_settings)
+            self.view.add_page_to_tab(
+                getattr(self, attr_name), category_settings.display_name
+            )
 
-        (
-            log_file_path,
-            log_file_name,
-            log_file_max_mbs,
-            log_backup_count,
-            log_keep_files_days,
-            log_turn_off_print,
-        ) = self.settings.get_log_settings()
-        self.ui.set_log_settings(
-            log_file_path,
-            log_file_name,
-            log_file_max_mbs,
-            log_backup_count,
-            log_keep_files_days,
-            log_turn_off_print,
-        )
+            getattr(self, attr_name).settings_field_updated.connect(
+                self.settings_controller.on_field_change
+            )
 
-    def save_log_settings(self):
-        (
-            log_file_path,
-            log_file_name,
-            log_file_max_mbs,
-            log_backup_count,
-            log_keep_files_days,
-            log_turn_off_print,
-        ) = self.ui.get_log_settings()
-        self.logging("Saving Logging Settings", "INFO")
-        self.send_settings.emit(
-            log_file_path,
-            log_file_name,
-            log_file_max_mbs,
-            log_backup_count,
-            log_keep_files_days,
-            log_turn_off_print,
-        )
-
-    @Slot()
-    def success_save(self):
-        """
-        Slot that gets called when the credentials are successfully saved.
-        Displays a log message with a success toast notification.
-
-        Returns:
-            None: This function does not return a value.
-        """
-        self.log_with_toast(
-            "Log Settings Saved.",
-            "Logger Settings Saved Successful",
-            "INFO",
-            "SUCCESS",
-            True,
-            self,
-        )
+            getattr(self, attr_name).send_to_verify.connect(
+                self.settings_controller.on_field_verify
+            )
+            getattr(self, attr_name).send_batch_to_verify.connect(
+                self.settings_controller.on_batch_verify
+            )
+            self.settings_controller.verify_response_update.connect(
+                getattr(self, attr_name).on_verify_response
+            )
+        self.tabs_loaded = True

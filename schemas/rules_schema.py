@@ -3,6 +3,7 @@ RULES_SCHEMA = {
     "type": "object",
     "properties": {
         "rule_name": {"type": "string", "minLength": 5},
+        "guid": {"type": "string"},
         "rule_category": {"type": "string", "minLength": 5, "default": "Admin - Other"},
         "frequency_based": {
             "type": "object",
@@ -11,6 +12,7 @@ RULES_SCHEMA = {
             },
             "required": ["time_interval"],
         },
+        "action_based": {"$ref": "/schemas/trigger_action_based"},
         "conditions": {
             "type": "array",
             "items": {
@@ -24,9 +26,19 @@ RULES_SCHEMA = {
                         "properties": {
                             "condition_type": {
                                 "type": "string",
-                                "enum": ["stats", "state"],
+                                "enum": ["stats"],
                             },
-                            "equality_operator": {"type": "string","enum": ["Equal To","Greater Than","Greater Than or Equal To","Less Than","Less Than or Equal To","Not Equal To"]},
+                            "equality_operator": {
+                                "type": "string",
+                                "enum": [
+                                    "Equal To",
+                                    "Greater Than",
+                                    "Greater Than or Equal To",
+                                    "Less Than",
+                                    "Less Than or Equal To",
+                                    "Not Equal To",
+                                ],
+                            },
                             "equality_threshold": {"type": "number", "minimum": 1},
                             "queues_source": {
                                 "type": "string",

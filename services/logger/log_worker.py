@@ -1,11 +1,12 @@
 import logging
-import os
 import queue
 import threading
 import time
 from logging.handlers import RotatingFileHandler
 
 from PySide6.QtCore import QMutex, QMutexLocker, QThread, Signal, Slot
+
+from base.enums import LOGLEVEL
 
 
 class LogWorker(QThread):
@@ -20,7 +21,7 @@ class LogWorker(QThread):
         log_file_max_mbs (int): Maximum size of the log file in megabytes.
         log_backup_count (int): Number of backup log files to retain.
         log_keep_files_days (int): Number of days to retain log files.
-        log_turn_off_print (bool): Flag to control whether log messages should be printed to the console.
+        log_print_logs (bool): Flag to control whether log messages should be printed to the console.
         stop_event (bool): Flag to stop the logging thread.
         mutex (QMutex): Mutex to ensure thread-safe logging operations.
         logger (logging.Logger): Logger instance for handling log file writing.
@@ -38,7 +39,8 @@ class LogWorker(QThread):
         log_file_max_mbs: int,
         log_backup_count: int,
         log_keep_files_days: int,
-        log_turn_off_print: bool,
+        log_print_logs: bool,
+        log_level: str,
     ):
         """
         Initializes the LogWorker with the provided logging parameters.
@@ -58,10 +60,19 @@ class LogWorker(QThread):
         self.log_file_max_mbs = log_file_max_mbs
         self.log_backup_count = log_backup_count
         self.log_keep_files_days = log_keep_files_days
-        self.log_turn_off_print = log_turn_off_print
+        self.log_print_logs = log_print_logs
+        self.log_level = log_level
 
         self.stop_event = False
         self.mutex = QMutex()
+
+        self.LOGLEVEL_PRIORITY = {
+            LOGLEVEL.DEBUG: 10,
+            LOGLEVEL.INFO: 20,
+            LOGLEVEL.WARN: 30,
+            LOGLEVEL.ERROR: 40,
+        }
+
         self.setup_logging()
 
     def setup_logging(self) -> None:
@@ -71,6 +82,7 @@ class LogWorker(QThread):
         Returns:
             None: This function does not return a value.
         """
+
         complete_path = self.log_file_path + self.log_file_name
         self.logger = logging.getLogger(complete_path)
         self.logger.setLevel(logging.INFO)
@@ -89,10 +101,18 @@ class LogWorker(QThread):
                 logging.Formatter("%(asctime)s %(levelname)s %(message)s")
             )
             self.logger.addHandler(logfile)
+
             self.insert_log(
                 (
-                    "INFO",
-                    f"Starting LogWorker Thread: {threading.get_ident()} - {self.thread()}",
+                    LOGLEVEL.INFO,
+                    f"{self.__class__.__name__}: {threading.get_ident()} - {self.thread()}",
+                    True,
+                )
+            )
+            self.insert_log(
+                (
+                    LOGLEVEL.INFO,
+                    f"{self.__class__.__name__}: Log Level set at: {self.log_level} ",
                     True,
                 )
             )
@@ -110,13 +130,17 @@ class LogWorker(QThread):
         """
         level, msg, print_msg = log
 
-        if level not in ["INFO", "WARN", "ERROR"]:
-            level = "INFO"
+        if level not in LOGLEVEL:
+            level = LOGLEVEL.INFO
+        if self.should_log(level):
+            if print_msg and self.log_print_logs:
+                print(f"{level} - {msg}")
 
-        if print_msg and not self.log_turn_off_print:
-            print(log)
+            self.log_queue.put((level, msg))
+        return
 
-        self.log_queue.put((level, msg))
+    def should_log(self, level: LOGLEVEL) -> bool:
+        return self.LOGLEVEL_PRIORITY[level] >= self.LOGLEVEL_PRIORITY[self.log_level]
 
     def run(self) -> None:
         """
@@ -127,16 +151,17 @@ class LogWorker(QThread):
             None: This function does not return a value.
         """
         while not self.stop_event or not self.log_queue.empty():
-
             try:
                 current_time_str = time.asctime(time.localtime())
                 level, msg = self.log_queue.get(timeout=1)
                 with QMutexLocker(self.mutex):
-                    if level == "INFO":
+                    if level == LOGLEVEL.INFO:
                         self.logger.info(msg)
-                    elif level == "ERROR":
+                    elif level == LOGLEVEL.ERROR:
                         self.logger.error(msg)
-                    elif level == "WARN":
+                    elif level == LOGLEVEL.DEBUG:
+                        self.logger.debug(msg)
+                    elif level == LOGLEVEL.WARN:
                         self.logger.warning(msg)
                     self.log_signal.emit(f"{current_time_str} - {level} - {msg}")
                 self.log_queue.task_done()

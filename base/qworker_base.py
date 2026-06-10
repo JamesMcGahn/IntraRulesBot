@@ -14,15 +14,22 @@ class QWorkerBase(QObject):
         send_logs (Signal): Signal to emit log messages (message, log level, whether to print the message).
         finished (Signal): Signal emitted when the worker finishes execution.
         error (Signal): Signal emitted when an error occurs in the worker.
+        error_occurred (Signal): string text of the error
     """
 
     send_logs = Signal(str, str, bool)
     finished = Signal()
+    error_occurred = Signal(str)
     error = Signal()
+    done = Signal()
 
     def __init__(self):
         """Initialize the worker base class."""
         super().__init__()
+        from services.logger import Logger
+
+        self.logger = Logger()
+        self.send_logs.connect(self.logger.insert)
 
     def logging(self, msg, level="INFO", print_msg=True) -> None:
         """
@@ -33,6 +40,7 @@ class QWorkerBase(QObject):
             level (str): The log level (e.g., "INFO","WARN", "ERROR"). Defaults to "INFO".
             print_msg (bool): Whether to print the message. Defaults to True.
         """
+        msg = f"{self.__class__.__name__}: {msg}"
         self.send_logs.emit(msg, level, print_msg)
 
     def log_thread(self) -> None:
@@ -45,3 +53,6 @@ class QWorkerBase(QObject):
             f"Starting {self.__class__.__name__} in thread: {threading.get_ident()} - {self.thread()}",
             "INFO",
         )
+
+    def handle_child_error(self, msg):
+        self.error_occurred.emit(msg)

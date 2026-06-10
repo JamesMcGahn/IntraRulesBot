@@ -1,0 +1,19 @@
+{
+  "rules": [
+    {
+      "rule_name": "Quick Action Clicked",
+      "rule_category": "Other - Admin",
+      "action_based": {
+        "provider_category": "Intradiem",
+        "provider_instance": "Users",
+        "provider_condition": "Quick Action Button Clicked",
+        "details": {
+          "action_type": "quick_action",
+          "quick_action_name": "New Quick Action Name"
+        }
+      },
+      "conditions": [],
+      "actions": []
+    }
+  ]
+}

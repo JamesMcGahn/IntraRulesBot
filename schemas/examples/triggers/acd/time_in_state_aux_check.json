@@ -1,0 +1,28 @@
+{
+  "rules": [
+    {
+      "rule_name": "Time In State - Single State Selection With Aux Check",
+      "rule_category": "Other - Admin",
+      "action_based": {
+        "provider_category": "ACD",
+        "provider_instance": "Avaya Test ACD",
+        "provider_condition": "Time in Current State Threshold Met",
+        "details": {
+          "action_type": "time_in_state",
+          "equality_operator": "Equal To",
+          "equality_threshold": 1,
+          "user_list": "All Users",
+          "state": [
+            {
+              "state": "UNAVAILABLE",
+              "aux": "55"
+            }
+          ],
+          "aux_equality_operator": "Equal To"
+        }
+      },
+      "conditions": [],
+      "actions": []
+    }
+  ]
+}

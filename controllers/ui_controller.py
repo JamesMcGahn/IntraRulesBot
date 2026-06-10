@@ -1,0 +1,62 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from views.components.toasts.qtoast.enums import QTOASTSTATUS
+    from services.logger.adapters import LogAdapter
+    from PySide6.QtWidgets import QWidget
+
+from PySide6.QtCore import Signal, Slot
+
+from base.enums import LOGLEVEL
+from base.events import SchemaErrorDialogEvent, ToastEvent, UIEvent
+from views.base.enums import PAGE
+from views.components.dialogs import SchemaErrorDialog
+from views.components.toasts import QToast
+from views.components.toasts.qtoast.enums import QTOASTSTATUS
+from base import ControllerBase
+
+
+class UIController(ControllerBase):
+    page_changed = Signal(object)
+    side_bar_changed = Signal(bool)
+
+    def set_side_bar(self, expand: bool):
+        self.side_bar_changed.emit(expand)
+
+    def set_active_page(self, page: PAGE):
+        self.page_changed.emit(page)
+
+    def __init__(self, logger: LogAdapter):
+        super().__init__(logger)
+        self.logger = logger
+        self.parent_widget = None
+
+    def set_parent_widget(self, widget: QWidget):
+        if self.parent_widget is not None:
+            return
+        self.parent_widget = widget
+
+    @Slot(object)
+    def handle_ui_event(self, event: UIEvent):
+        e = event.payload
+        if isinstance(e, ToastEvent):
+
+            self.log_with_toast(e.title, e.message, e.log_level, e.toast_level)
+        elif isinstance(e, SchemaErrorDialogEvent):
+            SchemaErrorDialog(errors=e.errors, parent=self.parent_widget).show()
+
+    def log_with_toast(
+        self,
+        toast_title: str,
+        msg: str,
+        log_level: LOGLEVEL = LOGLEVEL.INFO,
+        toast_level: QTOASTSTATUS = QTOASTSTATUS.INFORMATION,
+        print_msg: bool = True,
+    ) -> None:
+        """
+        Logs a message with the specified log level and shows toast message.
+        """
+        self.logger(msg, log_level, print_msg)
+        QToast(self.parent_widget, toast_level, toast_title, msg).show()

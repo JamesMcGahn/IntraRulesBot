@@ -20,7 +20,6 @@ class LogsPage(QWidgetBase):
         self.setStyleSheet(STYLES)
         # Initialize the UI for the LogsPage
         self.ui = LogsPageView()
-        self.layout = self.ui.layout()
-        self.setLayout(self.layout)
+        self.layout.addWidget(self.ui)
         # Connect the logger's send_log signal to the UI's log display update method
         self.logger.send_log.connect(self.ui.update_log_display)

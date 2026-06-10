@@ -9,8 +9,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from components.buttons import GradientButton
-from components.helpers import StyleHelper, WidgetFactory
+from ....components.buttons import GradientButton
+from ....components.helpers import StyleHelper, WidgetFactory
 
 
 class HeaderNavBarView(QWidget):

@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from controllers import UIController
+
 from PySide6.QtCore import QSize, Qt, Signal, Slot
 from PySide6.QtWidgets import QPushButton, QWidget
 
@@ -8,101 +15,30 @@ from .icon_text_navbar_ui import IconTextNavBarView
 class IconTextNavBar(QWidget):
     """
     Controller class for the expanded side navigation bar with icons and text buttons.
-
-    Signals:
-        btn_checked_ict (Signal[bool, QPushButton]): Emitted when a button is toggled.
-        btn_clicked_page (Signal[QPushButton]): Emitted when a button is clicked.
-
-    Attributes:
-        ui (IconTextNavBarView): The view instance managing the UI components.
     """
 
     btn_checked_ict = Signal(bool, QPushButton)
     btn_clicked_page = Signal(QPushButton)
 
-    def __init__(self):
-        """
-        Initializes the IconTextNavBar controller. Sets up signal connections for button
-        toggles and clicks, and initializes the UI layout.
-        """
+    def __init__(self, ui_controller: UIController):
         super().__init__()
-
         self.setObjectName("icon_text_widget")
         self.setMaximumSize(QSize(250, 16777215))
         self.setAttribute(Qt.WA_StyledBackground, True)
-
         self.setStyleSheet(STYLES)
+        self.ui_controller = ui_controller
 
         self.ui = IconTextNavBarView()
         self.layout = self.ui.layout()
         self.setLayout(self.layout)
-
-        self.ui.keys_btn_ict.toggled.connect(self.btn_checked)
-        self.ui.keys_btn_ict.clicked.connect(self.btn_clicked)
-
-        self.ui.rules_btn_ict.toggled.connect(self.btn_checked)
-        self.ui.rules_btn_ict.clicked.connect(self.btn_clicked)
-
-        self.ui.logs_btn_ict.toggled.connect(self.btn_checked)
-        self.ui.logs_btn_ict.clicked.connect(self.btn_clicked)
-
-        self.ui.settings_btn_ict.toggled.connect(self.btn_checked)
-        self.ui.settings_btn_ict.clicked.connect(self.btn_clicked)
-
-        self.ui.signout_btn_ict.toggled.connect(self.btn_checked)
-        self.ui.signout_btn_ict.clicked.connect(self.btn_clicked)
-
-        self.ui.rules_btn_ict.setChecked(True)
+        self.ui.page_change_request.connect(self.ui_controller.set_active_page)
+        self.ui_controller.page_changed.connect(self.ui.sync_page)
+        self.ui_controller.side_bar_changed.connect(self.hide_nav)
         self.setHidden(True)
-
-    def btn_checked(self, checked: bool) -> None:
-        """
-        Handles the button toggle state and emits the `btn_checked_ict` signal.
-
-        Args:
-            checked (bool): The checked state of the button.
-        """
-        self.btn_checked_ict.emit(checked, self.sender())
-
-    def btn_clicked(self) -> None:
-        """
-        Handles the button click event and emits the `btn_clicked_page` signal.
-        """
-        self.btn_clicked_page.emit(self.sender())
 
     @Slot(bool)
     def hide_nav(self, checked: bool) -> None:
         """
-        Toggles the visibility of the navigation bar.
-
-        Args:
-            checked (bool): True if the navigation bar should be visible, False to hide.
-
-        Returns:
-            None: This function does not return a value.
+        Slot to hide or show the navigation bar based on the checked state.
         """
         self.setHidden(not checked)
-
-    @Slot(bool, QPushButton)
-    def btns_set_checked(self, checked: bool, btn: QPushButton) -> None:
-        """
-        Updates the checked state of the corresponding button based on the button object name.
-
-        Args:
-            checked (bool): The new checked state of the button.
-            btn (QPushButton): The button that triggered the change.
-
-        Returns:
-            None: This function does not return a value.
-        """
-        match btn.objectName():
-            case "keys_btn_ico":
-                self.ui.keys_btn_ict.setChecked(checked)
-            case "rules_btn_ico":
-                self.ui.rules_btn_ict.setChecked(checked)
-            case "logs_btn_ico":
-                self.ui.logs_btn_ict.setChecked(checked)
-            case "settings_btn_ico":
-                self.ui.settings_btn_ict.setChecked(checked)
-            case "signout_btn_ico":
-                self.ui.signout_btn_ict.setChecked(checked)
