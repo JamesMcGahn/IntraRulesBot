@@ -24,13 +24,27 @@ class BaseBuilder:
     def build_path(self, *parts) -> str:
         return ".".join(str(p) for p in parts)
 
-    def create_box(self, title: str, layout: QFormLayout) -> QFormLayout:
-        return WidgetFactory.create_form_box(
-            title,
-            layout,
-            [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
-            "#f58220",
-            drop_shadow_effect=False,
-            title_font_size=13,
-            title_color="#fcfcfc",
-        )
+    def create_box(
+        self, title: str, layout: QFormLayout, style: str = "default"
+    ) -> QFormLayout:
+
+        match style:
+            case "detail":
+                return WidgetFactory.create_form_box(
+                    title,
+                    layout,
+                    False,
+                    object_name="Condition-Stats",
+                    drop_shadow_effect=False,
+                    title_font_size=11,
+                )
+            case _:
+                return WidgetFactory.create_form_box(
+                    title,
+                    layout,
+                    [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
+                    "#f58220",
+                    drop_shadow_effect=False,
+                    title_font_size=13,
+                    title_color="#fcfcfc",
+                )

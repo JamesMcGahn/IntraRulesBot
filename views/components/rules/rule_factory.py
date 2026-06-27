@@ -25,15 +25,20 @@ from services.rules.enums import (
 )
 from .rule_widget import RuleWidget
 from .builders.general_settings_builder import GeneralSettingsBuilder
+from .builders.trigger_builder import TriggerBuilder
 
 
 # TODO: Refactor to be cleaner
 class RuleFactory:
 
     def __init__(
-        self, field_factory: RuleFieldFactory, general_builder: GeneralSettingsBuilder
+        self,
+        field_factory: RuleFieldFactory,
+        general_builder: GeneralSettingsBuilder,
+        trigger_builder: TriggerBuilder,
     ):
         self._general_builder = general_builder
+        self._trigger_builder = trigger_builder
         self._field_factory = field_factory
         self._field_index = {}
         self._rule_guid = None
@@ -72,18 +77,12 @@ class RuleFactory:
         )
         rule_layout.setContentsMargins(12, 25, 12, 5)
 
-        # self.rf_add_general_settings(rule, rule_layout)
         self._general_builder.build(rule_layout)
-        self.rf_add_trigger_settings(rule, rule_layout)
-        self.rf_add_action_based_settings(rule, rule_layout)
+        self._trigger_builder.build(rule_layout)
         self.rf_add_conditions_settings(rule, rule_layout)
         self.rf_add_actions_settings(rule, rule_layout)
 
         return rule_outter_layout
-
-    def register_field(self, widget, full_path: str):
-        self._configure_event_registration(full_path, widget)
-        self._field_registry.register_field(full_path, widget)
 
     def build_path(self, *parts) -> str:
         return ".".join(str(p) for p in parts)
@@ -117,52 +116,6 @@ class RuleFactory:
         self._field_factory.register_field(el, full_path)
 
         return el
-
-    def rf_add_trigger_settings(self, rule: Rule, rule_layout: QFormLayout) -> None:
-        """
-        Adds trigger settings fields to the form layout.
-        """
-        if isinstance(rule.trigger, FrequencyTrigger):
-            frequency_settings_layout = WidgetFactory.create_form_box(
-                "Frequency Settings",
-                rule_layout,
-                [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
-                "#f58220",
-                drop_shadow_effect=False,
-                title_font_size=13,
-                title_color="#fcfcfc",
-            )
-            freq_int = str(rule.trigger.time_interval)
-
-            self._field_factory.text_row(
-                line_edit_value=freq_int,
-                label_text="Time Interval:",
-                parent_layout=frequency_settings_layout,
-                full_path=self.build_path(
-                    "frequency_based",
-                    "time_interval",
-                ),
-            )
-
-    def rf_add_action_based_settings(
-        self, rule: Rule, rule_layout: QFormLayout
-    ) -> None:
-        """
-        Adds condition settings fields to the form layout.
-        """
-
-        if isinstance(rule.trigger, ActionTrigger):
-            action_based_settings_layout = WidgetFactory.create_form_box(
-                "Action Trigger Settings",
-                rule_layout,
-                [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
-                "#f58220",
-                drop_shadow_effect=False,
-                title_font_size=13,
-                title_color="#fcfcfc",
-            )
-
-            self.create_action_based_fields(action_based_settings_layout, rule.trigger)
 
     def rf_add_conditions_settings(self, rule: Rule, rule_layout: QFormLayout) -> None:
         """
