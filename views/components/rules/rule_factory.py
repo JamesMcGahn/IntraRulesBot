@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from services.rules.models import Rule
-    from .rule_registry import RuleFieldRegistry
+    from .fields.rule_registry import RuleFieldRegistry
     from .rule_event_filter import RuleEventFilter
+    from .fields.rule_field_factory import RuleFieldFactory
 from typing import Optional
 
 from PySide6.QtWidgets import QFormLayout, QLabel, QLineEdit, QTextEdit
@@ -28,13 +29,10 @@ from .rule_widget import RuleWidget
 # TODO: Refactor to be cleaner
 class RuleFactory:
 
-    def __init__(
-        self, field_registry: RuleFieldRegistry, event_filter: RuleEventFilter
-    ):
+    def __init__(self, field_factory: RuleFieldFactory):
+        self._field_factory = field_factory
         self._field_index = {}
         self._rule_guid = None
-        self._field_registry = field_registry
-        self._event_filter = event_filter
 
     def build(self, rule: Rule, style=""):
         layout = self.create_rule_form(rule)
@@ -58,7 +56,7 @@ class RuleFactory:
         guid_widget = QLineEdit(rule_guid)
         rule_outter_layout = QFormLayout()
 
-        self.register_field(guid_widget, "guid")
+        self._field_factory.register_field(guid_widget, "guid")
         rule_layout = WidgetFactory.create_form_box(
             f"Rule Configuration - {rules_name}",
             rule_outter_layout,
@@ -81,12 +79,6 @@ class RuleFactory:
     def register_field(self, widget, full_path: str):
         self._configure_event_registration(full_path, widget)
         self._field_registry.register_field(full_path, widget)
-
-    def _configure_event_registration(self, full_path, widget):
-        widget.setProperty("field_path", full_path)
-        widget.setProperty("rule_guid", self._rule_guid)
-        widget.setFocusPolicy(Qt.StrongFocus)
-        widget.installEventFilter(self._event_filter)
 
     def build_path(self, *parts) -> str:
         return ".".join(str(p) for p in parts)
@@ -117,7 +109,7 @@ class RuleFactory:
             parent_layout,
         )
 
-        self.register_field(el, full_path)
+        self._field_factory.register_field(el, full_path)
 
         return el
 
@@ -135,14 +127,14 @@ class RuleFactory:
             title_color="#fcfcfc",
         )
 
-        self.create_text_input_row(
+        self._field_factory.text_row(
             line_edit_value=rule.rule_name,
             label_text="Rule Name:",
             parent_layout=general_settings_layout,
             full_path="rule_name",
         )
 
-        self.create_text_input_row(
+        self._field_factory.text_row(
             line_edit_value=rule.rule_category,
             label_text="Rule Category:",
             parent_layout=general_settings_layout,
@@ -165,7 +157,7 @@ class RuleFactory:
             )
             freq_int = str(rule.trigger.time_interval)
 
-            self.create_text_input_row(
+            self._field_factory.text_row(
                 line_edit_value=freq_int,
                 label_text="Time Interval:",
                 parent_layout=frequency_settings_layout,
@@ -271,7 +263,7 @@ class RuleFactory:
 
         for initial_value, label_text, rule_input_path in action_based_fields:
 
-            self.create_text_input_row(
+            self._field_factory.text_row(
                 line_edit_value=initial_value,
                 label_text=label_text,
                 parent_layout=action_based_general_settings_layout,
@@ -306,7 +298,7 @@ class RuleFactory:
 
             for index, state in enumerate(details.state):
 
-                self.create_text_input_row(
+                self._field_factory.text_row(
                     line_edit_value=state.state,
                     label_text="State",
                     parent_layout=state_layout,
@@ -318,7 +310,7 @@ class RuleFactory:
                         "state",
                     ),
                 )
-                self.create_text_input_row(
+                self._field_factory.text_row(
                     line_edit_value=state.aux,
                     label_text="Aux",
                     parent_layout=state_layout,
@@ -400,7 +392,7 @@ class RuleFactory:
 
             for index, state in enumerate(details.state):
 
-                self.create_text_input_row(
+                self._field_factory.text_row(
                     line_edit_value=state.state,
                     label_text="State",
                     parent_layout=state_layout,
@@ -412,7 +404,7 @@ class RuleFactory:
                         "state",
                     ),
                 )
-                self.create_text_input_row(
+                self._field_factory.text_row(
                     line_edit_value=state.aux,
                     label_text="Aux",
                     parent_layout=state_layout,
@@ -455,7 +447,7 @@ class RuleFactory:
 
         for initial_value, label_text, rule_input_path in detail_fields:
 
-            self.create_text_input_row(
+            self._field_factory.text_row(
                 line_edit_value=initial_value,
                 label_text=label_text,
                 parent_layout=details_layout,
@@ -502,7 +494,7 @@ class RuleFactory:
         ]
 
         for initial_value, label_text, rule_input_path in condition_fields:
-            self.create_text_input_row(
+            self._field_factory.text_row(
                 line_edit_value=initial_value,
                 label_text=label_text,
                 parent_layout=condition_general_settings_layout,
@@ -551,7 +543,7 @@ class RuleFactory:
 
             for initial_value, label_text, rule_input_path in detail_fields:
 
-                self.create_text_input_row(
+                self._field_factory.text_row(
                     line_edit_value=initial_value,
                     label_text=label_text,
                     parent_layout=details_layout,
@@ -587,7 +579,7 @@ class RuleFactory:
             (action.provider_condition, "Provider Instance:", "provider_condition"),
         ]
         for initial_value, label_text, rule_input_path in action_fields:
-            self.create_text_input_row(
+            self._field_factory.text_row(
                 line_edit_value=initial_value,
                 label_text=label_text,
                 parent_layout=action_general_settings_layout,
@@ -617,7 +609,7 @@ class RuleFactory:
             ]
 
             for initial_value, label_text, rule_input_path in detail_fields:
-                self.create_text_input_row(
+                self._field_factory.text_row(
                     line_edit_value=initial_value,
                     label_text=label_text,
                     parent_layout=details_layout,
@@ -641,7 +633,7 @@ class RuleFactory:
                             """)
             details_layout.addRow(email_body_label, email_body_input)
 
-            self.register_field(
+            self._field_factory.register_field(
                 email_body_input,
                 self.build_path(
                     "actions",

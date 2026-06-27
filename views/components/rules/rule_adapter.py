@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from services.validation.models import SchemaError
-    from .rule_registry import RuleFieldRegistry
+    from .fields.rule_registry import RuleFieldRegistry
 
 
 from PySide6.QtWidgets import QLineEdit, QTextEdit, QWidget
