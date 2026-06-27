@@ -3,6 +3,7 @@ from .rule_factory import RuleFactory
 from .rule_widget import RuleWidget
 from .rule_registry import RuleFieldRegistry
 from .rule_event_filter import RuleEventFilter
+from .rule_adapter_factory import RuleAdapterFactory
 
 __all__ = [
     "RuleWidget",
@@ -10,4 +11,5 @@ __all__ = [
     "RuleFactory",
     "RuleFieldRegistry",
     "RuleEventFilter",
+    "RuleAdapterFactory",
 ]

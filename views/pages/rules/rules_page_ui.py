@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from controllers.rules.models import ValidationRulesResult
     from services.rules.models import Rule
-
+    from ...components.rules import RuleAdapter
 from typing import List
 
 from PySide6.QtCore import QSize, Qt, Signal, Slot, QTimer
@@ -26,8 +26,7 @@ from views.components.helpers import StyleHelper, WidgetFactory
 from views.components.layouts import ScrollArea, StackedFormWidget
 
 from ...components.dialogs import RuleSetDialog, SchemaErrorDialog
-from ...components.rules import RuleAdapter, RuleEventFilter, RuleFactory
-from ...components.rules.rule_registry import RuleFieldRegistry
+from ...components.rules import RuleAdapterFactory, RuleEventFilter
 from services.rule_runner.enums.rule_runner_lifecycle import RULERUNNERLIFECYCLE
 from .enums.rules_page_event import RULESPAGEEVENT
 from .models import RulesPageAction
@@ -606,16 +605,9 @@ class RulesPageView(QWidget):
         """
         if rules:
             self.stacked_widget.remove_by_name("No-Rules-Widget")
+            rule_factory = RuleAdapterFactory(self.event_filter)
             for rule in rules:
-                registry = RuleFieldRegistry()
-                widget = RuleFactory(registry, self.event_filter).build(
-                    rule, "margin-top: 0px; padding-left: 0px;padding-top: 0px;"
-                )
-                adapter = RuleAdapter(
-                    guid=rule.guid,
-                    widget=widget,
-                    field_registry=registry,
-                )
+                adapter = rule_factory.build(rule)
                 self.stacked_widget.add_form(adapter)
             if self.previous_guid:
                 index = self.stacked_widget.get_widget_index_by_guid(self.previous_guid)
