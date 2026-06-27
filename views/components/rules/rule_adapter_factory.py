@@ -11,6 +11,7 @@ from .rule_factory import RuleFactory
 from .rule_adapter import RuleAdapter
 from .field_converters import FIELD_CONVERTERS
 from .fields.rule_field_factory import RuleFieldFactory
+from .builders.general_settings_builder import GeneralSettingsBuilder
 
 
 class RuleAdapterFactory:
@@ -22,7 +23,10 @@ class RuleAdapterFactory:
         registry = RuleFieldRegistry()
         field_factory = RuleFieldFactory(registry, self.event_filter)
         field_factory.rule_guid = rule.guid
-        widget = RuleFactory(field_factory).build(
+
+        general_builder = GeneralSettingsBuilder(field_factory, rule)
+
+        widget = RuleFactory(field_factory, general_builder).build(
             rule, "margin-top: 0px; padding-left: 0px;padding-top: 0px;"
         )
         return RuleAdapter(

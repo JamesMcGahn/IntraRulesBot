@@ -24,12 +24,16 @@ from services.rules.enums import (
     CONDITIONDETAILTYPE,
 )
 from .rule_widget import RuleWidget
+from .builders.general_settings_builder import GeneralSettingsBuilder
 
 
 # TODO: Refactor to be cleaner
 class RuleFactory:
 
-    def __init__(self, field_factory: RuleFieldFactory):
+    def __init__(
+        self, field_factory: RuleFieldFactory, general_builder: GeneralSettingsBuilder
+    ):
+        self._general_builder = general_builder
         self._field_factory = field_factory
         self._field_index = {}
         self._rule_guid = None
@@ -68,7 +72,8 @@ class RuleFactory:
         )
         rule_layout.setContentsMargins(12, 25, 12, 5)
 
-        self.rf_add_general_settings(rule, rule_layout)
+        # self.rf_add_general_settings(rule, rule_layout)
+        self._general_builder.build(rule_layout)
         self.rf_add_trigger_settings(rule, rule_layout)
         self.rf_add_action_based_settings(rule, rule_layout)
         self.rf_add_conditions_settings(rule, rule_layout)
@@ -112,34 +117,6 @@ class RuleFactory:
         self._field_factory.register_field(el, full_path)
 
         return el
-
-    def rf_add_general_settings(self, rule: Rule, rule_layout: QFormLayout) -> None:
-        """
-        Adds general settings fields to the form layout.
-        """
-        general_settings_layout = WidgetFactory.create_form_box(
-            "General Settings",
-            rule_layout,
-            [(0.05, "#F2F3F2"), (0.50, "#DEDEDE"), (1, "#DEDEDE")],
-            "#f58220",
-            drop_shadow_effect=False,
-            title_font_size=13,
-            title_color="#fcfcfc",
-        )
-
-        self._field_factory.text_row(
-            line_edit_value=rule.rule_name,
-            label_text="Rule Name:",
-            parent_layout=general_settings_layout,
-            full_path="rule_name",
-        )
-
-        self._field_factory.text_row(
-            line_edit_value=rule.rule_category,
-            label_text="Rule Category:",
-            parent_layout=general_settings_layout,
-            full_path="rule_category",
-        )
 
     def rf_add_trigger_settings(self, rule: Rule, rule_layout: QFormLayout) -> None:
         """
