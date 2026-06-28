@@ -45,7 +45,9 @@ class ActionTriggerDetailsBuilder(BaseBuilder):
         }
 
         self._build_general_settings(self.rule.trigger, trigger_layout)
-        details_layout = self._build_detail_box(self.rule.trigger, parent_layout)
+        details_layout = self.build_detail_box(
+            self.rule.trigger.provider_condition, parent_layout
+        )
         self._dispatch_build_details(self.rule.trigger.details, details_layout)
 
     def _dispatch_build_details(
@@ -63,36 +65,21 @@ class ActionTriggerDetailsBuilder(BaseBuilder):
             DetailsRow(
                 trigger.provider_category,
                 "Provider Category:",
-                "provider_category",
+                self.build_path("action_based", "provider_category"),
             ),
             DetailsRow(
                 trigger.provider_instance,
                 "Provider Instance:",
-                "provider_instance",
+                self.build_path("action_based", "provider_instance"),
             ),
             DetailsRow(
                 trigger.provider_condition,
                 "Provider Condition:",
-                "provider_condition",
+                self.build_path("action_based", "provider_condition"),
             ),
         ]
-        for field in action_based_fields:
 
-            self.field_factory.text_row(
-                line_edit_value=field.initial_value,
-                label_text=field.label_text,
-                parent_layout=parent_layout,
-                full_path=self.build_path(
-                    "action_based",
-                    field.rule_input_path,
-                ),
-            )
-
-    def _build_detail_box(
-        self, trigger: ActionTrigger, parent_layout: QFormLayout
-    ) -> QFormLayout:
-        title = trigger.provider_condition
-        return self.create_box(f"{title} Settings", parent_layout, "detail")
+        self.build_text_rows(action_based_fields, parent_layout)
 
     def _build_details_state(
         self, states: list[AgentState], parent_layout: QFormLayout
@@ -137,35 +124,21 @@ class ActionTriggerDetailsBuilder(BaseBuilder):
             DetailsRow(
                 details.action_type,
                 "Action Type:",
-                "action_type",
+                self.build_path("action_based", "details", "action_type"),
             ),
             DetailsRow(
                 details.equality_operator,
                 "Equality Operator:",
-                "equality_operator",
+                self.build_path("action_based", "details", "equality_operator"),
             ),
             DetailsRow(
                 details.user_list,
                 "User List:",
-                "user_list",
+                self.build_path("action_based", "details", "user_list"),
             ),
         ]
-        self._build_detail_text_rows(detail_fields, parent_layout)
 
-    def _build_detail_text_rows(
-        self, detail_fields: list[DetailsRow], parent_layout: QFormLayout
-    ):
-        for field in detail_fields:
-            self.field_factory.text_row(
-                line_edit_value=field.initial_value,
-                label_text=field.label_text,
-                parent_layout=parent_layout,
-                full_path=self.build_path(
-                    "action_based",
-                    "details",
-                    field.rule_input_path,
-                ),
-            )
+        self.build_text_rows(detail_fields, parent_layout)
 
     def _build_acd_user_logged_in(
         self, details: AgentLoggedInDetails, parent_layout: QFormLayout
@@ -175,15 +148,15 @@ class ActionTriggerDetailsBuilder(BaseBuilder):
             DetailsRow(
                 details.action_type,
                 "Action Type:",
-                "action_type",
+                self.build_path("action_based", "details", "action_type"),
             ),
             DetailsRow(
                 details.user_list,
                 "User List:",
-                "user_list",
+                self.build_path("action_based", "details", "user_list"),
             ),
         ]
-        self._build_detail_text_rows(detail_fields, parent_layout)
+        self.build_text_rows(detail_fields, parent_layout)
 
     def _build_acd_user_logged_out(
         self, details: AgentLoggedOutDetails, parent_layout: QFormLayout
@@ -192,15 +165,15 @@ class ActionTriggerDetailsBuilder(BaseBuilder):
             DetailsRow(
                 details.action_type,
                 "Action Type:",
-                "action_type",
+                self.build_path("action_based", "details", "action_type"),
             ),
             DetailsRow(
                 details.user_list,
                 "User List:",
-                "user_list",
+                self.build_path("action_based", "details", "user_list"),
             ),
         ]
-        self._build_detail_text_rows(detail_fields, parent_layout)
+        self.build_text_rows(detail_fields, parent_layout)
 
     def _build_intra_quick_action(
         self, details: IntraQuickActionClicked, parent_layout: QFormLayout
@@ -209,15 +182,15 @@ class ActionTriggerDetailsBuilder(BaseBuilder):
             DetailsRow(
                 details.action_type,
                 "Action Type:",
-                "action_type",
+                self.build_path("action_based", "details", "action_type"),
             ),
             DetailsRow(
                 details.quick_action_name,
                 "Quick Action Name:",
-                "quick_action_name",
+                self.build_path("action_based", "details", "quick_action_name"),
             ),
         ]
-        self._build_detail_text_rows(detail_fields, parent_layout)
+        self.build_text_rows(detail_fields, parent_layout)
 
     def _build_acd_time_in_state(
         self, details: AgentTimeInStateDetails, parent_layout: QFormLayout
@@ -227,27 +200,27 @@ class ActionTriggerDetailsBuilder(BaseBuilder):
             DetailsRow(
                 details.action_type,
                 "Action Type:",
-                "action_type",
+                self.build_path("action_based", "details", "action_type"),
             ),
             DetailsRow(
                 details.equality_operator,
                 "Equality Operator:",
-                "equality_operator",
+                self.build_path("action_based", "details", "equality_operator"),
             ),
             DetailsRow(
                 details.aux_equality_operator,
                 "Aux Equality Operator:",
-                "aux_equality_operator",
+                self.build_path("action_based", "details", "aux_equality_operator"),
             ),
             DetailsRow(
                 str(details.equality_threshold),
                 "Equality Threshold:",
-                "equality_threshold",
+                self.build_path("action_based", "details", "equality_threshold"),
             ),
             DetailsRow(
                 details.user_list,
                 "User List:",
-                "user_list",
+                self.build_path("action_based", "details", "user_list"),
             ),
         ]
-        self._build_detail_text_rows(detail_fields, parent_layout)
+        self.build_text_rows(detail_fields, parent_layout)

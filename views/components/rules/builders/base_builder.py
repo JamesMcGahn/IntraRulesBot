@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from services.rules.models import Rule
     from PySide6.QtWidgets import QFormLayout
     from ..fields.rule_field_factory import RuleFieldFactory
-
+    from .models.details_row import DetailsRow
 from views.components.helpers.widget_factory import WidgetFactory
 
 
@@ -23,6 +23,20 @@ class BaseBuilder:
 
     def build_path(self, *parts) -> str:
         return ".".join(str(p) for p in parts)
+
+    def build_text_rows(
+        self, detail_fields: list[DetailsRow], parent_layout: QFormLayout
+    ):
+        for field in detail_fields:
+            self.field_factory.text_row(
+                line_edit_value=field.initial_value,
+                label_text=field.label_text,
+                parent_layout=parent_layout,
+                full_path=field.rule_input_path,
+            )
+
+    def build_detail_box(self, title: str, parent_layout: QFormLayout) -> QFormLayout:
+        return self.create_box(f"{title} Settings", parent_layout, "detail")
 
     def create_box(
         self, title: str, layout: QFormLayout, style: str = "default"
