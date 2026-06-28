@@ -4,9 +4,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from services.validation.models import SchemaError
-    from .rule_registry import RuleFieldRegistry
+    from ..fields.rule_registry import RuleFieldRegistry
 
-from typing import Tuple
 
 from PySide6.QtWidgets import QLineEdit, QTextEdit, QWidget
 
@@ -26,7 +25,7 @@ class RuleAdapter:
         guid: str,
         widget: QWidget,
         field_registry: RuleFieldRegistry,
-        int_keys: Tuple[str] = ("time_interval", "equality_threshold"),
+        field_converters: object,
     ):
         super().__init__()
 
@@ -34,7 +33,7 @@ class RuleAdapter:
 
         self._widget = widget
         self._field_registry = field_registry
-        self.int_keys = int_keys
+        self.field_converters = field_converters
 
     @property
     def field_registry(self) -> RuleFieldRegistry:
@@ -112,7 +111,7 @@ class RuleAdapter:
 
         for error in rule_errors:
             element = get_value_from_path(rule_imports, error.error_path)
-            if element is not None:
+            if element is not None and isinstance(element, QWidget):
                 set_sheet(element)
 
     def to_validation_dict(self) -> dict:
@@ -125,27 +124,25 @@ class RuleAdapter:
         Returns:
             dict: A dictionary representing the form input data.
         """
-        int_keys = self.int_keys
 
-        def make_rule_dict(field_refs, int_keys):
+        def make_rule_dict(field_refs):
             x = {}
             if isinstance(field_refs, ValidationError):
                 return
             for key, field in field_refs.items():
                 if isinstance(field, dict):
-                    x[key] = make_rule_dict(field, int_keys)
+                    x[key] = make_rule_dict(field)
                 elif isinstance(field, list):
-                    x[key] = [make_rule_dict(item, int_keys) for item in field]
+                    x[key] = [make_rule_dict(item) for item in field]
                 else:
-                    if key in int_keys:
-                        if field.text().isdigit():
-                            x[key] = int(field.text())
+                    if isinstance(field, QLineEdit):
+                        converter = self.field_converters.get(key)
+                        if converter:
+                            x[key] = converter(field.text())
                         else:
                             x[key] = field.text()
-                    elif isinstance(field, QLineEdit):
-                        x[key] = field.text()
                     elif isinstance(field, QTextEdit):
                         x[key] = field.toPlainText()
             return x
 
-        return make_rule_dict(self.field_map, int_keys)
+        return make_rule_dict(self.field_map)

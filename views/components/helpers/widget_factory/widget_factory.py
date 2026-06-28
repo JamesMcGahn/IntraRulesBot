@@ -1,6 +1,13 @@
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QColor, QIcon, QValidator
-from PySide6.QtWidgets import QFormLayout, QGroupBox, QLabel, QLineEdit, QSizePolicy
+from PySide6.QtWidgets import (
+    QFormLayout,
+    QGroupBox,
+    QLabel,
+    QLineEdit,
+    QSizePolicy,
+    QTextEdit,
+)
 
 from ...boxes import GradientGroupBox
 
@@ -108,6 +115,31 @@ class WidgetFactory:
         label.setStyleSheet("background-color: transparent; color; black;")
         parent_layout.addRow(label, el)
         return el
+
+    def create_form_text_edit_row(
+        text_edit_value: str,
+        label_text: str,
+        parent_layout: QFormLayout,
+        background_color="#FCFCFC",
+        rule_input_path: str = "",
+        guid: str = "",
+    ):
+        objectID = f"{rule_input_path}**{guid}"
+
+        field = QTextEdit(text_edit_value)
+        field.setStyleSheet(f"""background-color: {background_color};
+                            color: black;
+                            border-radius:3px;
+                            font-size: 1em;
+                            padding 8px;
+                            padding-left: 10px;
+                            """)
+        field.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        field.setObjectName(objectID)
+        label = QLabel(label_text)
+        label.setStyleSheet("background-color: transparent; color; black;")
+        parent_layout.addRow(label, field)
+        return field
 
     @staticmethod
     def create_icon(

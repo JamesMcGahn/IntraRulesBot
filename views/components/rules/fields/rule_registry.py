@@ -1,4 +1,4 @@
-from ...base import FieldRegistry
+from ....base import FieldRegistry
 
 
 class RuleFieldRegistry(FieldRegistry):
