@@ -124,6 +124,11 @@ class RuleAdapter:
         Returns:
             dict: A dictionary representing the form input data.
         """
+        if "conditions" not in self.field_map:
+            self.field_map["conditions"] = []
+
+        if "actions" not in self.field_map:
+            self.field_map["actions"] = []
 
         def make_rule_dict(field_refs):
             x = {}
