@@ -15,6 +15,7 @@ from .builders.general_settings_builder import GeneralSettingsBuilder
 from .builders.trigger_builder import TriggerBuilder
 from .builders.action_trigger_details_builder import ActionTriggerDetailsBuilder
 from .builders.conditions_builder import ConditionsBuilder
+from .builders.actions_builder import ActionsBuilder
 
 
 class RuleAdapterFactory:
@@ -31,8 +32,13 @@ class RuleAdapterFactory:
         trigger_details_builder = ActionTriggerDetailsBuilder(field_factory, rule)
         trigger_builder = TriggerBuilder(field_factory, rule, trigger_details_builder)
         condition_builder = ConditionsBuilder(field_factory, rule)
+        action_builder = ActionsBuilder(field_factory, rule)
         widget = RuleFactory(
-            field_factory, general_builder, trigger_builder, condition_builder
+            field_factory,
+            general_builder,
+            trigger_builder,
+            condition_builder,
+            action_builder,
         ).build(rule, "margin-top: 0px; padding-left: 0px;padding-top: 0px;")
         return RuleAdapter(
             guid=rule.guid,

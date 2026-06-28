@@ -67,3 +67,17 @@ class RuleFieldFactory:
         self.register_field(el, full_path)
 
         return el
+
+    def text_edit_row(
+        self,
+        text_edit_value: str,
+        label_text: str,
+        parent_layout: QFormLayout,
+        full_path: str,
+    ) -> QLineEdit:
+        el = WidgetFactory.create_form_text_edit_row(
+            text_edit_value, label_text, parent_layout
+        )
+        self.register_field(el, full_path)
+
+        return el
