@@ -26,7 +26,8 @@ from views.components.helpers import StyleHelper, WidgetFactory
 from views.components.layouts import ScrollArea, StackedFormWidget
 
 from ...components.dialogs import RuleSetDialog, SchemaErrorDialog
-from ...components.rules import RuleAdapterFactory, RuleEventFilter
+from ...components.rules import RuleEventFilter
+from ...components.rules.adapters import RuleAdapterFactory
 from services.rule_runner.enums.rule_runner_lifecycle import RULERUNNERLIFECYCLE
 from .enums.rules_page_event import RULESPAGEEVENT
 from .models import RulesPageAction

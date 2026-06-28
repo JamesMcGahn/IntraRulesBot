@@ -3,19 +3,21 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .fields.rule_registry import RuleFieldRegistry
-    from .rule_event_filter import RuleEventFilter
+    from ..fields.rule_registry import RuleFieldRegistry
+    from ..rule_event_filter import RuleEventFilter
     from services.rules.models import Rule
-from .fields.rule_registry import RuleFieldRegistry
-from .rule_factory import RuleFactory
+from ..fields.rule_registry import RuleFieldRegistry
+from ..builders.rule_factory import RuleFactory
 from .rule_adapter import RuleAdapter
 from .field_converters import FIELD_CONVERTERS
-from .fields.rule_field_factory import RuleFieldFactory
-from .builders.general_settings_builder import GeneralSettingsBuilder
-from .builders.trigger_builder import TriggerBuilder
-from .builders.action_trigger_details_builder import ActionTriggerDetailsBuilder
-from .builders.conditions_builder import ConditionsBuilder
-from .builders.actions_builder import ActionsBuilder
+from ..fields.rule_field_factory import RuleFieldFactory
+from ..builders import (
+    GeneralSettingsBuilder,
+    TriggerBuilder,
+    ActionTriggerDetailsBuilder,
+    ConditionsBuilder,
+    ActionsBuilder,
+)
 
 
 class RuleAdapterFactory:

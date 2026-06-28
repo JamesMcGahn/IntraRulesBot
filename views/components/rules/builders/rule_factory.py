@@ -4,17 +4,17 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from services.rules.models import Rule
-    from .fields.rule_field_factory import RuleFieldFactory
+    from ..fields.rule_field_factory import RuleFieldFactory
 
 from PySide6.QtWidgets import QFormLayout, QLineEdit
 
 from views.components.helpers.widget_factory import WidgetFactory
 
-from .rule_widget import RuleWidget
-from .builders.general_settings_builder import GeneralSettingsBuilder
-from .builders.trigger_builder import TriggerBuilder
-from .builders.conditions_builder import ConditionsBuilder
-from .builders.actions_builder import ActionsBuilder
+from ..rule_widget import RuleWidget
+from .general_settings_builder import GeneralSettingsBuilder
+from .trigger_builder import TriggerBuilder
+from .conditions_builder import ConditionsBuilder
+from .actions_builder import ActionsBuilder
 
 
 class RuleFactory:
