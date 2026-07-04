@@ -59,12 +59,26 @@ class TriggerQuickActionSelectors:
     quick_action_icon_container: str
 
 
+@dataclass()
+class TriggerSegementOccurrence:
+    segment_code_dropdown_arrow: str
+    segment_code_dropdown_items: str
+    lead_time_input: str
+    lookup_operator_dropdown_arrow: str
+    lookup_operator_dropdown_items: str
+    segment_lookup_dropdown_arrow: str
+    segment_lookup_dropdown_items: str
+    user_list_arrow: str
+    user_list_items: str
+
+
 TriggerDetailSelectors = (
     TriggerStateChangedSelectors
     | TriggerUserLoggedInSelectors
     | TriggerUserLoggedOutSelectors
     | TriggerTimeInStateSelectors
     | TriggerQuickActionSelectors
+    | TriggerSegementOccurrence
 )
 
 

@@ -10,6 +10,7 @@ from .trigger_action_user_logged_in_executor import TriggerActionUserLoggedInExe
 from .trigger_action_user_logged_out_executor import TriggerActionUserLoggedOutExecutor
 from .trigger_action_time_in_state_executor import TriggerTimeInStateExecutor
 from .trigger_action_quick_action_executor import TriggerQuickActionExecutor
+from .trigger_action_segement_occurrence import TriggerActionSegementOccurrenceExecutor
 from ....rules.enums import ACTIONTRIGGERDETAILTYPE
 from ...enums import EXECUTORSCOPE
 
@@ -31,6 +32,7 @@ class TriggerActionBasedExectuor(BaseScopeChildExecutor):
             ACTIONTRIGGERDETAILTYPE.USER_LOGGED_OUT: TriggerActionUserLoggedOutExecutor,
             ACTIONTRIGGERDETAILTYPE.TIME_IN_STATE: TriggerTimeInStateExecutor,
             ACTIONTRIGGERDETAILTYPE.QUICK_ACTION: TriggerQuickActionExecutor,
+            ACTIONTRIGGERDETAILTYPE.SEGMENT_OCCURRENCE: TriggerActionSegementOccurrenceExecutor,
         }
 
     def set_provider_category(
@@ -64,7 +66,6 @@ class TriggerActionBasedExectuor(BaseScopeChildExecutor):
         Selects the provider condition for the specified condition.
         """
         self.logging("Selecting condition selection for Action Trigger", "INFO")
-
         self.form_port.select_exact_item_from_list(
             ctx.profile.selectors.triggers.common.provider_condition_items,
             ctx.rule.trigger.provider_condition,

@@ -63,7 +63,7 @@ class RuleFieldFactory:
             label_text,
             parent_layout,
         )
-
+        el.setMinimumWidth(250)
         self.register_field(el, full_path)
 
         return el

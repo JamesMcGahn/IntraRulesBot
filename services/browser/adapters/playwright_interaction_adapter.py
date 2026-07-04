@@ -115,6 +115,10 @@ class PlaywrightInteractionAdapter:
         text = str(text_to_select).strip()
 
         items = self.container.locator(selector)
+        items.wait_for(
+            state="visible",
+            timeout=timeout,
+        )
         matching_item = items.filter(has_text=text).first
 
         matching_item.click(timeout=timeout)

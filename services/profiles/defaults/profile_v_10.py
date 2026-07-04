@@ -26,6 +26,7 @@ from ..models import (
     TriggerTimeInStateSelectors,
     TriggerUserLoggedInSelectors,
     TriggerUserLoggedOutSelectors,
+    TriggerSegementOccurrence,
 )
 
 v_10 = BrowserProfile(
@@ -129,6 +130,17 @@ v_10 = BrowserProfile(
                 ACTIONTRIGGERDETAILTYPE.QUICK_ACTION: TriggerQuickActionSelectors(
                     quick_action_name_input='[id*="overlayContent_triggerParameters_ctl05"]',
                     quick_action_icon_container="""[id*="overlayContent_triggerParameters_ctl12"] > div""",
+                ),
+                ACTIONTRIGGERDETAILTYPE.SEGMENT_OCCURRENCE: TriggerSegementOccurrence(
+                    segment_code_dropdown_arrow='[id*="triggerParameters_segmentCodesSelectValue_Arrow"]',
+                    segment_code_dropdown_items='//*[contains(@id, "triggerParameters_segmentCodesSelectValue_DropDown")]/div/ul/li',
+                    lead_time_input='[id="ctl00_overlayContent_triggerParameters_ctl13"]',
+                    lookup_operator_dropdown_arrow='[id*="triggerParameters_selectBeforeAfter_Arrow"]',
+                    lookup_operator_dropdown_items='//*[contains(@id, "triggerParameters_selectBeforeAfter_DropDown")]/div/ul/li',
+                    segment_lookup_dropdown_arrow='[id*="triggerParameters_selectSegmentStartEnd_Arrow"]',
+                    segment_lookup_dropdown_items='//*[contains(@id, "triggerParameters_selectSegmentStartEnd_DropDown")]/div/ul/li',
+                    user_list_arrow='[id*="user_filter_static_id_Arrow"]',
+                    user_list_items='//*[contains(@id, "user_filter_static_id_DropDown")]/div/ul/li',
                 ),
             },
         ),

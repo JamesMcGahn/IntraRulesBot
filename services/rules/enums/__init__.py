@@ -8,6 +8,8 @@ from .stats_equality_operator import STATSEQUALITYOPERATOR
 from .queues_source import QUEUESSOURCE
 from .action_category import ACTIONCATEGORY
 from .action_detail_type import ACTIONDETAILTYPE
+from .lookup_operator import LOOKUPOPERATOR
+from .segment_lookup import SEGMENTLOOKUP
 
 __all__ = [
     "RULECATEGORY",
@@ -20,4 +22,6 @@ __all__ = [
     "QUEUESSOURCE",
     "ACTIONCATEGORY",
     "ACTIONDETAILTYPE",
+    "LOOKUPOPERATOR",
+    "SEGMENTLOOKUP",
 ]

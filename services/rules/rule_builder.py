@@ -15,6 +15,7 @@ from .models.triggers.action_based import (
     AgentLoggedOutDetails,
     AgentTimeInStateDetails,
     IntraQuickActionClicked,
+    SegmentOccurrenceDetails,
 )
 from .models.agent_state import AgentState
 
@@ -39,6 +40,7 @@ class RuleBuilder(ServiceBase):
             ACTIONTRIGGERDETAILTYPE.USER_LOGGED_IN: self._build_action_trigger_user_logged_in,
             ACTIONTRIGGERDETAILTYPE.USER_LOGGED_OUT: self._build_action_trigger_user_logged_out,
             ACTIONTRIGGERDETAILTYPE.QUICK_ACTION: self._build_action_trigger_quick_action,
+            ACTIONTRIGGERDETAILTYPE.SEGMENT_OCCURRENCE: self._build_action_trigger_segment_occurrence,
         }
         self.CONDITION_DETAIL_BUILDERS = {"stats": self._build_stats_details}
 
@@ -149,6 +151,16 @@ class RuleBuilder(ServiceBase):
         return IntraQuickActionClicked(
             action_type=ACTIONTRIGGERDETAILTYPE(data_detail["action_type"]),
             quick_action_name=data_detail["quick_action_name"],
+        )
+
+    def _build_action_trigger_segment_occurrence(self, data_detail):
+        return SegmentOccurrenceDetails(
+            action_type=ACTIONTRIGGERDETAILTYPE(data_detail["action_type"]),
+            segment_codes=data_detail["segment_codes"],
+            lookup_operator=data_detail["lookup_operator"],
+            segment_lookup=data_detail["segment_lookup"],
+            lead_time=data_detail["lead_time"],
+            user_list=data_detail["user_list"],
         )
 
     # CONDITIONS

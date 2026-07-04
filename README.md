@@ -227,6 +227,8 @@ pyside6-deploy
   - Intradiem
     - Users
     - Quick Action Clicked
+  - WFM
+    - Segment Occurrence
 
 ### Condition:
 

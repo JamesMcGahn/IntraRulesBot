@@ -26,6 +26,7 @@ from .trigger_selectors import (
     TriggerTimeInStateSelectors,
     TriggerUserLoggedInSelectors,
     TriggerUserLoggedOutSelectors,
+    TriggerSegementOccurrence,
 )
 
 __all__ = [
@@ -43,6 +44,7 @@ __all__ = [
     "TriggerUserLoggedInSelectors",
     "TriggerUserLoggedOutSelectors",
     "TriggerQuickActionSelectors",
+    "TriggerSegementOccurrence",
     "ConditionSelectors",
     "ConditionCommonSelectors",
     "ConditionStatsSelectors",

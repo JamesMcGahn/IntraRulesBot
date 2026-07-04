@@ -4,6 +4,7 @@ from .agent_user_logged_in import AgentLoggedInDetails
 from .agent_user_logged_out import AgentLoggedOutDetails
 from .agent_time_in_state import AgentTimeInStateDetails
 from .intra_quick_action_clicked import IntraQuickActionClicked
+from .segement_occurance import SegmentOccurrenceDetails
 
 __all__ = [
     "ActionTrigger",
@@ -12,4 +13,5 @@ __all__ = [
     "AgentLoggedOutDetails",
     "AgentTimeInStateDetails",
     "IntraQuickActionClicked",
+    "SegmentOccurrenceDetails",
 ]

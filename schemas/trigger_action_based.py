@@ -2,7 +2,7 @@ TRIGGER_ACTION_BASED = {
     "$id": "/schemas/trigger_action_based",
     "type": "object",
     "properties": {
-        "provider_category": {"type": "string", "enum": ["ACD", "Intradiem"]},
+        "provider_category": {"type": "string", "enum": ["ACD", "Intradiem", "WFM"]},
         "provider_instance": {"type": "string", "minLength": 3},
         "provider_condition": {"type": "string", "minLength": 3},
         "details": {
@@ -16,6 +16,7 @@ TRIGGER_ACTION_BASED = {
                         "user_logged_out",
                         "time_in_state",
                         "quick_action",
+                        "segment_occurrence",
                     ],
                 },
                 "state": {
@@ -48,6 +49,20 @@ TRIGGER_ACTION_BASED = {
                     "type": "string",
                     "minLength": 3,
                 },
+                "segment_codes": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {"type": "string"},
+                },
+                "lead_time": {"type": "number", "minimum": 1, "default": 5},
+                "lookup_operator": {
+                    "type": "string",
+                    "enum": ["Before", "After"],
+                },
+                "segment_lookup": {
+                    "type": "string",
+                    "enum": ["Segment Start", "Segment End"],
+                },
             },
             "required": ["action_type"],
             "allOf": [
@@ -78,6 +93,20 @@ TRIGGER_ACTION_BASED = {
                 {
                     "if": {"properties": {"action_type": {"const": "quick_action"}}},
                     "then": {"required": ["quick_action_name"]},
+                },
+                {
+                    "if": {
+                        "properties": {"action_type": {"const": "segment_occurrence"}}
+                    },
+                    "then": {
+                        "required": [
+                            "segment_codes",
+                            "lead_time",
+                            "lookup_operator",
+                            "segment_lookup",
+                            "user_list",
+                        ]
+                    },
                 },
             ],
         },

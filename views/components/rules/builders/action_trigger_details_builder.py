@@ -20,6 +20,7 @@ from services.rules.models.triggers.action_based import (
     AgentLoggedOutDetails,
     IntraQuickActionClicked,
     AgentTimeInStateDetails,
+    SegmentOccurrenceDetails,
 )
 
 
@@ -42,6 +43,7 @@ class ActionTriggerDetailsBuilder(BaseBuilder):
             AgentLoggedOutDetails: self._build_acd_user_logged_out,
             IntraQuickActionClicked: self._build_intra_quick_action,
             AgentTimeInStateDetails: self._build_acd_time_in_state,
+            SegmentOccurrenceDetails: self._build_wfm_segment_occurrence,
         }
 
         self._build_general_settings(self.rule.trigger, trigger_layout)
@@ -216,6 +218,43 @@ class ActionTriggerDetailsBuilder(BaseBuilder):
                 str(details.equality_threshold),
                 "Equality Threshold:",
                 self.build_path("action_based", "details", "equality_threshold"),
+            ),
+            DetailsRow(
+                details.user_list,
+                "User List:",
+                self.build_path("action_based", "details", "user_list"),
+            ),
+        ]
+        self.build_text_rows(detail_fields, parent_layout)
+
+    def _build_wfm_segment_occurrence(
+        self, details: SegmentOccurrenceDetails, parent_layout: QFormLayout
+    ):
+        detail_fields = [
+            DetailsRow(
+                details.action_type,
+                "Action Type:",
+                self.build_path("action_based", "details", "action_type"),
+            ),
+            DetailsRow(
+                ",".join(details.segment_codes),
+                "Segment Codes",
+                self.build_path("action_based", "details", "segment_codes"),
+            ),
+            DetailsRow(
+                str(details.lead_time),
+                "Lead Time:",
+                self.build_path("action_based", "details", "lead_time"),
+            ),
+            DetailsRow(
+                details.lookup_operator,
+                "Look Up Operator:",
+                self.build_path("action_based", "details", "lookup_operator"),
+            ),
+            DetailsRow(
+                details.segment_lookup,
+                "Segment Lookup:",
+                self.build_path("action_based", "details", "segment_lookup"),
             ),
             DetailsRow(
                 details.user_list,

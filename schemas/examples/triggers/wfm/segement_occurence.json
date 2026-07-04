@@ -1,0 +1,23 @@
+{
+  "rules": [
+    {
+      "rule_name": "User Logged In",
+      "rule_category": "Other - Admin",
+      "action_based": {
+        "provider_category": "WFM",
+        "provider_instance": "api verint wfm",
+        "provider_condition": "Segment Code Occurrence",
+        "details": {
+          "action_type": "segment_occurrence",
+          "segment_codes": ["Break", "VTO"],
+          "lead_time": 5,
+          "lookup_operator": "Before",
+          "segment_lookup": "Segment Start",
+          "user_list": "All Users"
+        }
+      },
+      "conditions": [],
+      "actions": []
+    }
+  ]
+}

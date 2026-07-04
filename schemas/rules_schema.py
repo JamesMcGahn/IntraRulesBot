@@ -18,7 +18,7 @@ RULES_SCHEMA = {
             "items": {
                 "type": "object",
                 "properties": {
-                    "provider_category": {"type": "string", "enum": ["ACD"]},
+                    "provider_category": {"type": "string", "enum": ["ACD", "WFM"]},
                     "provider_instance": {"type": "string", "minLength": 3},
                     "provider_condition": {"type": "string", "minLength": 3},
                     "details": {
