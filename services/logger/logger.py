@@ -174,6 +174,7 @@ class Logger(QObject, metaclass=QSingleton):
                         (
                             LOGLEVEL.INFO,
                             f"{self.__class__.__name__}: Removed old log file {file_path}",
+                            self.log_print_logs,
                         )
                     )
 
