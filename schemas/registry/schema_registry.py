@@ -1,7 +1,13 @@
 from jsonschema import Draft202012Validator
 from jsonschema.validators import RefResolver
 
-from schemas import MAIN_SCHEMA, RULES_SCHEMA, TRIGGER_ACTION_BASED, QUEUE_SCHEMA
+from schemas import (
+    MAIN_SCHEMA,
+    RULES_SCHEMA,
+    TRIGGER_ACTION_BASED_SCHEMA,
+    QUEUE_SCHEMA,
+    CONDITIONS_SCHEMA,
+)
 from ..enums import SCHEMATYPE
 
 
@@ -34,8 +40,9 @@ class SchemaRegistry:
         for schema_file in (
             MAIN_SCHEMA,
             RULES_SCHEMA,
-            TRIGGER_ACTION_BASED,
+            TRIGGER_ACTION_BASED_SCHEMA,
             QUEUE_SCHEMA,
+            CONDITIONS_SCHEMA,
         ):
             self.schema_store[schema_file["$id"]] = schema_file
 

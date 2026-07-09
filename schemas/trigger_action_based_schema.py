@@ -1,4 +1,4 @@
-TRIGGER_ACTION_BASED = {
+TRIGGER_ACTION_BASED_SCHEMA = {
     "$id": "/schemas/trigger_action_based",
     "type": "object",
     "properties": {
