@@ -13,4 +13,6 @@ FIELD_CONVERTERS = {
     "equality_threshold": to_int_or_original,
     "lead_time": to_int_or_original,
     "segment_codes": comma_string_to_list,
+    "segment_offset": to_int_or_original,
+    "segment_duration": to_int_or_original,
 }

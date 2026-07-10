@@ -10,6 +10,9 @@ from .action_category import ACTIONCATEGORY
 from .action_detail_type import ACTIONDETAILTYPE
 from .lookup_operator import LOOKUPOPERATOR
 from .segment_lookup import SEGMENTLOOKUP
+from .segment_time_interval import SEGMENTTIMEINTERVAL
+from .segment_start_time import SEGMENTSTARTTIME
+from .match_mode import MATCHMODE
 
 __all__ = [
     "RULECATEGORY",
@@ -24,4 +27,7 @@ __all__ = [
     "ACTIONDETAILTYPE",
     "LOOKUPOPERATOR",
     "SEGMENTLOOKUP",
+    "SEGMENTTIMEINTERVAL",
+    "SEGMENTSTARTTIME",
+    "MATCHMODE",
 ]

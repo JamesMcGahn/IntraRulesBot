@@ -25,7 +25,7 @@ TRIGGER_ACTION_BASED_SCHEMA = {
                     "items": {
                         "type": "object",
                         "properties": {
-                            "state": {"type": "string", "minLength": 5},
+                            "state": {"type": "string", "minLength": 3},
                             "aux": {"type": "string"},
                         },
                         "required": ["state", "aux"],
@@ -33,7 +33,7 @@ TRIGGER_ACTION_BASED_SCHEMA = {
                 },
                 "equality_operator": {
                     "type": "string",
-                    "enum": ["Equal To", "Not Equal To"],
+                    "enum": ["Equal To", "Greater Than", "Not Equal To"],
                 },
                 "aux_equality_operator": {
                     "type": "string",
@@ -68,7 +68,17 @@ TRIGGER_ACTION_BASED_SCHEMA = {
             "allOf": [
                 {
                     "if": {"properties": {"action_type": {"const": "state_changed"}}},
-                    "then": {"required": ["state", "equality_operator", "user_list"]},
+                    "then": {
+                        "required": ["state", "equality_operator", "user_list"],
+                        "properties": {
+                            "equality_operator": {
+                                "enum": [
+                                    "Equal To",
+                                    "Not Equal To",
+                                ]
+                            }
+                        },
+                    },
                 },
                 {
                     "if": {"properties": {"action_type": {"const": "time_in_state"}}},
@@ -79,7 +89,15 @@ TRIGGER_ACTION_BASED_SCHEMA = {
                             "equality_threshold",
                             "user_list",
                             "aux_equality_operator",
-                        ]
+                        ],
+                        "properties": {
+                            "equality_operator": {
+                                "enum": [
+                                    "Equal To",
+                                    "Greater Than",
+                                ]
+                            }
+                        },
                     },
                 },
                 {

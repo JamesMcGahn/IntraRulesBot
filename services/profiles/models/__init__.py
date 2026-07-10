@@ -10,6 +10,7 @@ from .condition_selectors import (
     ConditionDetailSelectors,
     ConditionSelectors,
     ConditionStatsSelectors,
+    ConditionWFMSegmentCodes,
 )
 from .executor_selectors import ExecutorSelectors
 from .login_selectors import LoginSelectors
@@ -48,6 +49,7 @@ __all__ = [
     "ConditionSelectors",
     "ConditionCommonSelectors",
     "ConditionStatsSelectors",
+    "ConditionWFMSegmentCodes",
     "ConditionDetailSelectors",
     "ActionCommonSelectors",
     "ActionDetailSelectors",

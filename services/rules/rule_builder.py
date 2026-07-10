@@ -19,7 +19,11 @@ from .models.triggers.action_based import (
 )
 from .models.agent_state import AgentState
 
-from .models.conditions import Condition, ConditionStatsDetails
+from .models.conditions import (
+    Condition,
+    ConditionStatsDetails,
+    ConditionWFMSegmentCodesDetails,
+)
 from .models.actions import Action, ActionsEmailDetails
 from .enums import ACTIONDETAILTYPE, CONDITIONDETAILTYPE, ACTIONTRIGGERDETAILTYPE
 
@@ -33,7 +37,7 @@ class RuleBuilder(ServiceBase):
     def __init__(self, logger: LogAdapter):
         super().__init__(logger)
 
-        self.ACTION_DETAIL_BUILDERS = {"email": self._build_action_email}
+        self.ACTION_DETAIL_BUILDERS = {ACTIONDETAILTYPE.EMAIL: self._build_action_email}
         self.ACTION_DETAIL_TRIGGER_BUILDERS = {
             ACTIONTRIGGERDETAILTYPE.STATE_CHANGED: self._build_action_trigger_state_changed,
             ACTIONTRIGGERDETAILTYPE.TIME_IN_STATE: self._build_action_trigger_time_in_state,
@@ -42,7 +46,10 @@ class RuleBuilder(ServiceBase):
             ACTIONTRIGGERDETAILTYPE.QUICK_ACTION: self._build_action_trigger_quick_action,
             ACTIONTRIGGERDETAILTYPE.SEGMENT_OCCURRENCE: self._build_action_trigger_segment_occurrence,
         }
-        self.CONDITION_DETAIL_BUILDERS = {"stats": self._build_stats_details}
+        self.CONDITION_DETAIL_BUILDERS = {
+            CONDITIONDETAILTYPE.STATS: self._build_stats_details,
+            CONDITIONDETAILTYPE.SEGMENT_CODES: self._build_wfm_segment_codes,
+        }
 
     def build_rules(self, rules) -> list[Rule]:
         return [self.build_rule(rule) for rule in rules]
@@ -179,6 +186,21 @@ class RuleBuilder(ServiceBase):
             equality_operator=data_detail["equality_operator"],
             equality_threshold=data_detail["equality_threshold"],
             queues_source=data_detail["queues_source"],
+        )
+
+    def _build_wfm_segment_codes(self, data_detail: object):
+        return ConditionWFMSegmentCodesDetails(
+            condition_type=CONDITIONDETAILTYPE(data_detail["condition_type"]),
+            equality_operator=data_detail["equality_operator"],
+            match_mode=data_detail["match_mode"],
+            segment_time_interval=data_detail["segment_time_interval"],
+            segment_start_time=data_detail["segment_start_time"],
+            segment_occurrence=data_detail["segment_occurrence"],
+            segment_codes=data_detail["segment_codes"],
+            segment_offset=data_detail.get("segment_offset", None),
+            segment_end_time=data_detail.get("segment_end_time", None),
+            segment_duration=data_detail.get("segment_duration", None),
+            user_list=data_detail["user_list"],
         )
 
     # ACTION BUILDERS

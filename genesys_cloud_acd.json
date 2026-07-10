@@ -1,0 +1,1324 @@
+{
+  "rules": [
+    {
+      "rule_name": "zz_scan_acd_stats_calls_abandoned_by_queue_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Calls Abandoned - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_calls_abandoned_by_queue_above",
+            "email_body": "zz_scan_acd_stats_calls_abandoned_by_queue_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_calls_abandoned_by_queue_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Calls Abandoned - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_calls_abandoned_by_queue_below",
+            "email_body": "zz_scan_acd_stats_calls_abandoned_by_queue_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_agents_avail_off_queue_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Agents Available Off Queue - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_agents_avail_off_queue_above",
+            "email_body": "zz_scan_acd_stats_agents_avail_off_queue_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_agents_avail_off_queue_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Agents Available Off Queue - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_agents_avail_off_queue_below",
+            "email_body": "zz_scan_acd_stats_agents_avail_off_queue_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_agents_away_off_queue_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Agents Away Off Queue - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_agents_away_off_queue_above",
+            "email_body": "zz_scan_acd_stats_agents_away_off_queue_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_agents_away_off_queue_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Agents Away Off Queue - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_agents_away_off_queue_below",
+            "email_body": "zz_scan_acd_stats_agents_away_off_queue_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_agents_on_calls_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Agents On Calls - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_agents_on_calls_above",
+            "email_body": "zz_scan_acd_stats_agents_on_calls_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_agents_on_calls_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Agents On Calls - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_agents_on_calls_below",
+            "email_body": "zz_scan_acd_stats_agents_on_calls_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_agents_available_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Agents Available - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_agents_available_above",
+            "email_body": "zz_scan_acd_stats_agents_available_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_agents_available_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Agents Available - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_agents_available_below",
+            "email_body": "zz_scan_acd_stats_agents_available_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_number_of_calls_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Number of Calls - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_number_of_calls_above",
+            "email_body": "zz_scan_acd_stats_number_of_calls_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_number_of_calls_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Number of Calls - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_number_of_calls_below",
+            "email_body": "zz_scan_acd_stats_number_of_calls_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_agents_logged_in_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Agents Logged In – By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_agents_logged_in_above",
+            "email_body": "zz_scan_acd_stats_agents_logged_in_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_agents_logged_in_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Agents Logged In – By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_agents_logged_in_below",
+            "email_body": "zz_scan_acd_stats_agents_logged_in_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_agents_staffed_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Agents Staffed - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_agents_staffed_above",
+            "email_body": "zz_scan_acd_stats_agents_staffed_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_agents_staffed_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Agents Staffed - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_agents_staffed_below",
+            "email_body": "zz_scan_acd_stats_agents_staffed_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_calls_in_queue_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Calls in Queue - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_calls_in_queue_above",
+            "email_body": "zz_scan_acd_stats_calls_in_queue_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_calls_in_queue_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Calls in Queue - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_calls_in_queue_below",
+            "email_body": "zz_scan_acd_stats_calls_in_queue_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_avg_speed_answer_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Average Speed of Answer (in seconds) - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_avg_speed_answer_above",
+            "email_body": "zz_scan_acd_stats_avg_speed_answer_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_avg_speed_answer_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Average Speed of Answer (in seconds) - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_avg_speed_answer_below",
+            "email_body": "zz_scan_acd_stats_avg_speed_answer_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_avg_handle_time_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Аvg Handle Time - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_avg_handle_time_above",
+            "email_body": "zz_scan_acd_stats_avg_handle_time_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_avg_handle_time_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Аvg Handle Time - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_avg_handle_time_below",
+            "email_body": "zz_scan_acd_stats_avg_handle_time_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_avg_time_in_queue_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Average Time in Queue (seconds) - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_avg_time_in_queue_above",
+            "email_body": "zz_scan_acd_stats_avg_time_in_queue_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_avg_time_in_queue_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Average Time in Queue (seconds) - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_avg_time_in_queue_below",
+            "email_body": "zz_scan_acd_stats_avg_time_in_queue_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_avg_talk_time_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Average Talk Time - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_avg_talk_time_above",
+            "email_body": "zz_scan_acd_stats_avg_talk_time_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_avg_talk_time_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Average Talk Time - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_avg_talk_time_below",
+            "email_body": "zz_scan_acd_stats_avg_talk_time_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_lcw_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Longest Call Waiting (seconds) - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_lcw_above",
+            "email_body": "zz_scan_acd_stats_lcw_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_lcw_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Longest Call Waiting (seconds) - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_lcw_below",
+            "email_body": "zz_scan_acd_stats_lcw_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_sla_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Service Level Percent - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_sla_above",
+            "email_body": "zz_scan_acd_stats_sla_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_sla_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Service Level Percent - By Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_sla_below",
+            "email_body": "zz_scan_acd_stats_sla_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_number_of_agents_in_queue_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Number of Agents in Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_number_of_agents_in_queue_above",
+            "email_body": "zz_scan_acd_stats_number_of_agents_in_queue_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_number_of_agents_in_queue_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Number of Agents in Queue",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_number_of_agents_in_queue_below",
+            "email_body": "zz_scan_acd_stats_number_of_agents_in_queue_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_outstanding_calls_count_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Outstanding Calls Count in Campaign",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_outstanding_calls_count_above",
+            "email_body": "zz_scan_acd_stats_outstanding_calls_count_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_outstanding_calls_count_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Outstanding Calls Count in Campaign",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_outstanding_calls_count_below",
+            "email_body": "zz_scan_acd_stats_outstanding_calls_count_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_idle_agents_on_camp_count_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Idle Agents on Campaign",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_idle_agents_on_camp_count_above",
+            "email_body": "zz_scan_acd_stats_idle_agents_on_camp_count_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_idle_agents_on_camp_count_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Idle Agents on Campaign",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_idle_agents_on_camp_count_below",
+            "email_body": "zz_scan_acd_stats_idle_agents_on_camp_count_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_effective_idle_agents_on_camp_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Effective Idle Agents on Campaign",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_effective_idle_agents_on_camp_above",
+            "email_body": "zz_scan_acd_stats_effective_idle_agents_on_camp_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_effective_idle_agents_on_camp_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Effective Idle Agents on Campaign",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_effective_idle_agents_on_camp_below",
+            "email_body": "zz_scan_acd_stats_effective_idle_agents_on_camp_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_hit_rate_above",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Hit Rate",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Greater Than or Equal To",
+            "equality_threshold": 1,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_hit_rate_above",
+            "email_body": "zz_scan_acd_stats_hit_rate_above",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_stats_hit_rate_below",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "ACD",
+          "provider_instance": "genesys_cloud_acd",
+          "provider_condition": "Hit Rate",
+          "details": {
+            "condition_type": "stats",
+            "equality_operator": "Less Than",
+            "equality_threshold": 9999,
+            "queues_source": "queues"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_stats_hit_rate_below",
+            "email_body": "zz_scan_acd_stats_hit_rate_below",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    }
+  ]
+}

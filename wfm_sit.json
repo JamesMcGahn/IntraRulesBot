@@ -1,0 +1,35 @@
+{
+  "rules": [
+    {
+      "rule_name": "zz_test_segement_code_occurrence",
+      "rule_category": "Other - Admin",
+      "action_based": {
+        "provider_category": "WFM",
+        "provider_instance": "api verint wfm",
+        "provider_condition": "Segment Code Occurrence",
+        "details": {
+          "action_type": "segment_occurrence",
+          "segment_codes": ["Break", "VTO"],
+          "lead_time": 5,
+          "lookup_operator": "Before",
+          "segment_lookup": "Segment Start",
+          "user_list": "All Users"
+        }
+      },
+      "conditions": [],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "Test Subject",
+            "email_address": "test@example.com",
+            "email_body": "Test body"
+          }
+        }
+      ]
+    }
+  ]
+}

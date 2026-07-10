@@ -1,0 +1,47 @@
+{
+  "rules": [
+    {
+      "rule_name": "Condition WFM - Segment Codes",
+      "rule_category": "Other - Admin",
+      "frequency_based": {
+        "time_interval": 5
+      },
+      "conditions": [
+        {
+          "provider_category": "WFM",
+          "provider_instance": "Test WFM",
+          "provider_condition": "Segment Codes",
+          "details": {
+            "condition_type": "segment_codes",
+            "equality_operator": "Equal To",
+            "segment_codes": ["Break", "VTO"],
+            "match_mode": "Any",
+            "segment_time_interval": "Duration",
+            "segment_start_time": "Rule Runtime",
+            "segment_duration": 5,
+            "segment_occurrence": "Any Part of Segment",
+            "user_list": "All Users"
+          }
+        },
+        {
+          "provider_category": "WFM",
+          "provider_instance": "Test WFM",
+          "provider_condition": "Segment Codes",
+          "details": {
+            "condition_type": "segment_codes",
+            "equality_operator": "Equal To",
+            "segment_codes": ["Break", "VTO"],
+            "match_mode": "Any",
+            "segment_time_interval": "Start and End Time",
+            "segment_start_time": "Rule Runtime Plus",
+            "segment_offset": 5,
+            "segment_end_time": "Shift End Time",
+            "segment_occurrence": "Any Part of Segment",
+            "user_list": "All Users"
+          }
+        }
+      ],
+      "actions": []
+    }
+  ]
+}

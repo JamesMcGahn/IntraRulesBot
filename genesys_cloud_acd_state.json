@@ -1,0 +1,283 @@
+{
+  "rules": [
+    {
+      "rule_name": "zz_scan_acd_time_in_state_acw",
+      "rule_category": "Other - Admin",
+      "action_based": {
+        "provider_category": "ACD",
+        "provider_instance": "genesys_cloud_acd",
+        "provider_condition": "Time in Current State Threshold Met",
+        "details": {
+          "action_type": "time_in_state",
+          "equality_operator": "Equal To",
+          "equality_threshold": 1,
+          "user_list": "All Users",
+          "state": [{ "state": "ACW", "aux": "" }],
+          "aux_equality_operator": "Equal To"
+        }
+      },
+      "conditions": [],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_time_in_state_acw",
+            "email_body": "zz_scan_acd_time_in_state_acw",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_time_in_state_available",
+      "rule_category": "Other - Admin",
+      "action_based": {
+        "provider_category": "ACD",
+        "provider_instance": "genesys_cloud_acd",
+        "provider_condition": "Time in Current State Threshold Met",
+        "details": {
+          "action_type": "time_in_state",
+          "equality_operator": "Equal To",
+          "equality_threshold": 1,
+          "user_list": "All Users",
+          "state": [{ "state": "AVAILABLE", "aux": "" }],
+          "aux_equality_operator": "Equal To"
+        }
+      },
+      "conditions": [],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_time_in_state_available",
+            "email_body": "zz_scan_acd_time_in_state_available",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_time_in_state_hold",
+      "rule_category": "Other - Admin",
+      "action_based": {
+        "provider_category": "ACD",
+        "provider_instance": "genesys_cloud_acd",
+        "provider_condition": "Time in Current State Threshold Met",
+        "details": {
+          "action_type": "time_in_state",
+          "equality_operator": "Equal To",
+          "equality_threshold": 1,
+          "user_list": "All Users",
+          "state": [{ "state": "HOLD", "aux": "" }],
+          "aux_equality_operator": "Equal To"
+        }
+      },
+      "conditions": [],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_time_in_state_hold",
+            "email_body": "zz_scan_acd_time_in_state_hold",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_time_in_state_consult",
+      "rule_category": "Other - Admin",
+      "action_based": {
+        "provider_category": "ACD",
+        "provider_instance": "genesys_cloud_acd",
+        "provider_condition": "Time in Current State Threshold Met",
+        "details": {
+          "action_type": "time_in_state",
+          "equality_operator": "Equal To",
+          "equality_threshold": 1,
+          "user_list": "All Users",
+          "state": [{ "state": "CONSULT", "aux": "" }],
+          "aux_equality_operator": "Equal To"
+        }
+      },
+      "conditions": [],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_time_in_state_consult",
+            "email_body": "zz_scan_acd_time_in_state_consult",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_time_in_state_interaction",
+      "rule_category": "Other - Admin",
+      "action_based": {
+        "provider_category": "ACD",
+        "provider_instance": "genesys_cloud_acd",
+        "provider_condition": "Time in Current State Threshold Met",
+        "details": {
+          "action_type": "time_in_state",
+          "equality_operator": "Equal To",
+          "equality_threshold": 1,
+          "user_list": "All Users",
+          "state": [{ "state": "INTERACTION", "aux": "" }],
+          "aux_equality_operator": "Equal To"
+        }
+      },
+      "conditions": [],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_time_in_state_interaction",
+            "email_body": "zz_scan_acd_time_in_state_interaction",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_time_in_state_busy",
+      "rule_category": "Other - Admin",
+      "action_based": {
+        "provider_category": "ACD",
+        "provider_instance": "genesys_cloud_acd",
+        "provider_condition": "Time in Current State Threshold Met",
+        "details": {
+          "action_type": "time_in_state",
+          "equality_operator": "Equal To",
+          "equality_threshold": 1,
+          "user_list": "All Users",
+          "state": [{ "state": "BUSY", "aux": "" }],
+          "aux_equality_operator": "Equal To"
+        }
+      },
+      "conditions": [],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_time_in_state_busy",
+            "email_body": "zz_scan_acd_time_in_state_busy",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_time_in_state_away",
+      "rule_category": "Other - Admin",
+      "action_based": {
+        "provider_category": "ACD",
+        "provider_instance": "genesys_cloud_acd",
+        "provider_condition": "Time in Current State Threshold Met",
+        "details": {
+          "action_type": "time_in_state",
+          "equality_operator": "Equal To",
+          "equality_threshold": 1,
+          "user_list": "All Users",
+          "state": [{ "state": "AWAY", "aux": "" }],
+          "aux_equality_operator": "Equal To"
+        }
+      },
+      "conditions": [],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_time_in_state_away",
+            "email_body": "zz_scan_acd_time_in_state_away",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_time_in_state_break",
+      "rule_category": "Other - Admin",
+      "action_based": {
+        "provider_category": "ACD",
+        "provider_instance": "genesys_cloud_acd",
+        "provider_condition": "Time in Current State Threshold Met",
+        "details": {
+          "action_type": "time_in_state",
+          "equality_operator": "Equal To",
+          "equality_threshold": 1,
+          "user_list": "All Users",
+          "state": [{ "state": "BREAK", "aux": "" }],
+          "aux_equality_operator": "Equal To"
+        }
+      },
+      "conditions": [],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_time_in_state_break",
+            "email_body": "zz_scan_acd_time_in_state_break",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "rule_name": "zz_scan_acd_time_in_state_idle",
+      "rule_category": "Other - Admin",
+      "action_based": {
+        "provider_category": "ACD",
+        "provider_instance": "genesys_cloud_acd",
+        "provider_condition": "Time in Current State Threshold Met",
+        "details": {
+          "action_type": "time_in_state",
+          "equality_operator": "Equal To",
+          "equality_threshold": 1,
+          "user_list": "All Users",
+          "state": [{ "state": "IDLE", "aux": "" }],
+          "aux_equality_operator": "Equal To"
+        }
+      },
+      "conditions": [],
+      "actions": [
+        {
+          "provider_category": "Communications",
+          "provider_instance": "Email Provider Instance",
+          "provider_condition": "Send Email",
+          "details": {
+            "action_type": "email",
+            "email_subject": "zz_scan_acd_time_in_state_idle",
+            "email_body": "zz_scan_acd_time_in_state_idle",
+            "email_address": "example@example.com"
+          }
+        }
+      ]
+    }
+  ]
+}
