@@ -131,23 +131,39 @@ class PlaywrightBrowserAdapter(BrowserPort):
         check_alert_text: str | None = None,
         timeout: int = 3000,
     ) -> bool:
-        try:
-            with self._page.expect_event("dialog", timeout=timeout) as dialog_info:
-                adapter = PlaywrightInteractionAdapter(frame_locator)
-                adapter.select_exact_item_from_list(list_selector, text_to_select)
+        result = {
+            "appeared": False,
+            "accepted": False,
+            "message": None,
+        }
 
-            dialog = dialog_info.value
-            message = dialog.message
+        def handle_dialog(dialog: Dialog) -> None:
+            result["appeared"] = True
+            result["message"] = dialog.message
 
-            if check_alert_text and check_alert_text not in message:
+            if check_alert_text and check_alert_text not in dialog.message:
                 dialog.dismiss()
-                return False
+                return
 
             dialog.accept()
-            return True
+            result["accepted"] = True
 
-        except PlaywrightTimeoutError:
-            return False
+        self._page.on("dialog", handle_dialog)
+
+        try:
+            adapter = PlaywrightInteractionAdapter(frame_locator)
+            adapter.select_exact_item_from_list(
+                list_selector,
+                text_to_select,
+            )
+
+            if not result["appeared"] and timeout > 0:
+                self._page.wait_for_timeout(timeout)
+
+            return result["accepted"]
+
+        finally:
+            self._page.remove_listener("dialog", handle_dialog)
 
     def frame_click_and_accept_alert_if_appears(
         self,
@@ -156,22 +172,19 @@ class PlaywrightBrowserAdapter(BrowserPort):
         check_alert_text: str | None = None,
         timeout: int = 3000,
     ) -> bool:
+        result = {"result": False}
+
+        def handler(dialog: Dialog) -> None:
+            self._handle_dialog(dialog, check_alert_text, result)
+
+        self._page.on("dialog", handler)
+
         try:
-            with self._page.expect_event("dialog", timeout=timeout) as dialog_info:
-                frame_locator.locator(click_selector).click()
-
-            dialog = dialog_info.value
-            message = dialog.message
-
-            if check_alert_text and check_alert_text not in message:
-                dialog.dismiss()
-                return False
-
-            dialog.accept()
-            return True
-
-        except PlaywrightTimeoutError:
-            return False
+            frame_locator.locator(click_selector).click()
+            self._page.wait_for_timeout(timeout)
+            return result["result"]
+        finally:
+            self._page.remove_listener("dialog", handler)
 
     def wait_for_page_ready(self, timeout: int = 30000) -> None:
         self._page.wait_for_load_state("domcontentloaded", timeout=timeout)
