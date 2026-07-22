@@ -170,7 +170,6 @@ class RuleRunnerMonitor(GradientDialog):
 
     def handle_upsert_row(self, row: RuleRunRow):
         self.monitor_table_model.upsert_row(row)
-        self.table_view_w.resizeColumnsToContents()
 
     def handle_summary_update(self, summary: RunSummary):
         self.total_label.setText(f"Total: {summary.total}")
