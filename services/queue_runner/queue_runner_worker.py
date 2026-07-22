@@ -36,10 +36,10 @@ from .models import (
 
 class QueueRunnerWorker(QObject):
     done = Signal()
-    progress = Signal(int, int)
     runner_result = Signal(object)
     task_progress = Signal(object)
     runner_life_cyle = Signal(object)
+    progress_status = Signal(int, int)
 
     def __init__(
         self,
@@ -158,6 +158,7 @@ class QueueRunnerWorker(QObject):
         start_time: bool = False,
         end_time: bool = False,
     ):
+        # TODO : REMOVE : TOO MANY SIGNALS - BAD
         for queue_item in self.q_item_queue:
             self.send_queue_progress(
                 QueueProgressEvent(
@@ -176,7 +177,7 @@ class QueueRunnerWorker(QObject):
 
         try:
             self.runner_life_cyle.emit(QUEUERUNNERLIFECYCLE.STARTED)
-            self._send_batch_progress(QUEUEEXECSTATUS.PENDING, "Queue queued.")
+            # self._send_batch_progress(QUEUEEXECSTATUS.PENDING, "Queue queued.")
             auth_result = self._authenticate()
             if auth_result.status == AUTHSTATUS.STOPPED_REQUESTED:
                 self.stop_clean_up()
@@ -190,8 +191,11 @@ class QueueRunnerWorker(QObject):
                 return
 
             state = QueueRunnerState()
+            self.total_count = len(self.q_item_queue)
+            self.logging(f"Total Queues: {len(self.q_item_queue)}", "INFO")
+            self.progress_status.emit(0, self.total_count)
             while self.q_item_queue and not self.should_stop():
-                self.progress.emit(self.completed_count, self.total_count)
+                self.logging(f"Queue: {self.completed_count+1} / {self.total_count}")
                 try:
                     item = self.q_item_queue.popleft()
                     item.status = QUEUERUNSTATUS.RUNNING
@@ -278,6 +282,7 @@ class QueueRunnerWorker(QObject):
             self.success_queues.append(item)
             self._send_result_progress(item, result, "Succeeded", use_exec_status=False)
             self.completed_count += 1
+            self.progress_status.emit(self.completed_count, self.total_count)
         else:
             if result.status == QUEUEEXECSTATUS.RUNNER_STOPPED_ERROR:
                 self._send_result_progress(
@@ -294,7 +299,7 @@ class QueueRunnerWorker(QObject):
             )
             if item.retry_count < 2:
                 item.retry_count += 1
-                if result.status in (QUEUEEXECSTATUS.NAME_EXISTS_ERROR):
+                if result.status == QUEUEEXECSTATUS.NAME_EXISTS_ERROR:
                     item.status = QUEUERUNSTATUS.FAILED
                     self.errored_queues.append(item)
                     self.completed_count += 1
@@ -307,6 +312,7 @@ class QueueRunnerWorker(QObject):
                         "Queue Name Exists Already.",
                         use_exec_status=False,
                     )
+                    self.progress_status.emit(self.completed_count, self.total_count)
                 elif result.status in (
                     QUEUEEXECSTATUS.BROWSER_ERROR,
                     QUEUEEXECSTATUS.UNKNOWN_ERROR,
@@ -338,6 +344,7 @@ class QueueRunnerWorker(QObject):
                 )
                 self.errored_queues.append(item)
                 self.completed_count += 1
+                self.progress_status.emit(self.completed_count, self.total_count)
 
     def create_rule_summary(self) -> None:
         """
@@ -354,11 +361,12 @@ class QueueRunnerWorker(QObject):
         self.logging(errored_rules_msg, "ERROR")
 
     def _drain_remaining_rules(self, status: QUEUERUNSTATUS, reason: str):
+        # self._send_batch_progress(status, reason, end_time=True)
         while self.q_item_queue:
-            self._send_batch_progress(status, reason, end_time=True)
             item = self.q_item_queue.popleft()
             item.status = status
             self.errored_queues.append(item)
+        self.progress_status.emit(self.total_count, self.total_count)
 
         self.logging(f"Removing remaining queues from queue: {reason}", "WARN")
 
@@ -366,7 +374,7 @@ class QueueRunnerWorker(QObject):
         self._drain_remaining_rules(
             QUEUERUNSTATUS.STOPPED, "Queue Runner manually stopped."
         )
-        self.progress.emit(self.total_count, self.total_count)
+        self.progress_status.emit(self.total_count, self.total_count)
 
     def stop(self) -> None:
         """

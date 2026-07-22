@@ -20,6 +20,7 @@ from base.events import (
     MonitorSnapShotEvent,
     UIEvent,
     QueueRunnerStateEvent,
+    ProgressStatus,
 )
 from .queues_monitor.queues_runner_monitor import QueuesRunnerMonitor
 
@@ -70,14 +71,16 @@ class QueuesPage(QWidgetBase):
         if isinstance(event.payload, MonitorRowUpsertEvent):
             self.monitor_upsert_row.emit(event.payload.row)
         elif isinstance(event.payload, MonitorSummaryUpdateEvent):
-            self.progress_bar_update.emit(
-                event.payload.summary.completed, event.payload.summary.total
-            )
+
             self.monitor_summary_update.emit(event.payload.summary)
         elif isinstance(event.payload, MonitorSnapShotEvent):
             self.monitor_snapshot_update.emit(event.payload)
         elif isinstance(event.payload, QueueRunnerStateEvent):
             self.queue_runner_state_update.emit(event.payload.state)
+        elif isinstance(event.payload, ProgressStatus):
+            self.progress_bar_update.emit(
+                event.payload.current_value, event.payload.total
+            )
 
     def handle_monitor_actions(self, action: MONITOREVENT):
         if action == MONITOREVENT.MONITOR_CLEAR_ALL:

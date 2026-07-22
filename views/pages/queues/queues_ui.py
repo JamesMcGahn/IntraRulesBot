@@ -264,6 +264,7 @@ class QueuesPageView(QWidget):
         if state == QUEUERUNNERLIFECYCLE.STARTED:
             self.stop_button.setHidden(False)
             self.progress_bar.setHidden(False)
+            self.progress_bar.setValue(0)
             self.run_button.setDisabled(True)
         if state == QUEUERUNNERLIFECYCLE.FINISHED:
             self.stop_button.setHidden(True)

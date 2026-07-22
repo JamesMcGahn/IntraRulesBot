@@ -221,6 +221,10 @@ class AppContext(QObject, metaclass=QSingleton):
             self.queues_monitor_controller.handle_runner_lifecyle
         )
 
+        self.queue_runner_service.progress_status.connect(
+            self.queues_monitor_controller.progress_status_event
+        )
+
         ## SETTINGS
         self.settings_controller.setting_updated.connect(self.setting_updated)
         self.setting_updated.connect(self.logger.received_settings_change)

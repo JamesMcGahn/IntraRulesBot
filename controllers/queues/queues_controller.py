@@ -25,8 +25,6 @@ from dataclasses import fields
 
 
 class QueuesController(ControllerBase):
-    # TODO convert to ui_event
-    runner_progress = Signal(int, int)
     stop_runner_service = Signal()
 
     def __init__(
@@ -48,7 +46,6 @@ class QueuesController(ControllerBase):
         self._active_runners: dict[str, QueueRunnerRequestPayload] = {}
 
         # TODO convert to ui_event
-        self._queue_runner_service.progress.connect(self.runner_progress)
         self._queue_runner_service.runner_life_cyle.connect(
             self.handle_runner_lifecycle
         )

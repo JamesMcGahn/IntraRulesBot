@@ -15,6 +15,7 @@ from base.events import (
     MonitorRowUpsertEvent,
     MonitorSummaryUpdateEvent,
     MonitorSnapShotEvent,
+    ProgressStatus,
     UIEvent,
 )
 from services.monitor.queue_monitor.models import QueueRunRow
@@ -56,6 +57,13 @@ class QueuesRunMonitorController(ControllerBase):
             UIEvent(
                 event_type=UIEVENTTYPE.DISPLAY,
                 payload=MonitorRowUpsertEvent[QueueRunRow](row=row),
+            )
+        )
+
+    def progress_status_event(self, value: int, total: int):
+        self.ui_event.emit(
+            UIEvent(
+                event_type=UIEVENTTYPE.DISPLAY, payload=ProgressStatus(value, total)
             )
         )
 
