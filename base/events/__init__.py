@@ -8,6 +8,7 @@ from .ui_event import UIEvent
 from .rule_runner_state_event import RuleRunnerStateEvent
 from .monitor_snapshot import MonitorSnapShotEvent
 from .queue_runner_state_event import QueueRunnerStateEvent
+from .progress_status import ProgressStatus
 
 __all__ = [
     "UIEvent",
@@ -20,4 +21,5 @@ __all__ = [
     "RuleRunnerStateEvent",
     "MonitorSnapShotEvent",
     "QueueRunnerStateEvent",
+    "ProgressStatus",
 ]

@@ -133,43 +133,52 @@ class QueueExecutor:
         alert = ctx.browser_port.frame_click_and_accept_alert_if_appears(
             self.queue_port, ctx.profile.selectors.queues.queue_add_btn
         )
-
+        self.logging(f"Submitted Queue: {ctx.queue.queue_number}", "INFO")
         if alert:
             raise DuplicateNameException
-
+        self.logging("Checking for Loading Spinner.", "INFO")
         self.queue_port.wait_for_loading_cycle(
             ctx.profile.selectors.queues.queue_grid_container,
-            60000,
+            500,
+            disappear_timeout=30000,
         )
+        self.logging("Loading Spinner Clear.", "INFO")
 
     def verify_queue_submission(self, ctx: QueueExecutionContext):
+        self.logging("Verification started", "INFO")
+        self.logging("Finding Name Row", "INFO")
         name_row = self.queue_port.find_by_has_selector(
             ctx.profile.selectors.queues.queue_grid_rows,
-            f"{ctx.profile.selectors.queues.queue_row_name_item}[{ctx.profile.selectors.queues.queue_row_attribute}='{ctx.queue.queue_name}']",
+            (
+                f"{ctx.profile.selectors.queues.queue_row_name_item}"
+                f"[{ctx.profile.selectors.queues.queue_row_attribute}="
+                f"'{ctx.queue.queue_name}']"
+            ),
         )
-        # for example = f"span[id$='lblName'][title='{ctx.queue.queue_name}']",
-
-        actual_name = self.queue_port.get_attribute_inside_parent(
-            name_row,
-            selector=ctx.profile.selectors.queues.queue_row_name_item,
-            attribute=ctx.profile.selectors.queues.queue_row_attribute,
-        )
-        actual_number = self.queue_port.get_attribute_inside_parent(
-            name_row,
-            selector=ctx.profile.selectors.queues.queue_row_number_item,
-            attribute=ctx.profile.selectors.queues.queue_row_attribute,
-        )
-        # NOTE: behavior observered Queue number gets auto renamed to queue name, if different values
-        if actual_name != ctx.queue.queue_name or (
-            actual_number
-            != str(ctx.queue.queue_number and actual_number != ctx.queue.queue_name)
-        ):
-
-            raise ValueError(
-                f"Queue save verification failed. "
-                f"Expected ({ctx.queue.queue_name}, {ctx.queue.queue_number}), "
-                f"got ({actual_name}, {actual_number})"
+        self.logging("Getting queue number", "INFO")
+        try:
+            actual_number = self.queue_port.get_attribute_inside_parent(
+                name_row,
+                selector=ctx.profile.selectors.queues.queue_row_number_item,
+                attribute=ctx.profile.selectors.queues.queue_row_attribute,
+                timeout=3000,
             )
+        except PlaywrightTimeoutError:
+            actual_number = self.queue_port.get_attribute_inside_parent(
+                name_row,
+                selector=ctx.profile.selectors.queues.queue_row_number_item,
+                attribute=ctx.profile.selectors.queues.queue_row_attribute,
+                timeout=10000,
+            )
+        expected_number = str(ctx.queue.queue_number)
+        expected_name = str(ctx.queue.queue_name)
+
+        if actual_number != expected_number and actual_number != expected_name:
+            msg = f"""Queue save verification failed. \n
+                Expected number {expected_number!r} or {expected_name!r}, got {actual_number!r}"""
+            self.logging(msg, "ERROR")
+            raise ValueError(msg)
+        self.logging("Queue number found")
 
     def execute(self) -> QueueExecutionResult:
         """
@@ -311,7 +320,6 @@ class QueueExecutor:
             self.form_port,
             ctx.profile.selectors.provider_instance.provider_instance_dropdown_items,
             ctx.provider_instance,
-            ctx.profile.selectors.providers.switch_instance_alert_text,
         )
 
     def switch_to_configuration_page(self, ctx: QueueExecutionContext):

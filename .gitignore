@@ -1,6 +1,6 @@
 out/
 data/
-logs/*.log
+logs/
 __pycache__/
 
 keys.py
