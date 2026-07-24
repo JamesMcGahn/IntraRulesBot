@@ -3,5 +3,5 @@ class StoppedRequestException(Exception):
 
     def __init__(self, message=None):
         if message is None:
-            message = "Stop Requested"
+            message = "StoppedRequestException: User Stop Requested"
         super().__init__(message)

@@ -3,5 +3,5 @@ class PlaywrightSessionLostException(Exception):
 
     def __init__(self, message=None):
         if message is None:
-            message = "Playwright session lost"
+            message = "PlaywrightSessionLostException: Playwright session lost"
         super().__init__(message)

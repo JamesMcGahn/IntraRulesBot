@@ -3,5 +3,5 @@ class DuplicateNameException(Exception):
 
     def __init__(self, message=None):
         if message is None:
-            message = "An error occurred"
+            message = "DuplicateNameException: name already exists."
         super().__init__(message)
