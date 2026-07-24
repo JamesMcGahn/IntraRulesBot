@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+import time
 
 from ..enums import QUEUEEXECSTATUS, QEXECUTORTASK, QUEUERUNSTATUS
 
@@ -13,3 +14,4 @@ class QueueProgressEvent:
     message: str | None = None
     started_at: int | None = None
     finished_at: int | None = None
+    emitted_at: int = field(default_factory=time.monotonic_ns)

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from ....queue_runner.enums import (
     QUEUEEXECSTATUS,
     QUEUERUNSTATUS,
@@ -13,6 +14,7 @@ class QueueRunRow:
     queue_name: str
     status: QUEUERUNSTATUS | QUEUEEXECSTATUS
     task: QEXECUTORTASK
+    emitted_at: int
     retry_count: int = 0
     message: str | None = None
     started_at: int | None = None

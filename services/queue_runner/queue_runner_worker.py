@@ -345,11 +345,11 @@ class QueueRunnerWorker(QObject):
         )
         item.retry_count += 1
         item.status = QUEUERUNSTATUS.RETRYING
-        self.q_item_queue.appendleft(item)
         self.logging(
             f"({self.completed_count+1}/{self.total_count}) - RETRYING (ATTEMPT: {item.retry_count}) - Row: {item.queue.row_number} - {item.queue.queue_name} - failed."
         )
         self._send_result_progress(item, result, "Retrying...", use_exec_status=False)
+        self.q_item_queue.appendleft(item)
         self._rebuild_browser()
         auth_result = self._authenticate()
         if not auth_result.success:

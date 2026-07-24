@@ -44,6 +44,7 @@ class QueuesRunMonitorController(ControllerBase):
             queue_name=event.queue_name,
             status=event.status,
             task=event.task,
+            emitted_at=event.emitted_at,
             message=event.message,
             started_at=event.started_at,
             finished_at=event.finished_at,
