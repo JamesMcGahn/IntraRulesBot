@@ -11,6 +11,7 @@ class QueueProgressEvent:
     queue_row: int
     status: QUEUEEXECSTATUS | QUEUERUNSTATUS
     task: QEXECUTORTASK | None
+    retry_count: int = 0
     message: str | None = None
     started_at: int | None = None
     finished_at: int | None = None

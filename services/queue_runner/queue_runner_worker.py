@@ -264,6 +264,7 @@ class QueueRunnerWorker(QObject):
                 queue_name=item.queue.queue_name,
                 queue_row=item.queue.row_number,
                 task=result.task,
+                retry_count=item.retry_count,
                 status=result.status if use_exec_status else item.status,
                 message=message,
                 started_at=None,
