@@ -5,6 +5,11 @@ QUEUE_SCHEMA = {
         "queue_name": {"type": "string", "minLength": 1},
         "queue_number": {"type": "string", "minLength": 1},
         "guid": {"type": "string"},
+        "action_type": {
+            "type": "string",
+            "enum": ["ADD", "VERIFY"],
+            "default": "ADD",
+        },
     },
     "required": ["queue_name", "queue_number"],
 }

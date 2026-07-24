@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from services.files.models import ImportedSheetsRow
 from base import ServiceBase
 from .models import Queue
+from .enums import QUEUEACTION
 from uuid import uuid4
 
 
@@ -18,6 +19,12 @@ class QueueBuilder(ServiceBase):
         queue_name = queue.values.get("queue_name", "").strip()
         queue_number = queue.values.get("queue_number", "").strip()
         queue_row = queue.row_number
+        queue_action_raw = queue.values.get("action_type", "ADD")
+
+        try:
+            queue_action = QUEUEACTION(queue_action_raw)
+        except ValueError:
+            queue_action = QUEUEACTION.ADD
 
         if not queue_name or not queue_number:
             msg = f"Queue {queue_row} doesn't have value for both Queue Name & Queue Number."
@@ -28,6 +35,7 @@ class QueueBuilder(ServiceBase):
             queue_name=queue_name,
             queue_number=queue_number,
             row_number=queue_row,
+            action_type=queue_action,
         )
 
     def build_queues(self, queues: list[ImportedSheetsRow]) -> list[Queue]:

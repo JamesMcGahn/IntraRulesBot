@@ -85,14 +85,16 @@ class QueuesController(ControllerBase):
             self.send_toast_failure("Queues Import Failed", import_res.message)
 
     def on_validation_complete(self, batch: ValidationQueueBatch):
-        print(batch)
         self._display_validation(batch, "Queue Import")
         if batch.errors:
             return
 
         queues = self._queue_builder.build_queues(batch.valid_queues)
 
-        queue_items = [QueueRunItem(queue.guid, queue) for queue in queues]
+        queue_items = [
+            QueueRunItem(queue.guid, queue, action_type=queue.action_type)
+            for queue in queues
+        ]
         login_config = self._settings_provider.get_queue_run_config()
         if not login_config.login_valid:
             self.send_toast_failure(

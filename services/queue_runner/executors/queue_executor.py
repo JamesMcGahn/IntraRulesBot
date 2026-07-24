@@ -19,6 +19,7 @@ from base.errors import (
 
 from ..enums import QEXECUTORTASK, QUEUEEXECSTATUS
 from ..models import QEXECSTEPCALL, QueueExecutionResult, QueueProgressEvent
+from services.queues.enums import QUEUEACTION
 
 
 class QueueExecutor:
@@ -48,7 +49,7 @@ class QueueExecutor:
             ),
         ]
 
-        self._queue_flow = [
+        self._add_queue_flow = [
             QEXECSTEPCALL(QEXECUTORTASK.SET_QUEUE_NAME, self.set_queue_name),
             QEXECSTEPCALL(QEXECUTORTASK.SET_QUEUE_NUMBER, self.set_queue_number),
             QEXECSTEPCALL(QEXECUTORTASK.SUBMIT_QUEUE, self.submit_queue),
@@ -56,6 +57,17 @@ class QueueExecutor:
                 QEXECUTORTASK.VERIFY_SUBMISSION, self.verify_queue_submission
             ),
         ]
+
+        self._verify_queue_flow = [
+            QEXECSTEPCALL(
+                QEXECUTORTASK.VERIFY_SUBMISSION, self.verify_queue_submission
+            ),
+        ]
+
+        self._queue_actions = {
+            QUEUEACTION.ADD: self._add_queue_flow,
+            QUEUEACTION.VERIFY: self._verify_queue_flow,
+        }
 
     @property
     def form_port(self) -> InteractionPort:
@@ -196,7 +208,14 @@ class QueueExecutor:
                 for step in self._ensure_form_flow:
                     self.run_step(step)
 
-            for step in self._queue_flow:
+            action_type = self._ctx.queue.action_type
+            queue_flow = self._queue_actions.get(action_type)
+
+            if queue_flow is None:
+                msg = f"queue_action is not a recognized value. value: {queue_flow}"
+                self.logging(msg, "ERROR")
+                raise ValueError(msg)
+            for step in queue_flow:
                 self.run_step(step)
 
             return QueueExecutionResult(
