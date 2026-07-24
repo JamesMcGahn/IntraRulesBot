@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from ...queues.models import Queue
     from .queue_progress_event import QueueProgressEvent
     from .queue_runner_state import QueueRunnerState
+    from ...queues.enums import QUEUEACTION
 
 
 @dataclass(frozen=True)
@@ -20,6 +21,7 @@ class QueueExecutionContext:
     browser_port: BrowserPort
     state: QueueRunnerState
     queue: Queue
+    action_type: QUEUEACTION
     logger: LogAdapter
     should_stop: Callable[[], bool]
     profile: BrowserProfile

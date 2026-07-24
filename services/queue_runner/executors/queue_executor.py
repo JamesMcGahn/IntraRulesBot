@@ -222,7 +222,7 @@ class QueueExecutor:
                 for step in self._ensure_form_flow:
                     self.run_step(step)
             self.logging("Provider Modal is open. Continuing", "INFO")
-            action_type = self._ctx.queue.action_type
+            action_type = self._ctx.action_type
             queue_flow = self._queue_actions.get(action_type)
 
             if queue_flow is None:

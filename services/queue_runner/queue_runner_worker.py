@@ -207,6 +207,7 @@ class QueueRunnerWorker(QObject):
                         browser_port=self.playwright_session.browser_adapter,
                         state=state,
                         queue=item.queue,
+                        action_type=item.action_type,
                         logger=self.logger,
                         should_stop=self.should_stop,
                         profile=self.profile_registry.get_profile(
