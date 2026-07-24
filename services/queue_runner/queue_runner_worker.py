@@ -292,7 +292,7 @@ class QueueRunnerWorker(QObject):
 
     def _handle_result_success(self, item: QueueRunItem, result: QueueExecutionResult):
         self.logging(
-            f"Row: {item.queue.row_number} - {item.queue.queue_name} - succeeded."
+            f"({self.completed_count+1}/{self.total_count}) - SUCCESS - Row: {item.queue.row_number} - {item.queue.queue_name} - succeeded."
         )
         item.status = QUEUERUNSTATUS.SUCCESS
 
@@ -316,7 +316,7 @@ class QueueRunnerWorker(QObject):
         if item.retry_count >= 2:
             return self._handle_result_failure(item, result)
         self.logging(
-            f"Row: {item.queue.row_number} - {item.queue.queue_name} - failed."
+            f"({self.completed_count+1}/{self.total_count}) - FAILED - Row: {item.queue.row_number} - {item.queue.queue_name} - Queue Exists."
         )
         self._send_result_progress(
             item,
@@ -332,16 +332,22 @@ class QueueRunnerWorker(QObject):
         )
         self.q_item_queue.appendleft(item)
         self.progress_status.emit(self.completed_count, self.total_count)
+        self.logging(
+            f"({self.completed_count+1}/{self.total_count}) - VALIDATING (ATTEMPT: {item.retry_count}) - Row: {item.queue.row_number} - {item.queue.queue_name}"
+        )
 
     def _handle_result_retry(self, item: QueueRunItem, result: QueueExecutionResult):
         if item.retry_count >= 2:
             return self._handle_result_failure(item, result)
         self.logging(
-            f"Row: {item.queue.row_number} - {item.queue.queue_name} - failed."
+            f"({self.completed_count+1}/{self.total_count}) - FAILED - Row: {item.queue.row_number} - {item.queue.queue_name} - failed."
         )
         item.retry_count += 1
         item.status = QUEUERUNSTATUS.RETRYING
         self.q_item_queue.appendleft(item)
+        self.logging(
+            f"({self.completed_count+1}/{self.total_count}) - RETRYING (ATTEMPT: {item.retry_count}) - Row: {item.queue.row_number} - {item.queue.queue_name} - failed."
+        )
         self._send_result_progress(item, result, "Retrying...", use_exec_status=False)
         self._rebuild_browser()
         auth_result = self._authenticate()
@@ -354,7 +360,7 @@ class QueueRunnerWorker(QObject):
 
     def _handle_result_failure(self, item: QueueRunItem, result: QueueExecutionResult):
         self.logging(
-            f"Row: {item.queue.row_number} - {item.queue.queue_name} - not retrying running queue."
+            f"({self.completed_count+1}/{self.total_count}) - FAILED - Row: {item.queue.row_number} - {item.queue.queue_name} - not retrying running queue."
         )
         item.status = QUEUERUNSTATUS.FAILED
         self._send_result_progress(

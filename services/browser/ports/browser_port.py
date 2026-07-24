@@ -10,6 +10,7 @@ from .interaction_port import InteractionPort
 class BrowserPort(InteractionPort, Protocol):
 
     def goto(self, url: str) -> None: ...
+    def reload_page(self) -> None: ...
 
     def is_current_url(
         self, url_part: str, exact: bool = False, case_sensitive: bool = False

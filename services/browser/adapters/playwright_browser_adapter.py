@@ -20,6 +20,9 @@ class PlaywrightBrowserAdapter(BrowserPort):
     def goto(self, url: str) -> None:
         self._page.goto(url)
 
+    def reload_page(self) -> None:
+        self._page.reload()
+
     def is_current_url(
         self, url_part: str, exact: bool = False, case_sensitive: bool = False
     ) -> bool:

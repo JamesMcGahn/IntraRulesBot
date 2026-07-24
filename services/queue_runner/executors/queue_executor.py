@@ -82,14 +82,27 @@ class QueueExecutor:
         return self._ctx.state.queue_port
 
     def _is_queue_form_usable(self):
+        self.logging("Checking the Provider Modal is Open.", "DEBUG")
         if self._ctx.state.queue_port is None:
             return False
+
         try:
+            self._ctx.state.queue_port.wait_for_loading_cycle(
+                self._ctx.profile.selectors.queues.queue_grid_container,
+                500,
+                disappear_timeout=45_000,
+            )
+
             return self._ctx.state.queue_port.is_visible(
                 self._ctx.profile.selectors.queues.queue_name_input,
-                timeout=1000,
+                timeout=5_000,
             )
-        except Exception:
+        except PlaywrightTimeoutError:
+            # The frame may still exist, form never became usable.
+            return False
+
+        except PlaywrightError:
+            # The cached frame is actually detached, closed, or otherwise invalid.
             self._ctx.state.queue_port = None
             return False
 
@@ -180,7 +193,7 @@ class QueueExecutor:
                 name_row,
                 selector=ctx.profile.selectors.queues.queue_row_number_item,
                 attribute=ctx.profile.selectors.queues.queue_row_attribute,
-                timeout=10000,
+                timeout=20_000,
             )
         expected_number = str(ctx.queue.queue_number)
         expected_name = str(ctx.queue.queue_name)
@@ -205,9 +218,10 @@ class QueueExecutor:
             self._ctx.browser_port.wait_for_page_ready()
 
             if not self._is_queue_form_usable():
+                self.logging("Provider Modal is not open. Reopening Modal", "INFO")
                 for step in self._ensure_form_flow:
                     self.run_step(step)
-
+            self.logging("Provider Modal is open. Continuing", "INFO")
             action_type = self._ctx.queue.action_type
             queue_flow = self._queue_actions.get(action_type)
 
@@ -301,6 +315,8 @@ class QueueExecutor:
             ctx.browser_port.goto(
                 f"https://{ctx.tenant}.intradiem.com/{ctx.profile.selectors.providers.page_path}"
             )
+        ctx.browser_port.reload_page()
+        self.logging(f"Trying to Find Provider Name: {ctx.provider_name}", "INFO")
         provider_category = ctx.browser_port.find_by_has_text(
             ctx.profile.selectors.providers.category_items,
             ctx.profile.selectors.providers.category_header,
@@ -321,6 +337,7 @@ class QueueExecutor:
             ctx.profile.selectors.providers.provider_edit_button,
             no_wait_after=True,
         )
+        self.logging(f"Found Provider Name: {ctx.provider_name}", "INFO")
 
     def open_provider_form(self, ctx: QueueExecutionContext):
         frame_port = ctx.browser_port.frame_locator(
@@ -329,6 +346,9 @@ class QueueExecutor:
         ctx.state.form_port = frame_port
 
     def find_provider_instance(self, ctx: QueueExecutionContext):
+        self.logging(
+            f"Trying to Find Provider Instance: {ctx.provider_instance}", "INFO"
+        )
         self.form_port.click(ctx.profile.selectors.provider_instance.instances_button)
 
         self.form_port.click(
@@ -340,13 +360,21 @@ class QueueExecutor:
             ctx.profile.selectors.provider_instance.provider_instance_dropdown_items,
             ctx.provider_instance,
         )
+        self.logging(f"Found Provider Instance: {ctx.provider_instance}", "INFO")
 
     def switch_to_configuration_page(self, ctx: QueueExecutionContext):
+        self.logging(
+            f"Switching Provider Instance {ctx.provider_instance} Configuration Page.",
+            "INFO",
+        )
         self.form_port.click(
             ctx.profile.selectors.provider_instance.configuration_button
         )
 
     def open_queue_form(self, ctx: QueueExecutionContext):
+        self.logging(
+            f"Opening Provider Instance: {ctx.provider_instance} Queue Form", "INFO"
+        )
         manage_queues = self.form_port.find_by_has_text(
             ctx.profile.selectors.provider_instance.configuration_items,
             ctx.profile.selectors.provider_instance.configuration_header,
@@ -363,3 +391,4 @@ class QueueExecutor:
             ctx.profile.selectors.queues.queues_modal_frame
         )
         ctx.state.queue_port = queue_port
+        self.logging(f"{ctx.provider_instance} Queue Form Opened.", "INFO")
