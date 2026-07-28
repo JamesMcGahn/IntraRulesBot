@@ -15,6 +15,7 @@ from base.errors import (
     DuplicateNameException,
     PlaywrightSessionLostException,
     StoppedRequestException,
+    QueueNotFound,
 )
 
 from ..enums import QEXECUTORTASK, QUEUEEXECSTATUS
@@ -58,15 +59,26 @@ class QueueExecutor:
             ),
         ]
 
-        self._verify_queue_flow = [
+        self._del_queue_flow = [
+            QEXECSTEPCALL(QEXECUTORTASK.DELETE_QUEUE, self.delete_queue),
+            QEXECSTEPCALL(QEXECUTORTASK.VERIFY_SUBMISSION, self.verify_delete_queue),
+        ]
+
+        self._verify_add_queue_flow = [
             QEXECSTEPCALL(
                 QEXECUTORTASK.VERIFY_SUBMISSION, self.verify_queue_submission
             ),
         ]
 
+        self._verify_del_queue_flow = [
+            QEXECSTEPCALL(QEXECUTORTASK.VERIFY_SUBMISSION, self.verify_delete_queue),
+        ]
+
         self._queue_actions = {
             QUEUEACTION.ADD: self._add_queue_flow,
-            QUEUEACTION.VERIFY: self._verify_queue_flow,
+            QUEUEACTION.VERIFY_EXISTS: self._verify_add_queue_flow,
+            QUEUEACTION.VERIFY_NOT_EXISTS: self._verify_del_queue_flow,
+            QUEUEACTION.DELETE: self._del_queue_flow,
         }
 
     @property
@@ -156,7 +168,7 @@ class QueueExecutor:
 
     def submit_queue(self, ctx: QueueExecutionContext):
         alert = ctx.browser_port.frame_click_and_accept_alert_if_appears(
-            self.queue_port, ctx.profile.selectors.queues.queue_add_btn
+            self.queue_port, ctx.profile.selectors.queues.queue_add_button
         )
         self.logging(f"Submitted Queue: {ctx.queue.queue_number}", "INFO")
         if alert:
@@ -205,6 +217,41 @@ class QueueExecutor:
             raise ValueError(msg)
         self.logging("Queue number found")
 
+    def delete_queue(self, ctx: QueueExecutionContext):
+        message = f"Unable to find {ctx.queue.queue_name}. Queue does not exist"
+        try:
+            name_row = self.queue_port.find_by_has_selector(
+                ctx.profile.selectors.queues.queue_grid_rows,
+                (
+                    f"{ctx.profile.selectors.queues.queue_row_name_item}"
+                    f"[{ctx.profile.selectors.queues.queue_row_attribute}="
+                    f"'{ctx.queue.queue_name}']"
+                ),
+            )
+            if name_row.count() == 0:
+                self.logging(message, "ERROR")
+                raise QueueNotFound
+
+            ctx.browser_port.frame_click_and_accept_alert_if_appears(
+                name_row,
+                ctx.profile.selectors.queues.queue_delete_button,
+                "delete",
+            )
+        except PlaywrightTimeoutError as e:
+            self.logging(message, "ERROR")
+            raise QueueNotFound from e
+
+    def verify_delete_queue(self, ctx: QueueExecutionContext):
+        name_row = self.queue_port.find_by_has_selector(
+            ctx.profile.selectors.queues.queue_grid_rows,
+            (
+                f"{ctx.profile.selectors.queues.queue_row_name_item}"
+                f"[{ctx.profile.selectors.queues.queue_row_attribute}="
+                f"'{ctx.queue.queue_name}']"
+            ),
+        )
+        self.queue_port.verify_locator_not_present(name_row, 3000)
+
     def execute(self) -> QueueExecutionResult:
         """
         Executes the queue creation process by navigating through the form pages and submitting queues.
@@ -251,6 +298,12 @@ class QueueExecutor:
             return self._build_error_result(
                 status=QUEUEEXECSTATUS.NAME_EXISTS_ERROR,
                 message="Queue name already exists.",
+            )
+
+        except QueueNotFound:
+            return self._build_error_result(
+                status=QUEUEEXECSTATUS.QUEUE_NOT_FOUND_ERROR,
+                message="Queue not found.",
             )
 
         except PlaywrightSessionLostException as e:

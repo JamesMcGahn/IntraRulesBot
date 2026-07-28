@@ -10,3 +10,4 @@ class QUEUEEXECSTATUS(StrEnum):
     UNKNOWN_ERROR = "unknown_error"
     RUNNER_STOPPED_ERROR = "runner_stopped_error"
     TIMEOUT_ERROR = "timeout_error"
+    QUEUE_NOT_FOUND_ERROR = "not_found_error"

@@ -13,3 +13,4 @@ class QEXECUTORTASK(StrEnum):
     SET_QUEUE_NUMBER = "set_queue_number"
     SUBMIT_QUEUE = "submit_queue"
     VERIFY_SUBMISSION = "verify_submission"
+    DELETE_QUEUE = "delete_queue"

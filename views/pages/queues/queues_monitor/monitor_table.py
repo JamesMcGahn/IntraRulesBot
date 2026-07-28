@@ -21,7 +21,8 @@ class MonitorTableModel(QAbstractTableModel):
         return len(self.rule_rows)
 
     def columnCount(self, parent=None):
-        return len(fields(QueueRunRow))
+        # Minus the emitted field as its in monotonic
+        return len(fields(QueueRunRow)) - 1
 
     def remove_selected(self, selected):
         indexes = [i.row() for i in selected]
@@ -92,6 +93,7 @@ class MonitorTableModel(QAbstractTableModel):
                 return "Finished At:"
             if section == 8:
                 return "Message:"
+
         return super().headerData(section, orientation, role)
 
     def data(self, index: QModelIndex, role=Qt.DisplayRole):

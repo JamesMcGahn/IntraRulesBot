@@ -196,7 +196,9 @@ class QueueRunnerWorker(QObject):
             self.logging(f"Total Queues: {len(self.q_item_queue)}", "INFO")
             self.progress_status.emit(0, self.total_count)
             while self.q_item_queue and not self.should_stop():
-                self.logging(f"Queue: {self.completed_count+1} / {self.total_count}")
+                self.logging(
+                    f"({self.completed_count+1}/{self.total_count}) - Queue Executing"
+                )
                 try:
                     item = self.q_item_queue.popleft()
                     item.status = QUEUERUNSTATUS.RUNNING
@@ -274,7 +276,7 @@ class QueueRunnerWorker(QObject):
 
     def _handle_result(self, item: QueueRunItem, result: QueueExecutionResult):
         self.logging(
-            f"Recieved result for Row: {item.queue.row_number} - {item.queue.queue_name}"
+            f"({self.completed_count+1}/{self.total_count}) - Recieved result for Row: {item.queue.row_number} - {item.queue.queue_name}"
         )
         if result.success:
             self._handle_result_success(item, result)
@@ -283,6 +285,8 @@ class QueueRunnerWorker(QObject):
                 return self._handle_result_runner_stopped(item, result)
             elif result.status == QUEUEEXECSTATUS.NAME_EXISTS_ERROR:
                 return self._handle_result_queue_exists(item, result)
+            elif result.status == QUEUEEXECSTATUS.QUEUE_NOT_FOUND_ERROR:
+                return self._handle_result_queue_not_found(item, result)
             elif result.status in (
                 QUEUEEXECSTATUS.BROWSER_ERROR,
                 QUEUEEXECSTATUS.UNKNOWN_ERROR,
@@ -312,6 +316,41 @@ class QueueRunnerWorker(QObject):
         self.logging("Queue Executor stopped.", "WARN")
         self.stop_clean_up()
 
+    def _handle_result_queue_not_found(
+        self, item: QueueRunItem, result: QueueExecutionResult
+    ):
+        if item.retry_count >= 2 or item.action_type not in (
+            QUEUEACTION.VERIFY_NOT_EXISTS,
+            QUEUEACTION.DELETE,
+        ):
+            return self._handle_result_failure(item, result)
+        self.logging(
+            f"({self.completed_count+1}/{self.total_count}) - FAILED - Row: {item.queue.row_number} - {item.queue.queue_name} - Queue Does NOT Exist Already."
+        )
+        self._send_result_progress(
+            item,
+            result,
+            "Queue Name Does NOT Exist Already.",
+            use_exec_status=False,
+        )
+        item.retry_count += 1
+        item.status = QUEUERUNSTATUS.RETRYING
+        item.action_type = QUEUEACTION.VERIFY_NOT_EXISTS
+        self._send_result_progress(
+            item,
+            result,
+            "Verifying Queue Actually Does Not Exist",
+            use_exec_status=False,
+        )
+        self.q_item_queue.appendleft(item)
+        self.logging(
+            f"({self.completed_count+1}/{self.total_count}) - adding queue item back to queue for validation."
+        )
+        self.progress_status.emit(self.completed_count, self.total_count)
+        self.logging(
+            f"({self.completed_count+1}/{self.total_count}) - VALIDATING (ATTEMPT: {item.retry_count}) - Row: {item.queue.row_number} - {item.queue.queue_name}"
+        )
+
     def _handle_result_queue_exists(
         self, item: QueueRunItem, result: QueueExecutionResult
     ):
@@ -328,9 +367,12 @@ class QueueRunnerWorker(QObject):
         )
         item.retry_count += 1
         item.status = QUEUERUNSTATUS.RETRYING
-        item.action_type = QUEUEACTION.VERIFY
+        item.action_type = QUEUEACTION.VERIFY_EXISTS
         self._send_result_progress(
             item, result, "Verifying Queue Actually Exists", use_exec_status=False
+        )
+        self.logging(
+            f"({self.completed_count+1}/{self.total_count}) - adding queue item back to queue for validation."
         )
         self.q_item_queue.appendleft(item)
         self.progress_status.emit(self.completed_count, self.total_count)
@@ -354,6 +396,7 @@ class QueueRunnerWorker(QObject):
         self._rebuild_browser()
         auth_result = self._authenticate()
         if not auth_result.success:
+            self._handle_result_failure(item, result)
             self._shut_down.set()
             self._drain_remaining_rules(
                 QUEUERUNSTATUS.FAILED, "Authentication failed during retry"

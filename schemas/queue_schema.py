@@ -7,7 +7,7 @@ QUEUE_SCHEMA = {
         "guid": {"type": "string"},
         "action_type": {
             "type": "string",
-            "enum": ["ADD", "VERIFY"],
+            "enum": ["ADD", "VERIFY_EXISTS", "VERIFY_NOT_EXISTS", "DELETE"],
             "default": "ADD",
         },
     },

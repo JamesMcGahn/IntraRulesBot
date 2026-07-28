@@ -127,3 +127,9 @@ class InteractionPort(Protocol):
     def get_attribute_inside_parent(
         self, parent: Locator, selector: str, attribute: str, timeout: int = 30000
     ) -> str: ...
+
+    def verify_locator_present(self, locator: Locator, timeout: int = 5000) -> None: ...
+
+    def verify_locator_not_present(
+        self, locator: Locator, timeout: int = 5000
+    ) -> None: ...

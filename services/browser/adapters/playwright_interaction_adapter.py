@@ -8,6 +8,7 @@ from playwright.sync_api import (
     Page,
 )
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import expect
 
 
 class PlaywrightInteractionAdapter:
@@ -234,3 +235,9 @@ class PlaywrightInteractionAdapter:
     ) -> str:
         value = parent.locator(selector).get_attribute(attribute, timeout=timeout)
         return value or ""
+
+    def verify_locator_present(self, locator: Locator, timeout: int = 5000) -> None:
+        return expect(locator).to_have_count(count=1, timeout=timeout)
+
+    def verify_locator_not_present(self, locator: Locator, timeout: int = 5000) -> None:
+        return expect(locator).to_have_count(count=0, timeout=timeout)

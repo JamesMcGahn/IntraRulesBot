@@ -3,4 +3,6 @@ from enum import StrEnum
 
 class QUEUEACTION(StrEnum):
     ADD = "ADD"
-    VERIFY = "VERIFY"
+    VERIFY_EXISTS = "VERIFY_EXISTS"
+    VERIFY_NOT_EXISTS = "VERIFY_NOT_EXISTS"
+    DELETE = "DELETE"
