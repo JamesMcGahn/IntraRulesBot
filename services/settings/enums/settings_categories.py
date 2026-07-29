@@ -5,3 +5,4 @@ class SETTINGSCATEGORIES(StrEnum):
     LOG = "log"
     WHISPER = "whisper"
     LOGIN = "login"
+    BROWSER = "browser"

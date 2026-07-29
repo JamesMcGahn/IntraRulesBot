@@ -103,6 +103,10 @@ class AppContext(QObject, metaclass=QSingleton):
         self.browser_session_factory = BrowserSessionFactory(
             session_registry=self.session_registry, logger=self.log_adapter
         )
+        browser_settings = self.settings_manager.get_category(
+            SETTINGSCATEGORIES.BROWSER
+        )
+        self.browser_session_factory.load_settings(browser_settings)
 
         self.validation_service = ValidationService(
             settings_meta_provider=self.settings_manager,
@@ -228,6 +232,9 @@ class AppContext(QObject, metaclass=QSingleton):
         ## SETTINGS
         self.settings_controller.setting_updated.connect(self.setting_updated)
         self.setting_updated.connect(self.logger.received_settings_change)
+        self.setting_updated.connect(
+            self.browser_session_factory.received_settings_change
+        )
 
         ## Ruleset Bookmarked
         self.rules_controller.rule_set_bookmarked.connect(
