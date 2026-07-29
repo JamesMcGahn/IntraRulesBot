@@ -4,13 +4,13 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .models import StartUpContainer
-import os
 import subprocess
-import sys
+
 
 from utils.files import PathManager
 from services.auth.enums import PROVIDERS
 from PySide6.QtCore import QObject, Signal
+from playwright._impl._driver import compute_driver_executable, get_driver_env
 
 
 class StartUpCoordinator(QObject):
@@ -39,15 +39,23 @@ class StartUpCoordinator(QObject):
 
     def ensure_playwright_browsers(self):
         folder = PathManager.create_folder_in_app_data("playwright")
-        env = os.environ.copy()
+        env = get_driver_env()
         env["PLAYWRIGHT_BROWSERS_PATH"] = folder
         self._logging(
             "Ensuring Playwright is installed. ** This can take a while. **",
             "INFO",
         )
+        node_executable, cli_path = compute_driver_executable()
+        command = [
+            node_executable,
+            cli_path,
+            "install",
+            "chromium",
+        ]
+
         try:
             result = subprocess.run(
-                [sys.executable, "-m", "playwright", "install", "chromium"],
+                command,
                 env=env,
                 check=True,
                 capture_output=True,
@@ -90,6 +98,13 @@ class StartUpCoordinator(QObject):
 
             self._logging(
                 f"Playwright browser install failed with exit code {e.returncode}.",
+                "ERROR",
+            )
+            raise
+        except Exception as e:
+
+            self._logging(
+                f"Playwright browser install failed: {e}.",
                 "ERROR",
             )
             raise
