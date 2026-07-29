@@ -237,6 +237,14 @@ class QueueExecutor:
                 ctx.profile.selectors.queues.queue_delete_button,
                 "delete",
             )
+
+            self.logging("Checking for Loading Spinner.", "INFO")
+            self.queue_port.wait_for_loading_cycle(
+                ctx.profile.selectors.queues.queue_grid_container,
+                500,
+                disappear_timeout=30000,
+            )
+            self.logging("Loading Spinner Clear.", "INFO")
         except PlaywrightTimeoutError as e:
             self.logging(message, "ERROR")
             raise QueueNotFound from e
@@ -250,7 +258,10 @@ class QueueExecutor:
                 f"'{ctx.queue.queue_name}']"
             ),
         )
-        self.queue_port.verify_locator_not_present(name_row, 3000)
+        try:
+            self.queue_port.verify_locator_not_present(name_row, 3000)
+        except (PlaywrightTimeoutError, AssertionError):
+            self.queue_port.verify_locator_not_present(name_row, 30_000)
 
     def execute(self) -> QueueExecutionResult:
         """
