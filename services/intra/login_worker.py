@@ -14,7 +14,6 @@ from threading import Event, get_ident
 from PySide6.QtCore import QObject, Signal
 
 from services.auth.enums import PROVIDERS
-from services.browser.models import PlaywrightConfig
 
 from ..auth.enums import AUTHSTATUS
 from ..auth.models.auth_result import AuthResult
@@ -88,7 +87,7 @@ class IntraLoginWorker(QObject):
         Initializes the Selenium WebDriver through the WebDriverManager.
         """
         self.playwright_session_manager = self.browser_session_factory.create_session(
-            PROVIDERS.INTRA, PlaywrightConfig()
+            PROVIDERS.INTRA
         )
         self.playwright_session = self.playwright_session_manager.start()
 

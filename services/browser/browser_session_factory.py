@@ -42,7 +42,11 @@ class BrowserSessionFactory(QObject):
         for field in settings.get_fields_list():
             value = getattr(settings, field.name, None)
             setattr(self, field.name, value)
+        self._update_config()
         self._settings_loaded = True
+        self.logger(
+            f"{self.__class__.__name__}: Browser Settings loaded.", "INFO", True
+        )
 
     def _update_config(self):
         self.config = PlaywrightConfig(
@@ -59,7 +63,7 @@ class BrowserSessionFactory(QObject):
 
         self._update_config()
         self.logger(
-            "Browser Settings changed. Settings will apply to the next Browser Session.",
+            f"{self.__class__.__name__}: Browser Settings changed. Settings will apply to the next Browser Session.",
             "INFO",
             True,
         )
