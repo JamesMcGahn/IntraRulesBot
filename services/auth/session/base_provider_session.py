@@ -55,7 +55,7 @@ class BaseProviderSession:
         return getattr(self.Config, "has_token", False)
 
     @property
-    def provider_name(self) -> str:
+    def provider_name(self) -> PROVIDERS:
         return getattr(self.Config, "provider_name", PROVIDERS.DEFAULT)
 
     @property

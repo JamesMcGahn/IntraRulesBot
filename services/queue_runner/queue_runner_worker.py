@@ -19,7 +19,6 @@ from threading import Event, get_ident
 from PySide6.QtCore import QObject, Signal
 
 from base.enums import INTRAVERSION
-from services.auth.enums import PROVIDERS
 
 from ..auth.enums import AUTHSTATUS
 from ..auth.models.auth_result import AuthResult
@@ -108,7 +107,7 @@ class QueueRunnerWorker(QObject):
         Initializes the Playwright.
         """
         self.playwright_session_manager = self.browser_session_factory.create_session(
-            PROVIDERS.INTRA
+            self.session.provider_name
         )
         self.playwright_session = self.playwright_session_manager.start()
 
@@ -134,7 +133,7 @@ class QueueRunnerWorker(QObject):
                 f"Attempting to authenticate: {auth_attempts} / {max_attempts-1}"
             )
             result = self.auth_service.ensure_auth(
-                PROVIDERS.INTRA,
+                self.session.provider_name,
                 self.creds,
                 self.playwright_session.browser_adapter,
                 should_stop_cb=self.should_stop,
