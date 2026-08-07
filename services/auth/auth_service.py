@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 from .enums import PROVIDERS
 from .models import AuthValidationResponse
 
-from ..intra.intra_auth_service import IntraAuthService
+from ..intra.v10.intra_auth_service import IntraAuthService
 from .session.session_registry import SessionRegistry
 from .base_auth_service import BaseAuthService
 
@@ -27,8 +27,8 @@ class AuthService:
     ):
         super().__init__()
         self._providers: dict[PROVIDERS, BaseAuthService] = {
-            PROVIDERS.INTRA: IntraAuthService(
-                session_registry, profile_registry, PROVIDERS.INTRA, logger
+            PROVIDERS.INTRA_V10: IntraAuthService(
+                session_registry, profile_registry, PROVIDERS.INTRA_V10, logger
             ),
         }
 

@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from .interfaces.settings_meta_provider import SettingsMetaProvider
     from .interfaces.schema_meta_provider import SchemaMetaProvider
     from ..auth.auth_service import AuthService
-    from ..intra.intra_provider_session import IntraProviderSession
+    from services.intra.v10.intra_provider_session import IntraProviderSession
     from ..browser import BrowserSessionFactory
     from ..logger.adapters import LogAdapter
 

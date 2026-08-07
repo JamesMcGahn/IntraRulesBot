@@ -7,8 +7,8 @@ if TYPE_CHECKING:
     from .session_store import SessionStore
 
 from ..enums import PROVIDERS
-from .base_provider_session import BaseProviderSession
-from services.intra.intra_provider_session import IntraProviderSession
+from services.auth.session.base_provider_session import BaseProviderSession
+from services.intra.v10.intra_provider_session import IntraProviderSession
 
 
 class SessionRegistry:
@@ -24,7 +24,7 @@ class SessionRegistry:
         self._sessions: dict[PROVIDERS, BaseProviderSession] = {}
 
         self.providers = {
-            PROVIDERS.INTRA: IntraProviderSession,
+            PROVIDERS.INTRA_V10: IntraProviderSession,
         }
 
     def for_provider(self, provider: PROVIDERS) -> BaseProviderSession:

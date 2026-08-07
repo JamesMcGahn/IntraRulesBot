@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Deque
 if TYPE_CHECKING:
     from ..auth.auth_service import AuthService
 
-    from ..intra.intra_provider_session import IntraProviderSession
+    from services.intra.v10.intra_provider_session import IntraProviderSession
     from services.logger.adapters import LogAdapter
     from ..base.models import JobRequest
     from .models import RuleRunnerRequestPayload
@@ -107,7 +107,7 @@ class RuleRunnerWorker(QObject):
         Initializes the Selenium WebDriver through the WebDriverManager.
         """
         self.playwright_session_manager = self.browser_session_factory.create_session(
-            PROVIDERS.INTRA
+            PROVIDERS.INTRA_V10
         )
         self.playwright_session = self.playwright_session_manager.start()
 
@@ -133,7 +133,7 @@ class RuleRunnerWorker(QObject):
                 f"Attempting to authenticate: {auth_attempts} / {max_attempts-1}"
             )
             result = self.auth_service.ensure_auth(
-                PROVIDERS.INTRA,
+                PROVIDERS.INTRA_V10,
                 self.creds,
                 self.playwright_session.browser_adapter,
                 should_stop_cb=self.should_stop,

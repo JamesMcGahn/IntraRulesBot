@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..auth.session import SessionRegistry
+    from services.auth.session.session_registry import SessionRegistry
     from services.auth.enums import PROVIDERS
     from services.logger.adapters import LogAdapter
     from ..settings.events import SettingUpdatedEvent
@@ -30,6 +30,8 @@ class BrowserSessionFactory(QObject):
     ) -> PlaywrightSessionManager:
         if config is None:
             config = self.config
+        print("THIS IS THE CONFIG")
+        print(config)
         return PlaywrightSessionManager(
             provider_session=self.session_registry.for_provider(provider),
             logger=self.logger,
@@ -42,6 +44,8 @@ class BrowserSessionFactory(QObject):
         for field in settings.get_fields_list():
             value = getattr(settings, field.name, None)
             setattr(self, field.name, value)
+            print(field.name, value)
+
         self._update_config()
         self._settings_loaded = True
         self.logger(
@@ -49,9 +53,13 @@ class BrowserSessionFactory(QObject):
         )
 
     def _update_config(self):
+        print("before update", self.browser_headless)
+        headless = self.browser_headless.strip().lower() == "true"
         self.config = PlaywrightConfig(
-            headless=bool(self.browser_headless), slow_mo=self.browser_move_delay_speed
+            headless=headless, slow_mo=self.browser_move_delay_speed
         )
+        print("this is the config on load")
+        print(self.config)
 
     @Slot(object)
     def received_settings_change(self, event: SettingUpdatedEvent):

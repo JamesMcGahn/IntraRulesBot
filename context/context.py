@@ -15,7 +15,8 @@ from controllers import (
 from schemas.registry import SchemaRegistry
 from services.auth.auth_service import AuthService
 from services.auth.enums import PROVIDERS
-from services.auth.session import SessionRegistry, SessionStore
+from services.auth.session.session_registry import SessionRegistry
+from services.auth.session.session_store import SessionStore
 from services.browser import BrowserSessionFactory
 from services.lifecycle import ShutdownCoordinator, StartUpCoordinator
 from services.logger import Logger
@@ -106,12 +107,13 @@ class AppContext(QObject, metaclass=QSingleton):
         browser_settings = self.settings_manager.get_category(
             SETTINGSCATEGORIES.BROWSER
         )
+
         self.browser_session_factory.load_settings(browser_settings)
 
         self.validation_service = ValidationService(
             settings_meta_provider=self.settings_manager,
             schema_meta_provider=self.schema_registry,
-            session=self.session_registry.for_provider(PROVIDERS.INTRA),
+            session=self.session_registry.for_provider(PROVIDERS.INTRA_V10),
             auth_service=self.auth_service,
             browser_session_factory=self.browser_session_factory,
             logger=self.log_adapter,
@@ -124,7 +126,7 @@ class AppContext(QObject, metaclass=QSingleton):
         )
 
         self.rule_runner_service = RuleRunnerService(
-            session=self.session_registry.for_provider(PROVIDERS.INTRA),
+            session=self.session_registry.for_provider(PROVIDERS.INTRA_V10),
             auth_service=self.auth_service,
             browser_session_factory=self.browser_session_factory,
             logger=self.log_adapter,
@@ -132,7 +134,7 @@ class AppContext(QObject, metaclass=QSingleton):
         )
 
         self.queue_runner_service = QueueRunnerService(
-            session=self.session_registry.for_provider(PROVIDERS.INTRA),
+            session=self.session_registry.for_provider(PROVIDERS.INTRA_V10),
             auth_service=self.auth_service,
             browser_session_factory=self.browser_session_factory,
             logger=self.log_adapter,

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..auth.auth_service import AuthService
-    from ..intra.intra_provider_session import IntraProviderSession
+    from ..intra.v10.intra_provider_session import IntraProviderSession
     from ..logger.adapters import LogAdapter
     from ..base.models import JobRequest
     from .models import QueueRunnerRequestPayload

@@ -30,7 +30,7 @@ class StartUpCoordinator(QObject):
             self._logging("Starting Start Up Checks....", "INFO")
             self.container.rule_sets_controller.load_editor_state()
             self.container.rules_controller.load_editor_state()
-            self.container.session_registry.pre_load_providers([PROVIDERS.INTRA])
+            self.container.session_registry.pre_load_providers([PROVIDERS.INTRA_V10])
             self.ensure_playwright_browsers()
             self._logging("Starting Start Up Checks Finished.", "INFO")
             self.done.emit(True)

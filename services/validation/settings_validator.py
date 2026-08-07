@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..auth.auth_service import AuthService
 
-    from ..intra.intra_provider_session import IntraProviderSession
+    from services.intra.v10.intra_provider_session import IntraProviderSession
     from ..base.models import JobRequest
     from .models import (
         ValidationRequest,
@@ -23,7 +23,7 @@ from PySide6.QtCore import QThread, Signal
 from .base_validator import BaseValidator
 from ..base.enums import JOBSTATUS
 from ..base.models import JobRef, JobResponse
-from ..intra.login_worker import IntraLoginWorker
+from services.intra.v10.login_worker import IntraLoginWorker
 from ..settings.enums import FIELDSTATESTATUS
 from .enums import VALIDATEJOBTYPE
 from .models import (
