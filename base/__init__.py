@@ -5,6 +5,7 @@ from .qworker_base import QWorkerBase
 from .singleton import Singleton
 from .service_base import ServiceBase
 from .controller_base import ControllerBase
+from .logging_base import LoggingBase
 
 __all__ = [
     "Singleton",
@@ -14,4 +15,5 @@ __all__ = [
     "QWorkerBase",
     "ServiceBase",
     "ControllerBase",
+    "LoggingBase",
 ]
