@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from .interfaces.settings_meta_provider import SettingsMetaProvider
     from .interfaces.schema_meta_provider import SchemaMetaProvider
     from ..auth.auth_service import AuthService
-    from services.intra.v10.intra_provider_session import IntraProviderSession
+    from services.auth.session.session_registry import SessionRegistry
     from ..browser import BrowserSessionFactory
     from ..logger.adapters import LogAdapter
 
@@ -32,7 +32,7 @@ class ValidationService(QObjectBase):
         self,
         settings_meta_provider: SettingsMetaProvider,
         schema_meta_provider: SchemaMetaProvider,
-        session: IntraProviderSession,
+        session: SessionRegistry,
         auth_service: AuthService,
         browser_session_factory: BrowserSessionFactory,
         logger: LogAdapter,

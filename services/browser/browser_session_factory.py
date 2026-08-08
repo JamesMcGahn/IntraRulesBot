@@ -30,8 +30,7 @@ class BrowserSessionFactory(QObject):
     ) -> PlaywrightSessionManager:
         if config is None:
             config = self.config
-        print("THIS IS THE CONFIG")
-        print(config)
+
         return PlaywrightSessionManager(
             provider_session=self.session_registry.for_provider(provider),
             logger=self.logger,
@@ -44,7 +43,6 @@ class BrowserSessionFactory(QObject):
         for field in settings.get_fields_list():
             value = getattr(settings, field.name, None)
             setattr(self, field.name, value)
-            print(field.name, value)
 
         self._update_config()
         self._settings_loaded = True
@@ -53,13 +51,10 @@ class BrowserSessionFactory(QObject):
         )
 
     def _update_config(self):
-        print("before update", self.browser_headless)
         headless = self.browser_headless.strip().lower() == "true"
         self.config = PlaywrightConfig(
             headless=headless, slow_mo=self.browser_move_delay_speed
         )
-        print("this is the config on load")
-        print(self.config)
 
     @Slot(object)
     def received_settings_change(self, event: SettingUpdatedEvent):

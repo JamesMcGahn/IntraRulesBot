@@ -113,7 +113,7 @@ class AppContext(QObject, metaclass=QSingleton):
         self.validation_service = ValidationService(
             settings_meta_provider=self.settings_manager,
             schema_meta_provider=self.schema_registry,
-            session=self.session_registry.for_provider(PROVIDERS.INTRA_V10),
+            session=self.session_registry,
             auth_service=self.auth_service,
             browser_session_factory=self.browser_session_factory,
             logger=self.log_adapter,
@@ -237,6 +237,7 @@ class AppContext(QObject, metaclass=QSingleton):
         self.setting_updated.connect(
             self.browser_session_factory.received_settings_change
         )
+        self.setting_updated.connect(self.session_registry.received_settings_change)
 
         ## Ruleset Bookmarked
         self.rules_controller.rule_set_bookmarked.connect(

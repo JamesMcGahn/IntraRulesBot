@@ -4,8 +4,6 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..auth.auth_service import AuthService
-
-    from services.intra.v10.intra_provider_session import IntraProviderSession
     from ..base.models import JobRequest
     from .models import (
         ValidationRequest,
@@ -17,13 +15,15 @@ if TYPE_CHECKING:
     from .interfaces.settings_meta_provider import SettingsMetaProvider
     from ..browser import BrowserSessionFactory
     from ..logger.adapters import LogAdapter
+    from services.auth.session.session_registry import SessionRegistry
 
 from PySide6.QtCore import QThread, Signal
 
 from .base_validator import BaseValidator
 from ..base.enums import JOBSTATUS
 from ..base.models import JobRef, JobResponse
-from services.intra.v10.login_worker import IntraLoginWorker
+from services.intra.v10.login_worker import IntraLoginWorker as IntraV10Worker
+from services.intra.v11.login_worker import IntraLoginWorker as IntraV11Worker
 from ..settings.enums import FIELDSTATESTATUS
 from .enums import VALIDATEJOBTYPE
 from .models import (
@@ -31,6 +31,8 @@ from .models import (
     ValidationBatchResponse,
     ValidationResponse,
 )
+from services.auth.enums import PROVIDERS
+from base.enums import INTRAVERSION
 
 
 class SettingsValidationService(BaseValidator):
@@ -42,7 +44,7 @@ class SettingsValidationService(BaseValidator):
         self,
         logger: LogAdapter,
         settings_meta_provider: SettingsMetaProvider,
-        session: IntraProviderSession,
+        session: SessionRegistry,
         auth_service: AuthService,
         browser_session_factory: BrowserSessionFactory,
     ):
@@ -162,15 +164,31 @@ class SettingsValidationService(BaseValidator):
         if self._intra_login_thread and self._intra_login_thread.isRunning():
             return
 
+        version = batch_object.get("platform_version")
+        if INTRAVERSION(version) == INTRAVERSION.V10:
+            provider = PROVIDERS.INTRA_V10
+            session = self._session.for_provider(provider)
+            self._intra_worker = IntraV10Worker(
+                job_id,
+                batch_object,
+                self._browser_session_factory,
+                session,
+                self._auth_service,
+                self._logger,
+            )
+        else:
+            provider = PROVIDERS.INTRA_V11
+            session = self._session.for_provider(provider)
+            self._intra_worker = IntraV11Worker(
+                job_id,
+                batch_object,
+                self._browser_session_factory,
+                session,
+                self._auth_service,
+                self._logger,
+            )
+
         self._intra_login_thread = QThread()
-        self._intra_worker = IntraLoginWorker(
-            job_id,
-            batch_object,
-            self._browser_session_factory,
-            self._session,
-            self._auth_service,
-            self._logger,
-        )
 
         self._intra_worker.moveToThread(self._intra_login_thread)
 

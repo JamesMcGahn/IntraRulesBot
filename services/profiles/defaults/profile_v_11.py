@@ -30,8 +30,8 @@ from ..models import (
     TriggerSegementOccurrence,
 )
 
-v_10 = BrowserProfile(
-    version=INTRAVERSION.V11,
+v_11 = BrowserProfile(
+    version=INTRAVERSION.V10,
     selectors=ExecutorSelectors(
         login=LoginSelectors(
             user_name_input="#inputUserName,#username",
