@@ -31,15 +31,15 @@ from ..models import (
 )
 
 v_11 = BrowserProfile(
-    version=INTRAVERSION.V10,
+    version=INTRAVERSION.V11,
     selectors=ExecutorSelectors(
         login=LoginSelectors(
             user_name_input="#inputUserName,#username",
             password_input="#inputPassword,#password",
             submit_button="#btnLogin, #button[name='login']",
-            error_container="#loginErrorContainer span",
-            main_page_container="#ctl00_contentWrapper",
-            logged_out_session="#lblLoggedOut",
+            error_container="form .error-message",
+            main_page_container="",
+            logged_out_session="",
         ),
         providers=ProviderSelectors(
             page_path="ManagerConsole/Delivery/Providers.aspx",

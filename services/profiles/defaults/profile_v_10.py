@@ -31,7 +31,7 @@ from ..models import (
 )
 
 v_10 = BrowserProfile(
-    version=INTRAVERSION.V11,
+    version=INTRAVERSION.V10,
     selectors=ExecutorSelectors(
         login=LoginSelectors(
             user_name_input="#inputUserName,#username",

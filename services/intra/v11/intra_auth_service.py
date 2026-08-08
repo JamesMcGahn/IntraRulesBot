@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 import time
 
-from playwright.sync_api import Error as PlaywrightError
+from playwright.sync_api import Error as PlaywrightError, TimeoutError
 
 from ...auth.base_auth_service import BaseAuthService
 from ...auth.enums.auth_status import AUTHSTATUS
@@ -97,14 +97,43 @@ class IntraAuthService(BaseAuthService):
             browser_port.goto(
                 f"https://{creds.tenant}.intradiem.com/?loginoverride=manual"
             )
+
             self.check_shutdown(should_stop_cb)
             browser_port.wait_for_page_ready()
             self.check_shutdown(should_stop_cb)
-            self._enter_login_info(creds, browser_port, selectors)
+            try:
+                token = browser_port.capture_response_json(
+                    url_contains="openid-connect/token",
+                    action=lambda: self._enter_login_info(
+                        creds, browser_port, selectors
+                    ),
+                    method="POST",
+                    timeout=5_000,
+                )
+                print("here is the token response")
+                print(token)
+            except TimeoutError as _:
+                msg = "Error during login. Couldnt log in."
+                self.logging(msg, "ERROR")
+                error_toast = browser_port.is_visible(selectors.error_container, 3000)
+                if error_toast:
+                    msg = "Invalid User Credentials, Please check your Username or Password."
+                    self.logging(msg, "ERROR")
+                    return AuthResult(
+                        success=False,
+                        status=AUTHSTATUS.INVALID_CREDENTIALS,
+                        message=msg,
+                    )
+                return AuthResult(
+                    success=False, status=AUTHSTATUS.BROWSER_ERROR, message=msg
+                )
+
             self.check_shutdown(should_stop_cb)
             browser_port.wait_for_page_ready()
             self.check_shutdown(should_stop_cb)
-            return self._wait_for_success(browser_port, selectors)
+            msg = "Found Session Token. Login Successful."
+            self.logging(msg)
+            return AuthResult(success=True, status=AUTHSTATUS.SUCCESS, message=msg)
         except PlaywrightError as e:
             if should_stop_cb is not None and should_stop_cb():
                 self.logging("Stop Requested. Stopping Auth.")
@@ -144,52 +173,7 @@ class IntraAuthService(BaseAuthService):
 
         browser_port.fill(selectors.user_name_input, creds.user_name)
         browser_port.fill(selectors.password_input, creds.password)
-
-        alert = browser_port.click_and_accept_alert_if_appears(
-            selectors.submit_button, timeout=5000
-        )
-        if alert:
-            self.logging(
-                "Session open elsewhere alert was present. Accepted alert to proceed with this session.",
-                "INFO",
-            )
-        else:
-            self.logging("No session alert was present.", "INFO")
-
-    def _wait_for_success(
-        self, browser_port: BrowserPort, selectors: LoginSelectors
-    ) -> AuthResult:
-        """
-        Waits for the login success by checking for any error messages.
-        """
-
-        error_toast = browser_port.is_visible(selectors.error_container, 3000)
-        duplicate_session = browser_port.is_visible(selectors.logged_out_session, 3000)
-        if error_toast:
-            msg = "Error during login. Couldnt log in."
-            self.logging(msg, "ERROR")
-            return AuthResult(
-                success=False, status=AUTHSTATUS.INVALID_CREDENTIALS, message=msg
-            )
-        if duplicate_session:
-            msg = "You have logged out or have been logged out due to logging in from another session."
-            self.logging(msg, "ERROR")
-            return AuthResult(
-                success=False, status=AUTHSTATUS.DUPLICATE_SESSION, message=msg
-            )
-
-        self.logging("Login error toast not found. Verifying page loaded.", "INFO")
-        main_page_content = browser_port.is_visible(selectors.main_page_container, 5000)
-        if main_page_content:
-            msg = "Found main content on page. Login Successful."
-            self.logging(msg)
-            return AuthResult(success=True, status=AUTHSTATUS.SUCCESS, message=msg)
-        else:
-            msg = "Failure to find main content on page. Login Error."
-            self.logging(msg)
-            return AuthResult(
-                success=False, status=AUTHSTATUS.BROWSER_ERROR, message=msg
-            )
+        browser_port.click(selectors.submit_button, timeout=5000)
 
     def check_shutdown(self, should_stop_cb: Callable):
         if should_stop_cb():

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Protocol, Callable
 
 if TYPE_CHECKING:
     from playwright.sync_api import FrameLocator
+
 from .interaction_port import InteractionPort
 
 
@@ -46,3 +47,12 @@ class BrowserPort(InteractionPort, Protocol):
     ) -> bool: ...
 
     def wait_for_page_ready(self, timeout: int = 30000) -> None: ...
+
+    def capture_response_json(
+        self,
+        url_contains: str,
+        action: Callable[[], None],
+        method: str = "POST",
+        status: int | None = None,
+        timeout: int = 30_000,
+    ) -> dict: ...
