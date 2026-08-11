@@ -118,11 +118,19 @@ class IntraAuthService(BaseAuthService):
                     method="POST",
                     timeout=5_000,
                 )
-                print("here is the token response")
-                print(token)
-
-                self.session.access_token = token.get("access_token")
-                self.session.refresh_token = token.get("refresh_token")
+                self.logging(f"Token Response: {token}")
+                access_token = token.get("access_token")
+                if self._token_manager.check_token(access_token):
+                    self.session.access_token = access_token
+                    self.session.refresh_token = token.get("refresh_token")
+                else:
+                    msg = "Token Failed check. Auth Validation Failed"
+                    self.logging(msg, "ERROR")
+                    return AuthResult(
+                        success=False,
+                        status=AUTHSTATUS.INVALID_CREDENTIALS,
+                        message=msg,
+                    )
             except TimeoutError as _:
                 msg = "Error during login. Couldnt log in."
                 self.logging(msg, "ERROR")
