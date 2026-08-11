@@ -61,8 +61,11 @@ class SessionRegistry(QObject, LoggingBase):
             INTRAVERSION.V11: PROVIDERS.INTRA_V11,
         }
 
-        self._current_session = provider_mapping.get(version, BaseProviderSession)
-        self.logging(f"Setting current session to {self._current_session}")
+        provider = provider_mapping.get(version, BaseProviderSession)
+        self._current_session = self.for_provider(provider)
+        self.logging(
+            f"Setting current session to {self._current_session.provider_name}"
+        )
 
     def save_all(self):
         self.logging("Saving all sessions...")
