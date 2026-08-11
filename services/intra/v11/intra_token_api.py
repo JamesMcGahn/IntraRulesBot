@@ -32,7 +32,7 @@ class IntraTokenApi(BaseApi):
         request = NetworkRequest(
             method=HTTPMETHOD.POST,
             url=f"https://{token_data.tenant}auth.intradiem.com/auth/realms/{token_data.tenant}/protocol/openid-connect/token",
-            json={
+            data={
                 "grant_type": "refresh_token",
                 "refresh_token": token_data.refresh_token,
                 "client_id": "intradiem_frontend",
@@ -41,11 +41,11 @@ class IntraTokenApi(BaseApi):
 
         response = self._execute(request)
         self._logging(f"Received token response: {response}", "DEBUG")
-        if not response.ok:
+        if not response.ok or response.status >= 400:
             self._send_failure()
             return
-        access_token = response.get("access_token")
-        refesh_token = response.get("refresh_token")
+        access_token = response.data.get("access_token")
+        refesh_token = response.data.get("refresh_token")
 
         if access_token is None or refesh_token is None:
             self._send_failure(response)
