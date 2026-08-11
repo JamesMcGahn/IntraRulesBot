@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from services.logger.adapters import LogAdapter
     from services.files.models import ImportedSheetsRow
+    from controllers.queues.models import ValidationQueueBatch
 from base import ServiceBase
 from .models import Queue
 from .enums import QUEUEACTION
@@ -15,7 +16,9 @@ class QueueBuilder(ServiceBase):
     def __init__(self, logger: LogAdapter):
         super().__init__(logger)
 
-    def build_queue(self, queue: ImportedSheetsRow) -> Queue:
+    def build_queue(
+        self, queue: ImportedSheetsRow, provider_name: str, provider_instance: str
+    ) -> Queue:
         queue_name = queue.values.get("queue_name", "").strip()
         queue_number = queue.values.get("queue_number", "").strip()
         queue_row = queue.row_number
@@ -35,11 +38,15 @@ class QueueBuilder(ServiceBase):
             queue_name=queue_name,
             queue_number=queue_number,
             row_number=queue_row,
+            provider_instance=provider_instance,
+            provider_name=provider_name,
             action_type=queue_action,
         )
 
-    def build_queues(self, queues: list[ImportedSheetsRow]) -> list[Queue]:
+    def build_queues(self, batch: ValidationQueueBatch) -> list[Queue]:
         created_queues = []
-        for queue in queues:
-            created_queues.append(self.build_queue(queue))
+        for queue in batch.valid_queues:
+            created_queues.append(
+                self.build_queue(queue, batch.provider_name, batch.provider_instance)
+            )
         return created_queues

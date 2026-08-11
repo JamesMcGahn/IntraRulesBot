@@ -73,8 +73,8 @@ class QueuesController(ControllerBase):
         if import_res.ok:
             self.send_toast_success("Queues Import Succeeded", import_res.message)
             validate_payload = ValidationQueues(
-                provider_name=action.provider_name,
-                provider_instance=action.provider_instance,
+                provider_name=action.provider_name.strip(),
+                provider_instance=action.provider_instance.strip(),
                 file_path=import_res.file_path,
                 rows=import_res.rows,
             )
@@ -89,7 +89,7 @@ class QueuesController(ControllerBase):
         if batch.errors:
             return
 
-        queues = self._queue_builder.build_queues(batch.valid_queues)
+        queues = self._queue_builder.build_queues(batch)
 
         queue_items = [
             QueueRunItem(queue.guid, queue, action_type=queue.action_type)

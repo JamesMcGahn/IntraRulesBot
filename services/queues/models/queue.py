@@ -8,4 +8,6 @@ class Queue:
     queue_name: str
     queue_number: str
     row_number: int
+    provider_name: str
+    provider_instance: str
     action_type: QUEUEACTION.ADD
