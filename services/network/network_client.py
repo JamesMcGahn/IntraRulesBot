@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from .models.network_request import NetworkRequest
 from requests import Response, RequestException
 from .models.network_response import NetworkResponse
+from .enums.auth_mode import AUTHMODE
 
 
 class NetworkClient:
@@ -21,12 +22,16 @@ class NetworkClient:
         provider_session = self._session_registry.current_session()
         session = provider_session.build_session()
 
+        headers = dict(request.headers or {})
+        if request.auth_mode == AUTHMODE.BEARER:
+            headers["Authorization"] = f"Bearer {provider_session.access_token}"
+
         try:
             response = session.request(
                 method=request.method,
                 url=request.url,
                 params=request.params,
-                headers=request.headers,
+                headers=headers,
                 json=request.json,
                 data=request.data,
                 files=request.files,

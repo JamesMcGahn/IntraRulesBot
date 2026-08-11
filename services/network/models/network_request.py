@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Mapping
 from ..enums.http_method import HTTPMETHOD
+from ..enums.auth_mode import AUTHMODE
 
 
 @dataclass(frozen=True)
@@ -14,3 +15,4 @@ class NetworkRequest:
     files: Any = None
     timeout: float = 30.0
     retries: int = 0
+    auth_mode: AUTHMODE = AUTHMODE.NONE
