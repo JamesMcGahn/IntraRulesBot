@@ -10,8 +10,8 @@ class IntraProviderSession(BaseProviderSession):
 
     class Config:
         provider_name = PROVIDERS.INTRA_V11
-        has_token = False
+        has_token = True
         has_cookies = True
-        has_auth_cookies = False
-        auth_cookies = set()
+        has_auth_cookies = True
+        auth_cookies = {"KEYCLOAK_SESSION", "KEYCLOAK_SESSION_LEGACY"}
         domains = {"intradiem.com"}
