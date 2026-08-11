@@ -17,8 +17,7 @@ from services.auth.auth_service import AuthService
 from services.auth.enums import PROVIDERS
 from services.auth.session.session_registry import SessionRegistry
 from services.auth.session.session_store import SessionStore
-from services.intra.v11.intra_token_manager import IntraTokenManager
-from services.intra.v11.intra_token_api import IntraTokenApi
+from services.intra.v11 import IntraTokenManager, IntraTokenApi, IntraTokenService
 from services.network import NetworkClient
 from services.browser import BrowserSessionFactory
 from services.lifecycle import ShutdownCoordinator, StartUpCoordinator
@@ -90,19 +89,17 @@ class AppContext(QObject, metaclass=QSingleton):
         v11_session = self.session_registry.for_provider(PROVIDERS.INTRA_V11)
 
         self.network_client = NetworkClient(self.session_registry)
-        intra_v11_tokenapi = IntraTokenApi(self.log_adapter, self.network_client)
-        intra_token_manager = IntraTokenManager(
-            v11_session,
-            self.log_adapter,
-            intra_v11_tokenapi,
-            self.thread_cleanup_manager,
+        self.intra_v11_tokenapi = IntraTokenApi(self.log_adapter, self.network_client)
+        self.intra_token_service = IntraTokenService(
+            self.log_adapter, self.intra_v11_tokenapi
         )
+        self.intra_token_manager = IntraTokenManager(v11_session, self.log_adapter)
 
         self.auth_service = AuthService(
             self.session_registry,
             self.prolife_registry,
             self.log_adapter,
-            intra_token_manager,
+            self.intra_token_manager,
         )
 
         self.schema_registry = SchemaRegistry()
@@ -216,6 +213,7 @@ class AppContext(QObject, metaclass=QSingleton):
                 rules_controller=self.rules_controller,
                 rule_sets_controller=self.rule_sets_controller,
                 session_registry=self.session_registry,
+                intra_token_service=self.intra_token_service,
             )
         )
 
@@ -224,7 +222,7 @@ class AppContext(QObject, metaclass=QSingleton):
         self.shut_down_coord.register_service(
             "validation_service", self.validation_service
         )
-
+        self.shut_down_coord.register_service("intra_token", self.intra_token_service)
         # CONNECTIONS
         ## Rule Runner
         self.rule_runner_service.task_progress.connect(
@@ -265,6 +263,18 @@ class AppContext(QObject, metaclass=QSingleton):
         )
         self.rule_sets_controller.load_rule_set_from_bookmark.connect(
             self.rules_controller.load_from_bookmarks
+        )
+
+        # TOKEN
+
+        self.intra_token_service.token_response.connect(
+            self.intra_token_manager.receive_token
+        )
+        self.intra_token_service.token_failed.connect(
+            self.intra_token_manager.token_failed
+        )
+        self.intra_token_manager.request_refresh.connect(
+            self.intra_token_service.request_refreshes
         )
         # UI EVENTS
         self.rules_controller.ui_event.connect(self.ui_controller.handle_ui_event)

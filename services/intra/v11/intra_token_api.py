@@ -20,15 +20,15 @@ class IntraTokenApi(BaseApi):
     token_failed = Signal()
     token_response = Signal(object)
 
-    def __init__(
-        self,
-        logger: LogAdapter,
-        network_client: NetworkClient,
-    ):
+    def __init__(self, logger: LogAdapter, network_client: NetworkClient):
         super().__init__(logger, network_client)
+        self.token_fetch_in_progress = False
 
     @Slot(object)
     def refesh_token(self, token_data: TokenData) -> NetworkResponse:
+        if self.token_fetch_in_progress:
+            return
+        self.token_fetch_in_progress = True
         request = NetworkRequest(
             method=HTTPMETHOD.POST,
             url=f"https://{token_data.tenant}auth.intradiem.com/auth/realms/{token_data.tenant}/protocol/openid-connect/token",
@@ -41,6 +41,7 @@ class IntraTokenApi(BaseApi):
 
         response = self._execute(request)
         self._logging(f"Received token response: {response}", "DEBUG")
+        self.token_fetch_in_progress = False
         if not response.ok or response.status >= 400:
             self._send_failure()
             return
@@ -57,9 +58,12 @@ class IntraTokenApi(BaseApi):
                 access_token=access_token,
             )
         )
-        self.done.emit()
 
     def _send_failure(self, response: Response):
         self._logging(f"Token request failed. status: {response.status_code}")
         self.token_failed.emit()
+
+    @Slot()
+    def request_stop(self):
+        self._logging("Received shut down... Shutting down.")
         self.done.emit()

@@ -5,33 +5,24 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .intra_provider_session import IntraProviderSession
     from services.logger.adapters import LogAdapter
-    from base import ThreadCleanUpManager
-    from .intra_token_api import IntraTokenApi
 from ..models.token_data import TokenData
 
 import time
 
 import jwt
-from PySide6.QtCore import QThread, QTimer, Signal, Slot
+from PySide6.QtCore import QTimer, Signal, Slot
 
-from base import QObjectBase, ThreadCleanUpManager
+from base import QObjectBase
 
 
 class IntraTokenManager(QObjectBase):
     token_status = Signal(str)
     schedule_requested = Signal(str)
+    request_refresh = Signal(object)
 
-    def __init__(
-        self,
-        session: IntraProviderSession,
-        logger: LogAdapter,
-        token_api: IntraTokenApi,
-        thread_cleanup_manager: ThreadCleanUpManager,
-    ):
+    def __init__(self, session: IntraProviderSession, logger: LogAdapter):
         super().__init__(logger)
         self.session = session
-        self.cleanup_manager = thread_cleanup_manager
-        self.token_api = token_api
         self.token_fetch_in_progress = False
         self.token_tries = 0
         self.token_threads = {}
@@ -41,7 +32,6 @@ class IntraTokenManager(QObjectBase):
         self.refresh_timer.timeout.connect(self.refresh_token)
         self.REFRESH_BUFFER = 30
         self._tenant = None
-        self._token_api = token_api
         self.schedule_requested.connect(self._schedule_token)
 
     @property
@@ -117,24 +107,11 @@ class IntraTokenManager(QObjectBase):
             return
 
         self.token_fetch_in_progress = True
-        task_id = f"token_fetch_{self.token_tries}"
-        token_thread = QThread()
-        token_worker = self.token_api
-        token_worker.moveToThread(token_thread)
-        token_worker.token_failed.connect(self.token_failed)
-        token_worker.token_response.connect(self.receive_token)
-        token_worker.done.connect(
-            lambda: self.cleanup_manager.cleanup_task(task_id, False)
-        )
-        token_thread.finished.connect(
-            lambda: self.cleanup_manager.cleanup_task(task_id, True)
-        )
         token_data = TokenData(
             self.tenant, self.session.refresh_token, self.session.access_token
         )
-        token_thread.started.connect(lambda: token_worker.refesh_token(token_data))
-        token_thread.start()
-        self.cleanup_manager.add_task(task_id, token_thread, token_worker)
+        self.request_refresh.emit(token_data)
+        self._logging("Sent Token Refresh Request Signal", "DEBUG")
         self.token_tries += 1
 
     @Slot(object)
