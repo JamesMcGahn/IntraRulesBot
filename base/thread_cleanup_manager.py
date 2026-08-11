@@ -25,12 +25,12 @@ class ThreadCleanUpManager(QObjectBase):
 
         if not thread_finished:
             if w_thread and w_thread.isRunning():
-                self.logging(f"Task {task_id} - Thread Quitting.")
+                self._logging(f"Task {task_id} - Thread Quitting.")
                 w_thread.quit()
             return
 
         w_thread, worker = self.running_tasks.pop(task_id)
-        self.logging(f"Task {task_id} - Thread & Worker Deleting.")
+        self._logging(f"Task {task_id} - Thread & Worker Deleting.")
         if worker:
             worker.deleteLater()
 
@@ -39,4 +39,4 @@ class ThreadCleanUpManager(QObjectBase):
 
     def add_task(self, task_id, thread, worker):
         self.running_tasks[task_id] = (thread, worker)
-        self.logging(f"Added {task_id} to running tasks.")
+        self._logging(f"Added {task_id} to running tasks.")
