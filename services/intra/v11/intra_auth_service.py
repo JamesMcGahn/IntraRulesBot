@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from ..models.intra_login import IntraLogin
     from services.profiles import ProfileRegistry
     from services.profiles.models import LoginSelectors
-
+    from .intra_token_manager import IntraTokenManager
 import time
 
 from playwright.sync_api import Error as PlaywrightError, TimeoutError
@@ -30,11 +30,13 @@ class IntraAuthService(BaseAuthService):
         profile_registry: ProfileRegistry,
         provider: PROVIDERS,
         logger: LogAdapter,
+        token_manager: IntraTokenManager,
     ):
         super().__init__(session_registry, profile_registry, provider, logger)
 
         self.last_login_attempt = None
         self.login_cooldown_seconds = self.session.login_cool_down
+        self._token_manager = token_manager
 
     def validate(self) -> AuthValidationResponse:
         self.logging("Validating auth session credentials...")
@@ -55,7 +57,11 @@ class IntraAuthService(BaseAuthService):
     ) -> AuthResult:
 
         result = self.validate()
-        if not force_login and result.cookies_valid:
+        if (
+            not force_login
+            and result.cookies_valid
+            and self._token_manager.is_token_usable()
+        ):
             return AuthResult(
                 success=True,
                 status=AUTHSTATUS.ALREADY_AUTHENTICATED,
@@ -80,6 +86,8 @@ class IntraAuthService(BaseAuthService):
         selectors: LoginSelectors,
         should_stop_cb,
     ) -> AuthResult:
+
+        self._token_manager.tenant = creds.tenant
         result = self._perform_login(creds, browser_port, selectors, should_stop_cb)
         self.last_login_attempt = time.time()
 
@@ -112,6 +120,9 @@ class IntraAuthService(BaseAuthService):
                 )
                 print("here is the token response")
                 print(token)
+
+                self.session.access_token = token.get("access_token")
+                self.session.refresh_token = token.get("refresh_token")
             except TimeoutError as _:
                 msg = "Error during login. Couldnt log in."
                 self.logging(msg, "ERROR")

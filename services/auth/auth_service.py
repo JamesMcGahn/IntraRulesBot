@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from services.logger.adapters import LogAdapter
     from services.rule_runner.interfaces import BrowserPort
     from services.profiles import ProfileRegistry
+    from services.intra.v11.intra_token_manager import IntraTokenManager
 
 from .enums import PROVIDERS
 from .models import AuthValidationResponse
@@ -25,6 +26,7 @@ class AuthService:
         session_registry: SessionRegistry,
         profile_registry: ProfileRegistry,
         logger: LogAdapter,
+        token_manager: IntraTokenManager,
     ):
         super().__init__()
         self._providers: dict[PROVIDERS, BaseAuthService] = {
@@ -32,7 +34,11 @@ class AuthService:
                 session_registry, profile_registry, PROVIDERS.INTRA_V10, logger
             ),
             PROVIDERS.INTRA_V11: V11_AuthService(
-                session_registry, profile_registry, PROVIDERS.INTRA_V11, logger
+                session_registry,
+                profile_registry,
+                PROVIDERS.INTRA_V11,
+                logger,
+                token_manager,
             ),
         }
 

@@ -17,6 +17,9 @@ from services.auth.auth_service import AuthService
 from services.auth.enums import PROVIDERS
 from services.auth.session.session_registry import SessionRegistry
 from services.auth.session.session_store import SessionStore
+from services.intra.v11.intra_token_manager import IntraTokenManager
+from services.intra.v11.intra_token_api import IntraTokenApi
+from services.network import NetworkClient
 from services.browser import BrowserSessionFactory
 from services.lifecycle import ShutdownCoordinator, StartUpCoordinator
 from services.logger import Logger
@@ -48,6 +51,7 @@ from services.settings.providers import (
 )
 from services.validation import ValidationService
 from services.lifecycle.models import StartUpContainer
+from base import ThreadCleanUpManager
 
 
 class AppContext(QObject, metaclass=QSingleton):
@@ -63,6 +67,7 @@ class AppContext(QObject, metaclass=QSingleton):
 
         self.send_logs.connect(self.logger.insert)
         self.log_adapter = LogAdapter(self.logger)
+        self.thread_cleanup_manager = ThreadCleanUpManager(self.log_adapter)
         self.shut_down_coord = ShutdownCoordinator("APP", self.log_adapter)
         self.settings = AppSettings()
         self.secure_settings = SecureCredentials(self.log_adapter)
@@ -81,8 +86,23 @@ class AppContext(QObject, metaclass=QSingleton):
         self.session_store = SessionStore(self.json_file_service, self.log_adapter)
         self.session_registry = SessionRegistry(self.session_store, self.log_adapter)
         self.prolife_registry = ProfileRegistry()
+
+        v11_session = self.session_registry.for_provider(PROVIDERS.INTRA_V11)
+
+        self.network_client = NetworkClient(self.session_registry)
+        intra_v11_tokenapi = IntraTokenApi(self.log_adapter, self.network_client)
+        intra_token_manager = IntraTokenManager(
+            v11_session,
+            self.log_adapter,
+            intra_v11_tokenapi,
+            self.thread_cleanup_manager,
+        )
+
         self.auth_service = AuthService(
-            self.session_registry, self.prolife_registry, self.log_adapter
+            self.session_registry,
+            self.prolife_registry,
+            self.log_adapter,
+            intra_token_manager,
         )
 
         self.schema_registry = SchemaRegistry()
