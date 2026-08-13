@@ -5,7 +5,6 @@ from .qworker_base import QWorkerBase
 from .singleton import Singleton
 from .service_base import ServiceBase
 from .controller_base import ControllerBase
-from .logging_base import LoggingBase
 from .thread_cleanup_manager import ThreadCleanUpManager
 
 __all__ = [
@@ -16,6 +15,5 @@ __all__ = [
     "QWorkerBase",
     "ServiceBase",
     "ControllerBase",
-    "LoggingBase",
     "ThreadCleanUpManager",
 ]

@@ -5,17 +5,18 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from services.auth.session.session_registry import SessionRegistry
     from .models.network_request import NetworkRequest
+    from services.logger.adapters import LogAdapter
+
 from requests import Response, RequestException
 from .models.network_response import NetworkResponse
 from .enums.auth_mode import AUTHMODE
+from base.logging_base import LoggingBase
 
 
-class NetworkClient:
+class NetworkClient(LoggingBase):
 
-    def __init__(
-        self,
-        session_registry: SessionRegistry,
-    ):
+    def __init__(self, session_registry: SessionRegistry, logger: LogAdapter):
+        super().__init__(logger)
         self._session_registry = session_registry
 
     def execute(self, request: NetworkRequest):
@@ -25,7 +26,7 @@ class NetworkClient:
         headers = dict(request.headers or {})
         if request.auth_mode == AUTHMODE.BEARER:
             headers["Authorization"] = f"Bearer {provider_session.access_token}"
-
+        self.logging(f"Sending Request to: {request.method} - {request.url}", "INFO")
         try:
             response = session.request(
                 method=request.method,
@@ -38,6 +39,7 @@ class NetworkClient:
                 timeout=request.timeout,
             )
 
+            self._log_response(response)
         except RequestException as e:
             return NetworkResponse(ok=False, status=0, data=None, message=f"{e}")
 
@@ -49,6 +51,16 @@ class NetworkClient:
             data=self._extract_payload(response),
             message="success" if response.ok else "error",
         )
+
+    def _log_response(self, response: Response) -> None:
+        self.logging(
+            f"Response Received: - STATUS: {response.status_code} - METHOD: {response.request.method} - {response.request.url} - Time Elapsed: {response.elapsed}",
+            "INFO",
+        )
+        self.logging(f"Request headers: {response.request.headers}", "DEBUG")
+        self.logging(f"Request body: {response.request.body}", "DEBUG")
+        self.logging(f"Response headers: {response.headers}", "DEBUG")
+        self.logging(f"Response body: {response.text}", "DEBUG")
 
     @staticmethod
     def _extract_payload(response: Response) -> Any:
