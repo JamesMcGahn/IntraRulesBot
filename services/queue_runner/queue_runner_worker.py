@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from ..browser import BrowserSessionFactory
     from services.browser.models import PlaywrightSession
     from services.profiles import ProfileRegistry
+    from ..api.queues.queue_v11_api import V11QueueApi
 
 import time
 from collections import deque
@@ -23,7 +24,7 @@ from base.enums import INTRAVERSION
 from ..auth.enums import AUTHSTATUS
 from ..auth.models.auth_result import AuthResult
 from .enums import QUEUEEXECSTATUS, QUEUERUNNERLIFECYCLE, QUEUERUNSTATUS
-from .executors import QueueExecutor
+from .executors import QueueExecutor, V11QueueExecutor
 from .models import (
     QueueExecutionContext,
     QueueExecutionResult,
@@ -49,6 +50,7 @@ class QueueRunnerWorker(QObject):
         auth_service: AuthService,
         logger: LogAdapter,
         profile_registry: ProfileRegistry,
+        queue_api: V11QueueApi,
     ):
         super().__init__()
         self.q_item_queue: Deque[QueueRunItem] = deque(job.payload.queues)
@@ -56,6 +58,7 @@ class QueueRunnerWorker(QObject):
         self.session = session
         self.auth_service = auth_service
         self.browser_session_factory = browser_session_factory
+        self._queue_api = queue_api
 
         self.creds = job.payload.config
         self.url = f"https://{self.creds.tenant}.intradiem.com/"
@@ -227,7 +230,17 @@ class QueueRunnerWorker(QObject):
                             started_at=int(time.time()),
                         )
                     )
-                    self.current_executor = QueueExecutor(queue_context=context)
+                    print()
+                    if INTRAVERSION.V10 == self.creds.platform_version:
+                        self.current_executor = QueueExecutor(queue_context=context)
+                    elif INTRAVERSION.V11 == self.creds.platform_version:
+                        self.current_executor = V11QueueExecutor(
+                            queue_context=context, queue_api=self._queue_api
+                        )
+                    else:
+                        msg = f"{self.creds.platform_version} does not have a supported executor"
+                        self.logging(msg, "ERROR")
+                        raise ValueError(msg)
                     result = self.current_executor.execute()
                     self._handle_result(item, result)
                 except Exception as e:

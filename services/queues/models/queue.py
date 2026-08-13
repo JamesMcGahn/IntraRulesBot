@@ -10,4 +10,4 @@ class Queue:
     row_number: int
     provider_name: str
     provider_instance: str
-    action_type: QUEUEACTION.ADD
+    action_type: QUEUEACTION = QUEUEACTION.ADD

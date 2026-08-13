@@ -48,6 +48,7 @@ from services.settings.providers import (
     SettingsRuleRunnerConfigProvider,
     SettingsQueueRunnerConfigProvider,
 )
+from services.api.queues import V11QueueApi
 from services.validation import ValidationService
 from services.lifecycle.models import StartUpContainer
 from base import ThreadCleanUpManager
@@ -89,7 +90,11 @@ class AppContext(QObject, metaclass=QSingleton):
         v11_session = self.session_registry.for_provider(PROVIDERS.INTRA_V11)
 
         self.network_client = NetworkClient(self.session_registry)
+
+        # APIS
         self.intra_v11_tokenapi = IntraTokenApi(self.log_adapter, self.network_client)
+        self.queues_v11_api = V11QueueApi(self.log_adapter, self.network_client)
+
         self.intra_token_service = IntraTokenService(
             self.log_adapter, self.intra_v11_tokenapi
         )
@@ -151,11 +156,12 @@ class AppContext(QObject, metaclass=QSingleton):
         )
 
         self.queue_runner_service = QueueRunnerService(
-            session=self.session_registry.for_provider(PROVIDERS.INTRA_V10),
+            session=self.session_registry,
             auth_service=self.auth_service,
             browser_session_factory=self.browser_session_factory,
             logger=self.log_adapter,
             profile_registry=self.prolife_registry,
+            queue_api=self.queues_v11_api,
         )
 
         self.run_monitor_store = RunMonitorStore()
@@ -214,6 +220,7 @@ class AppContext(QObject, metaclass=QSingleton):
                 rule_sets_controller=self.rule_sets_controller,
                 session_registry=self.session_registry,
                 intra_token_service=self.intra_token_service,
+                settings_manager=self.settings_manager,
             )
         )
 
