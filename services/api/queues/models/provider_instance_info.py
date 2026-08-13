@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from services.queues.models import Queue
+    from .provider_queue import ProviderQueue
+    from .provider_stats import ProviderStatistics
 
 from dataclasses import dataclass, field
 
@@ -12,4 +13,14 @@ from dataclasses import dataclass, field
 class ProviderInstanceInfo:
     id: str
     name: str
-    queues: Queue = field(default_factory=list)
+    providerDefinitionId: str
+    description: str
+    queue_list: ProviderQueue = field(default_factory=list)
+    stats_monitored: ProviderStatistics = field(default_factory=list)
+    id_statistics_monitored_odata_type: str = (
+        "#Collection(com.intradiem.enterprise.edm.instances.KeyValue)"
+    )
+
+    id_manage_acd_queues_odata_type: str = (
+        "#Collection(com.intradiem.enterprise.edm.instances.QueueList)"
+    )
