@@ -18,7 +18,7 @@ from services.auth.enums import PROVIDERS
 from services.auth.session.session_registry import SessionRegistry
 from services.auth.session.session_store import SessionStore
 from services.intra.v11 import IntraTokenManager, IntraTokenApi, IntraTokenService
-from services.network import NetworkClient
+from services.network import NetworkClient, NetworkThrottle
 from services.browser import BrowserSessionFactory
 from services.lifecycle import ShutdownCoordinator, StartUpCoordinator
 from services.logger import Logger
@@ -89,11 +89,15 @@ class AppContext(QObject, metaclass=QSingleton):
 
         v11_session = self.session_registry.for_provider(PROVIDERS.INTRA_V11)
 
-        self.network_client = NetworkClient(self.session_registry)
+        self.network_client = NetworkClient(self.session_registry, self.log_adapter)
 
         # APIS
         self.intra_v11_tokenapi = IntraTokenApi(self.log_adapter, self.network_client)
-        self.queues_v11_api = V11QueueApi(self.log_adapter, self.network_client)
+
+        self.queue_api_throttle = NetworkThrottle(self.log_adapter, 0.5)
+        self.queues_v11_api = V11QueueApi(
+            self.log_adapter, self.network_client, self.queue_api_throttle
+        )
 
         self.intra_token_service = IntraTokenService(
             self.log_adapter, self.intra_v11_tokenapi

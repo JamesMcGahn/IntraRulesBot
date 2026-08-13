@@ -42,14 +42,10 @@ class V11QueueExecutor:
             QEXECSTEPCALL(
                 QEXECUTORTASK.FIND_PROVIDER_INSTANCE, self.find_provider_instance
             ),
-            # QEXECSTEPCALL(
-            #     QEXECUTORTASK.SWITCH_TO_INSTANCE_CONFIG,
-            #     self.switch_to_configuration_page,
-            # ),
-            # QEXECSTEPCALL(
-            #     QEXECUTORTASK.OPEN_QUEUE_FORM,
-            #     self.open_queue_form,
-            # ),
+            QEXECSTEPCALL(
+                QEXECUTORTASK.FIND_PROVIDER_CUSTOM_RESOURCES,
+                self.find_queue_custom_resource,
+            ),
         ]
 
         self._add_queue_flow = [
@@ -169,19 +165,13 @@ class V11QueueExecutor:
         )
 
     def submit_queue(self, ctx: QueueExecutionContext):
-        alert = ctx.browser_port.frame_click_and_accept_alert_if_appears(
-            self.queue_port, ctx.profile.selectors.queues.queue_add_button
+        self.logging(f"Submitting Queue: {ctx.queue.queue_number}", "INFO")
+        self._queue_api.add_queue(
+            ctx.tenant,
+            ctx.state.queue_custom_resource,
+            ctx.state.provider_instance,
+            ctx.queue,
         )
-        self.logging(f"Submitted Queue: {ctx.queue.queue_number}", "INFO")
-        if alert:
-            raise DuplicateNameException
-        self.logging("Checking for Loading Spinner.", "INFO")
-        self.queue_port.wait_for_loading_cycle(
-            ctx.profile.selectors.queues.queue_grid_container,
-            500,
-            disappear_timeout=30000,
-        )
-        self.logging("Loading Spinner Clear.", "INFO")
 
     def verify_queue_submission(self, ctx: QueueExecutionContext):
         self.logging("Verification started", "INFO")
@@ -384,7 +374,7 @@ class V11QueueExecutor:
             for provider in providers
             if provider.name.lower() == ctx.provider_name.lower()
         ]
-        print(is_provider)
+
         if is_provider:
             ctx.state.provider_info = is_provider[0]
             self.logging(f"Found Provider Name: {ctx.provider_name}", "INFO")
@@ -401,15 +391,13 @@ class V11QueueExecutor:
         instances = self._queue_api.get_provider_instances(
             ctx.tenant, ctx.state.provider_info
         )
-        print(instances)
-        print("8888888888888888")
+
         is_instance = [
             instance
             for instance in instances
             if instance.name.lower() == ctx.provider_instance.lower()
         ]
-        print("8888888888888888")
-        print(is_instance)
+
         if is_instance:
             ctx.state.provider_instance = is_instance[0]
             self.logging(f"Found Provider Instance: {ctx.provider_instance}", "INFO")
@@ -418,33 +406,26 @@ class V11QueueExecutor:
                 f"Provider Instance Name: {ctx.provider_instance} does not exist."
             )
 
-    def switch_to_configuration_page(self, ctx: QueueExecutionContext):
-        self.logging(
-            f"Switching Provider Instance {ctx.provider_instance} Configuration Page.",
-            "INFO",
-        )
-        self.form_port.click(
-            ctx.profile.selectors.provider_instance.configuration_button
+    def find_queue_custom_resource(self, ctx: QueueExecutionContext):
+        self.logging(f"Trying to Find Custom Resources: {ctx.provider_name}", "INFO")
+
+        resources = self._queue_api.get_custom_resources(
+            ctx.tenant, ctx.state.provider_info
         )
 
-    def open_queue_form(self, ctx: QueueExecutionContext):
-        self.logging(
-            f"Opening Provider Instance: {ctx.provider_instance} Queue Form", "INFO"
-        )
-        manage_queues = self.form_port.find_by_has_text(
-            ctx.profile.selectors.provider_instance.configuration_items,
-            ctx.profile.selectors.provider_instance.configuration_header,
-            ctx.profile.selectors.provider_instance.manage_queues_btn_text,
-            True,
-        )
+        is_queue_resource = [
+            resource
+            for resource in resources
+            if resource.name == "queue"
+            and resource.providerDefinitionId == ctx.state.provider_info.id
+        ]
 
-        self.form_port.click_inside_parent(
-            manage_queues,
-            ctx.profile.selectors.provider_instance.configuration_field_button,
-        )
-
-        queue_port = self.form_port.frame_locator(
-            ctx.profile.selectors.queues.queues_modal_frame
-        )
-        ctx.state.queue_port = queue_port
-        self.logging(f"{ctx.provider_instance} Queue Form Opened.", "INFO")
+        if is_queue_resource:
+            ctx.state.queue_custom_resource = is_queue_resource[0]
+            self.logging(
+                f"Found Custom Resource for Provider: {ctx.provider_name}", "INFO"
+            )
+        else:
+            raise ProviderInstanceNotFound(
+                f"Custom Resources For Provider Name: {ctx.provider_name} does not exist."
+            )

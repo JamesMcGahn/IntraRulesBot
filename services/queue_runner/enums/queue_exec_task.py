@@ -14,3 +14,4 @@ class QEXECUTORTASK(StrEnum):
     SUBMIT_QUEUE = "submit_queue"
     VERIFY_SUBMISSION = "verify_submission"
     DELETE_QUEUE = "delete_queue"
+    FIND_PROVIDER_CUSTOM_RESOURCES = "find_provider_custom_resources"
