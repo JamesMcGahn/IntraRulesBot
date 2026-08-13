@@ -42,6 +42,12 @@ class SessionRegistry(QObject, LoggingBase):
             self._sessions[provider] = session
         return self._sessions[provider]
 
+    def set_current_session(self, provider: PROVIDERS):
+        self._current_session = self.for_provider(provider)
+        self.logging(
+            f"Setting current session to {self._current_session.provider_name}"
+        )
+
     def current_session(self) -> BaseProviderSession:
         return self._current_session
 

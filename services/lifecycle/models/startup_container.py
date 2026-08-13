@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from controllers.rules import RulesController
     from ...auth.session.session_registry import SessionRegistry
     from services.intra.v11 import IntraTokenService
+    from services.settings import SettingsService
 from dataclasses import dataclass
 
 
@@ -18,3 +19,4 @@ class StartUpContainer:
     rule_sets_controller: RuleSetsController
     session_registry: SessionRegistry
     intra_token_service: IntraTokenService
+    settings_manager: SettingsService
