@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from services.logger.adapters import LogAdapter
@@ -116,6 +116,7 @@ class V11QueueApi(BaseApi):
         response = self._execute(request)
 
         values = response.data.get("value", [])
+
         return [
             CustomResource(
                 resource.get("id", ""),
@@ -152,7 +153,9 @@ class V11QueueApi(BaseApi):
         else:
             return False
 
-    def get_provider(self, tenant: str, provider_instance: ProviderInstanceInfo):
+    def get_provider_instance(
+        self, tenant: str, provider_instance: ProviderInstanceInfo
+    ) -> ProviderInstanceInfo:
         url = f"https://{tenant}providerapi.intradiem.com/api/instances/providers({provider_instance.id})"
         request = NetworkRequest(
             method=HTTPMETHOD.GET,
@@ -161,7 +164,57 @@ class V11QueueApi(BaseApi):
             auth_mode=AUTHMODE.BEARER,
         )
 
-        return self._process_provider_payload(request.data)
+        self._network_throttle.wait()
+        response = self._execute(request)
+
+        return self._process_provider_payload(response.data)
+
+    def update_provider_instance_settings(
+        self, tenant: str, provider_instance: ProviderInstanceInfo, queue: Queue
+    ):
+        payload = self._build_provider_settings_payload(provider_instance, queue)
+        url = f"https://{tenant}providerapi.intradiem.com/api/instances/providers({provider_instance.id})"
+        request = NetworkRequest(
+            method=HTTPMETHOD.PATCH,
+            url=url,
+            headers={"x-api-version": "2"},
+            json=payload,
+            auth_mode=AUTHMODE.BEARER,
+        )
+
+        self._network_throttle.wait()
+        response = self._execute(request)
+
+    def _build_provider_settings_payload(
+        self, provider_instance: ProviderInstanceInfo, queue: Queue
+    ) -> dict[str, Any]:
+        queue_list = [
+            {
+                "@odata.type": queue.odata_type,
+                "queue_name": queue.queue_name,
+                "queue_number": queue.queue_number,
+                "queue_id": queue.queue_id,
+            }
+            for queue in provider_instance.queue_list
+        ]
+
+        queue_list.append(
+            {
+                "@odata.type": "#com.intradiem.enterprise.edm.instances.QueueList",
+                "queue_name": queue.queue_name,
+                "queue_number": queue.queue_name,
+                "queue_id": queue.guid,
+            }
+        )
+
+        return {
+            "id_manage_acd_queues": queue_list,
+            "id_manage_acd_queues@odata.type": provider_instance.id_manage_acd_queues_odata_type,
+            "name": provider_instance.name,
+            "description": provider_instance.description,
+            "providerDefinitionId": provider_instance.providerDefinitionId,
+            "id": provider_instance.id,
+        }
 
     def _process_provider_payload(self, payload: dict) -> ProviderInstanceInfo:
         queues = payload.get("id_manage_acd_queues", [])
@@ -175,6 +228,7 @@ class V11QueueApi(BaseApi):
             for queue in queues
         ]
         stats = payload.get("id_statistics_monitored", [])
+
         stats_list = [
             ProviderStatistics(
                 stat["key"],

@@ -15,8 +15,8 @@ class ProviderInstanceInfo:
     name: str
     providerDefinitionId: str
     description: str
-    queue_list: ProviderQueue = field(default_factory=list)
-    stats_monitored: ProviderStatistics = field(default_factory=list)
+    queue_list: list[ProviderQueue] = field(default_factory=list)
+    stats_monitored: list[ProviderStatistics] = field(default_factory=list)
     id_statistics_monitored_odata_type: str = (
         "#Collection(com.intradiem.enterprise.edm.instances.KeyValue)"
     )

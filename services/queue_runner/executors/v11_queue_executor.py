@@ -49,9 +49,15 @@ class V11QueueExecutor:
         ]
 
         self._add_queue_flow = [
-            # QEXECSTEPCALL(QEXECUTORTASK.SET_QUEUE_NAME, self.set_queue_name),
-            # QEXECSTEPCALL(QEXECUTORTASK.SET_QUEUE_NUMBER, self.set_queue_number),
-            # QEXECSTEPCALL(QEXECUTORTASK.SUBMIT_QUEUE, self.submit_queue),
+            QEXECSTEPCALL(QEXECUTORTASK.SUBMIT_QUEUE, self.submit_queue),
+            QEXECSTEPCALL(
+                QEXECUTORTASK.GET_CURRENT_PROVIDER_INSTANCE,
+                self.get_current_provider_instance,
+            ),
+            QEXECSTEPCALL(
+                QEXECUTORTASK.UPDATE_PROVIDER_INSTANCE_SETTINGS,
+                self.submit_provider_settings,
+            ),
             # QEXECSTEPCALL(
             #     QEXECUTORTASK.VERIFY_SUBMISSION, self.verify_queue_submission
             # ),
@@ -254,6 +260,28 @@ class V11QueueExecutor:
             self.queue_port.verify_locator_not_present(name_row, 3000)
         except (PlaywrightTimeoutError, AssertionError):
             self.queue_port.verify_locator_not_present(name_row, 30_000)
+
+    def get_current_provider_instance(self, ctx: QueueExecutionContext):
+        self.logging(
+            f"Getting Current Provider Instance Settings: {ctx.provider_instance}",
+            "INFO",
+        )
+
+        instance = self._queue_api.get_provider_instance(
+            ctx.tenant, ctx.state.provider_instance
+        )
+
+        if instance.id != ctx.state.provider_instance.id:
+            raise ProviderInstanceNotFound(
+                f"Provider Instance Name: {ctx.provider_instance} does not exist."
+            )
+
+        ctx.state.provider_instance = instance
+
+    def submit_provider_settings(self, ctx: QueueExecutionContext):
+        self._queue_api.update_provider_instance_settings(
+            ctx.tenant, ctx.state.provider_instance, ctx.queue
+        )
 
     def execute(self) -> QueueExecutionResult:
         """
