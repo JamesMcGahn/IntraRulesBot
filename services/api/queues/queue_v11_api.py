@@ -7,9 +7,8 @@ if TYPE_CHECKING:
     from services.network.network_client import NetworkClient
     from services.network.network_throttle import NetworkThrottle
 
-from PySide6.QtCore import Signal
 from services.network.base_api import BaseApi
-from services.network.models import NetworkRequest
+from services.network.models import NetworkRequest, NetworkResponse
 from services.network.enums import HTTPMETHOD, AUTHMODE
 from .models import (
     ProviderInfo,
@@ -19,13 +18,15 @@ from .models import (
     ProviderQueue,
 )
 from services.queues.models import Queue
-
+from base.errors import (
+    NotAuthenticatedException,
+    RetryableNetworkException,
+    NetworkResponseException,
+)
 from urllib.parse import quote
 
 
 class V11QueueApi(BaseApi):
-    token_failed = Signal()
-    token_response = Signal(object)
 
     def __init__(
         self,
@@ -49,24 +50,16 @@ class V11QueueApi(BaseApi):
 
         self._network_throttle.wait()
         response = self._execute(request)
+        self._handle_response(response)
 
         providers = response.data.get("value", [])
         found_providers = []
 
         for provider in providers:
-
-            parameters = provider.get("parameters", [])
-            queue_parm = [
-                parm
-                for parm in parameters
-                if parm.get("name") == "id_manage_acd_queues"
-            ]
-
             prov = ProviderInfo(
                 provider.get("id", 0),
                 provider.get("name", "No Name"),
                 provider.get("category", "Other"),
-                queue_parm[0].get("id") if queue_parm else None,
             )
             found_providers.append(prov)
         return found_providers
@@ -89,6 +82,7 @@ class V11QueueApi(BaseApi):
         )
         self._network_throttle.wait()
         response = self._execute(request)
+        self._handle_response(response)
 
         instances = response.data.get("value", [])
 
@@ -114,6 +108,7 @@ class V11QueueApi(BaseApi):
         )
         self._network_throttle.wait()
         response = self._execute(request)
+        self._handle_response(response)
 
         values = response.data.get("value", [])
 
@@ -132,7 +127,7 @@ class V11QueueApi(BaseApi):
         queue_resource: CustomResource,
         provider_instance: ProviderInstanceInfo,
         queue: Queue,
-    ):
+    ) -> None:
         url = f"https://{tenant}.intradiem.com/api/instances/customResources({queue.guid})"
         request = NetworkRequest(
             method=HTTPMETHOD.PATCH,
@@ -147,11 +142,7 @@ class V11QueueApi(BaseApi):
         )
         self._network_throttle.wait()
         response = self._execute(request)
-
-        if response.status == 204:
-            return True
-        else:
-            return False
+        self._handle_response(response)
 
     def get_provider_instance(
         self, tenant: str, provider_instance: ProviderInstanceInfo
@@ -166,7 +157,7 @@ class V11QueueApi(BaseApi):
 
         self._network_throttle.wait()
         response = self._execute(request)
-
+        self._handle_response(response)
         return self._process_provider_payload(response.data)
 
     def update_provider_instance_settings(
@@ -184,6 +175,7 @@ class V11QueueApi(BaseApi):
 
         self._network_throttle.wait()
         response = self._execute(request)
+        self._handle_response(response)
 
     def _build_provider_settings_payload(
         self, provider_instance: ProviderInstanceInfo, queue: Queue
@@ -246,3 +238,28 @@ class V11QueueApi(BaseApi):
             queue_list=queue_list,
             stats_monitored=stats_list,
         )
+
+    def _handle_response(self, response: NetworkResponse):
+
+        if response.ok:
+            return
+
+        match response.status:
+            case 0:
+                raise NetworkResponseException
+            case 401:
+                raise NotAuthenticatedException
+            case 429:
+                retry_after = response.headers.get("Retry-After")
+
+                if retry_after:
+                    delay = self._client.parse_retry_after_time(retry_after)
+                    self._network_throttle.delay(delay)
+
+                self._network_throttle.increase_wait_interval()
+                raise RetryableNetworkException
+            case 408 | 500 | 502 | 503 | 504:
+                self._network_throttle.delay(5.0)
+                raise RetryableNetworkException
+            case status if status >= 400:
+                raise NetworkResponseException
