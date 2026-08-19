@@ -8,3 +8,4 @@ class NetworkResponse:
     status: int
     data: Any
     message: str | None = None
+    headers: None | dict = None
