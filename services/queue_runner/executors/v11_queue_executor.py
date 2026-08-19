@@ -9,16 +9,17 @@ if TYPE_CHECKING:
 
 import threading
 
-from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from base.errors import (
     DuplicateNameException,
-    PlaywrightSessionLostException,
     StoppedRequestException,
     QueueNotFound,
     ProviderNotFound,
     ProviderInstanceNotFound,
+    NotAuthenticatedException,
+    RetryableNetworkException,
+    NetworkResponseException,
 )
 
 from ..enums import QEXECUTORTASK, QUEUEEXECSTATUS
@@ -49,6 +50,9 @@ class V11QueueExecutor:
         ]
 
         self._add_queue_flow = [
+            QEXECSTEPCALL(
+                QEXECUTORTASK.CHECK_FOR_DUPLICATE_QUEUE, self.check_duplicate_queue
+            ),
             QEXECSTEPCALL(QEXECUTORTASK.SUBMIT_QUEUE, self.submit_queue),
             QEXECSTEPCALL(
                 QEXECUTORTASK.GET_CURRENT_PROVIDER_INSTANCE,
@@ -58,9 +62,7 @@ class V11QueueExecutor:
                 QEXECUTORTASK.UPDATE_PROVIDER_INSTANCE_SETTINGS,
                 self.submit_provider_settings,
             ),
-            # QEXECSTEPCALL(
-            #     QEXECUTORTASK.VERIFY_SUBMISSION, self.verify_queue_submission
-            # ),
+            QEXECSTEPCALL(QEXECUTORTASK.VERIFY_SUBMISSION, self.verify_queue_added),
         ]
 
         self._del_queue_flow = [
@@ -69,9 +71,7 @@ class V11QueueExecutor:
         ]
 
         self._verify_add_queue_flow = [
-            QEXECSTEPCALL(
-                QEXECUTORTASK.VERIFY_SUBMISSION, self.verify_queue_submission
-            ),
+            QEXECSTEPCALL(QEXECUTORTASK.VERIFY_SUBMISSION, self.verify_queue_added),
         ]
 
         self._verify_del_queue_flow = [
@@ -97,29 +97,15 @@ class V11QueueExecutor:
             raise RuntimeError("Queue form port has not been initialized.")
         return self._ctx.state.queue_port
 
-    def _is_queue_form_usable(self):
-        self.logging("Checking the Provider Modal is Open.", "DEBUG")
-        if self._ctx.state.queue_port is None:
+    def _is_provider_settings_usable(self, ctx: QueueExecutionContext):
+        self.logging("Checking the Provider Settings Cache.", "DEBUG")
+        if ctx.state.provider_instance is None:
             return False
 
-        try:
-            self._ctx.state.queue_port.wait_for_loading_cycle(
-                self._ctx.profile.selectors.queues.queue_grid_container,
-                500,
-                disappear_timeout=45_000,
-            )
-
-            return self._ctx.state.queue_port.is_visible(
-                self._ctx.profile.selectors.queues.queue_name_input,
-                timeout=5_000,
-            )
-        except PlaywrightTimeoutError:
-            # The frame may still exist, form never became usable.
+        if ctx.state.queue_custom_resource is None:
             return False
 
-        except PlaywrightError:
-            # The cached frame is actually detached, closed, or otherwise invalid.
-            self._ctx.state.queue_port = None
+        if ctx.state.provider_info is None:
             return False
 
     def logging(self, msg, level="INFO", print_msg=True) -> None:
@@ -179,42 +165,7 @@ class V11QueueExecutor:
             ctx.queue,
         )
 
-    def verify_queue_submission(self, ctx: QueueExecutionContext):
-        self.logging("Verification started", "INFO")
-        self.logging("Finding Name Row", "INFO")
-        name_row = self.queue_port.find_by_has_selector(
-            ctx.profile.selectors.queues.queue_grid_rows,
-            (
-                f"{ctx.profile.selectors.queues.queue_row_name_item}"
-                f"[{ctx.profile.selectors.queues.queue_row_attribute}="
-                f"'{ctx.queue.queue_name}']"
-            ),
-        )
-        self.logging("Getting queue number", "INFO")
-        try:
-            actual_number = self.queue_port.get_attribute_inside_parent(
-                name_row,
-                selector=ctx.profile.selectors.queues.queue_row_number_item,
-                attribute=ctx.profile.selectors.queues.queue_row_attribute,
-                timeout=3000,
-            )
-        except PlaywrightTimeoutError:
-            actual_number = self.queue_port.get_attribute_inside_parent(
-                name_row,
-                selector=ctx.profile.selectors.queues.queue_row_number_item,
-                attribute=ctx.profile.selectors.queues.queue_row_attribute,
-                timeout=20_000,
-            )
-        expected_number = str(ctx.queue.queue_number)
-        expected_name = str(ctx.queue.queue_name)
-
-        if actual_number != expected_number and actual_number != expected_name:
-            msg = f"""Queue save verification failed. \n
-                Expected number {expected_number!r} or {expected_name!r}, got {actual_number!r}"""
-            self.logging(msg, "ERROR")
-            raise ValueError(msg)
-        self.logging("Queue number found")
-
+    # TODO - Make Delete Flow
     def delete_queue(self, ctx: QueueExecutionContext):
         message = f"Unable to find {ctx.queue.queue_name}. Queue does not exist"
         try:
@@ -247,6 +198,7 @@ class V11QueueExecutor:
             self.logging(message, "ERROR")
             raise QueueNotFound from e
 
+    # TODO - Make Delete Flow
     def verify_delete_queue(self, ctx: QueueExecutionContext):
         name_row = self.queue_port.find_by_has_selector(
             ctx.profile.selectors.queues.queue_grid_rows,
@@ -283,6 +235,47 @@ class V11QueueExecutor:
             ctx.tenant, ctx.state.provider_instance, ctx.queue
         )
 
+    def verify_queue_added(self, ctx: QueueExecutionContext):
+        self.logging(
+            f"Checking Queue: {ctx.queue.queue_name} exists for: {ctx.provider_instance}",
+            "INFO",
+        )
+
+        instance = self._queue_api.get_provider_instance(
+            ctx.tenant, ctx.state.provider_instance
+        )
+
+        queue_added = [
+            queue
+            for queue in instance.queue_list
+            if queue.queue_name == ctx.queue.queue_name
+        ]
+        if queue_added:
+            self.logging(
+                f"Found Queue: {ctx.queue.queue_name} exists for: {ctx.provider_instance}",
+                "INFO",
+            )
+        else:
+            raise QueueNotFound
+
+    def check_duplicate_queue(self, ctx: QueueExecutionContext):
+        self.logging(
+            f"Checking Queue: {ctx.queue.queue_name} exists for: {ctx.provider_instance}",
+            "INFO",
+        )
+
+        instance = self._queue_api.get_provider_instance(
+            ctx.tenant, ctx.state.provider_instance
+        )
+
+        queue_added = [
+            queue
+            for queue in instance.queue_list
+            if queue.queue_name == ctx.queue.queue_name
+        ]
+        if queue_added:
+            raise DuplicateNameException
+
     def execute(self) -> QueueExecutionResult:
         """
         Executes the queue creation process by navigating through the form pages and submitting queues.
@@ -293,14 +286,16 @@ class V11QueueExecutor:
                 f"Starting {self.__class__.__name__} in thread: {threading.get_ident()}",
                 "INFO",
             )
-            # self._ctx.browser_port.wait_for_page_ready()
 
-            # if not self._is_queue_form_usable():
-            #     self.logging("Provider Modal is not open. Reopening Modal", "INFO")
-            print("******v111")
-            for step in self._ensure_form_flow:
-                self.run_step(step)
-            self.logging("Provider Modal is open. Continuing", "INFO")
+            if not self._is_provider_settings_usable(self._ctx):
+                self.logging(
+                    "Provider Settings Not cached in state. Getting Provider Settings.",
+                    "INFO",
+                )
+                for step in self._ensure_form_flow:
+                    self.run_step(step)
+
+            self.logging("Provider Settings cached in state. Continuing", "INFO")
             action_type = self._ctx.action_type
             queue_flow = self._queue_actions.get(action_type)
 
@@ -338,33 +333,27 @@ class V11QueueExecutor:
                 message="Queue not found.",
             )
 
-        except PlaywrightSessionLostException as e:
-
+        except NotAuthenticatedException as e:
             if self._ctx.should_stop():
                 return self._build_error_result(
-                    status=QUEUEEXECSTATUS.RUNNER_STOPPED_ERROR,
-                    message="Stopped Requested.",
+                    status=QUEUEEXECSTATUS.NOT_AUTHENTICATED,
+                    message="Received Not Autenticated Response from Server.",
                 )
             self.logging(str(e), "DEBUG")
-            return self._build_error_result(
-                status=QUEUEEXECSTATUS.BROWSER_ERROR,
-                message="Browser doesnt exist.",
-            )
-
-        except PlaywrightTimeoutError as e:
+        except RetryableNetworkException as e:
+            if self._ctx.should_stop():
+                return self._build_error_result(
+                    status=QUEUEEXECSTATUS.NETWORK_RETRYABLE_ERROR,
+                    message="Received an Network Retryable Error from the server.",
+                )
             self.logging(str(e), "DEBUG")
-            return self._build_error_result(
-                status=QUEUEEXECSTATUS.TIMEOUT_ERROR,
-                message="Finding element timed out. Queue Failed.",
-            )
-
-        except PlaywrightError as e:
+        except NetworkResponseException as e:
+            if self._ctx.should_stop():
+                return self._build_error_result(
+                    status=QUEUEEXECSTATUS.NETWORK_RESPONSE_ERROR,
+                    message="Received a Network Response Error.",
+                )
             self.logging(str(e), "DEBUG")
-            return self._build_error_result(
-                status=QUEUEEXECSTATUS.BROWSER_ERROR,
-                message="Browser error occurred.",
-            )
-
         except Exception as e:
 
             if self._ctx.should_stop():
@@ -392,7 +381,7 @@ class V11QueueExecutor:
         )
 
     # ***********************************************
-    # ENSURE FORM HANDLERS
+    # ENSURE PROVIDER SETTINGS
 
     def find_provider_name(self, ctx: QueueExecutionContext):
         self.logging(f"Trying to Find Provider Name: {ctx.provider_name}", "INFO")
