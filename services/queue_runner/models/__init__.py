@@ -6,6 +6,7 @@ from .queue_run_config import QueueRunnerConfig
 from .queue_run_item import QueueRunItem
 from .queue_runner_request import QueueRunnerRequestPayload
 from .queue_runner_state import QueueRunnerState
+from .queue_result_decision import QueueResultDecision
 
 __all__ = [
     "QueueRunItem",
@@ -16,4 +17,5 @@ __all__ = [
     "QueueExecutionResult",
     "QEXECSTEPCALL",
     "QueueRunnerState",
+    "QueueResultDecision",
 ]
