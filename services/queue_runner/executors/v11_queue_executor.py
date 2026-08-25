@@ -333,27 +333,21 @@ class V11QueueExecutor:
                 message="Queue not found.",
             )
 
-        except NotAuthenticatedException as e:
-            if self._ctx.should_stop():
-                return self._build_error_result(
-                    status=QUEUEEXECSTATUS.NOT_AUTHENTICATED,
-                    message="Received Not Autenticated Response from Server.",
-                )
-            self.logging(str(e), "DEBUG")
-        except RetryableNetworkException as e:
-            if self._ctx.should_stop():
-                return self._build_error_result(
-                    status=QUEUEEXECSTATUS.NETWORK_RETRYABLE_ERROR,
-                    message="Received an Network Retryable Error from the server.",
-                )
-            self.logging(str(e), "DEBUG")
-        except NetworkResponseException as e:
-            if self._ctx.should_stop():
-                return self._build_error_result(
-                    status=QUEUEEXECSTATUS.NETWORK_RESPONSE_ERROR,
-                    message="Received a Network Response Error.",
-                )
-            self.logging(str(e), "DEBUG")
+        except NotAuthenticatedException:
+            return self._build_error_result(
+                status=QUEUEEXECSTATUS.NOT_AUTHENTICATED,
+                message="Received Not Autenticated Response from Server.",
+            )
+        except RetryableNetworkException:
+            return self._build_error_result(
+                status=QUEUEEXECSTATUS.NETWORK_RETRYABLE_ERROR,
+                message="Received an Network Retryable Error from the server.",
+            )
+        except NetworkResponseException:
+            return self._build_error_result(
+                status=QUEUEEXECSTATUS.NETWORK_RESPONSE_ERROR,
+                message="Received a Network Response Error.",
+            )
         except Exception as e:
 
             if self._ctx.should_stop():
