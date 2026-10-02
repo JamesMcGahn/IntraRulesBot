@@ -252,6 +252,10 @@ class AppContext(QObject, metaclass=QSingleton):
             self.queues_monitor_controller.handle_task_progress_event
         )
 
+        self.queue_runner_service.batch_task_progress.connect(
+            self.queues_monitor_controller.handle_batch_task_progress_event
+        )
+
         self.queue_runner_service.runner_life_cyle.connect(
             self.queues_monitor_controller.handle_runner_lifecyle
         )

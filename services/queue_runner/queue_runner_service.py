@@ -20,6 +20,7 @@ from .queue_runner_worker import QueueRunnerWorker
 class QueueRunnerService(QObject):
     stop_run = Signal()
     task_progress = Signal(object)
+    batch_task_progress = Signal(list)
     progress_status = Signal(int, int)
     runner_life_cyle = Signal(object)
     shutdown_ready = Signal(str)
@@ -66,6 +67,7 @@ class QueueRunnerService(QObject):
         self._worker.done.connect(self._thread.quit)
         self._worker.done.connect(self._worker.deleteLater)
         self._worker.task_progress.connect(self.task_progress)
+        self._worker.batch_task_progress.connect(self.batch_task_progress)
         self._worker.progress_status.connect(self.progress_status)
         self._thread.finished.connect(self._clean_up_thread)
         self._thread.start()

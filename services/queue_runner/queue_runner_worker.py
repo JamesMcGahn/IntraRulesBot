@@ -46,6 +46,7 @@ from .queue_result_handler import QueueResultHandler
 class QueueRunnerWorker(QObject):
     done = Signal()
     task_progress = Signal(object)
+    batch_task_progress = Signal(list)
     runner_life_cyle = Signal(object)
     progress_status = Signal(int, int)
 
@@ -182,9 +183,11 @@ class QueueRunnerWorker(QObject):
         start_time: bool = False,
         end_time: bool = False,
     ):
-        # TODO : REMOVE : TOO MANY SIGNALS - BAD
+
+        batch_task = []
         for queue_item in self.q_item_queue:
-            self.send_queue_progress(
+
+            batch_task.append(
                 QueueProgressEvent(
                     queue_guid=queue_item.queue.guid,
                     queue_name=queue_item.queue.queue_name,
@@ -196,11 +199,12 @@ class QueueRunnerWorker(QObject):
                     finished_at=int(time.time()) if end_time else None,
                 )
             )
+        self.batch_task_progress.emit(batch_task)
 
     def run_queue(self):
         try:
             self.runner_life_cyle.emit(QUEUERUNNERLIFECYCLE.STARTED)
-            # self._send_batch_progress(QUEUEEXECSTATUS.PENDING, "Queue queued.")
+            self._send_batch_progress(QUEUEEXECSTATUS.PENDING, "Queue queued.")
             auth_result = self._authenticate()
             if auth_result.status == AUTHSTATUS.STOPPED_REQUESTED:
                 self.stop_clean_up()
@@ -402,7 +406,7 @@ class QueueRunnerWorker(QObject):
         tabs = "\t" * 3
 
         max_errors_logged = 5
-
+        self.logging(f"{self.provider_name} - {self.provider_instance} - RESULT:")
         self.logging(succeeded_queues_msg, "INFO")
         self.logging(duplicate_queues_msg, "INFO")
         self.logging(errored_queues_msg, "ERROR")
@@ -446,7 +450,7 @@ class QueueRunnerWorker(QObject):
             self.logging(indv_errored_msg, "ERROR")
 
     def _drain_remaining_queues(self, status: QUEUERUNSTATUS, reason: str):
-        # self._send_batch_progress(status, reason, end_time=True)
+        self._send_batch_progress(status, reason, end_time=True)
         while self.q_item_queue:
             item = self.q_item_queue.popleft()
             item.status = status

@@ -37,7 +37,7 @@ class QueuesRunnerMonitor(GradientDialog):
         gradient_colors = [(0.05, "#228752"), (0.75, "#014637"), (1, "#014637")]
         super().__init__(gradient_colors, parent)
         self.title = "Rule Runner Monitor"
-        self.setMinimumWidth(700)
+        self.setMinimumWidth(873)
         self.setMaximumWidth(1500)
         self.setWindowTitle(self.title)
         self.message = "Msg"
@@ -167,6 +167,9 @@ class QueuesRunnerMonitor(GradientDialog):
 
     def handle_cancel_clicked(self):
         self.reject()
+
+    def handle_upsert_rows(self, rows: list[RuleRunRow]):
+        self.monitor_table_model.upsert_rows(rows)
 
     def handle_upsert_row(self, row: RuleRunRow):
         self.monitor_table_model.upsert_row(row)
