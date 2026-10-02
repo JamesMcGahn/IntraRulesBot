@@ -61,6 +61,7 @@ class QueueResultHandler:
                     item, result, run_position, total_count
                 )
             case QUEUEEXECSTATUS.NAME_EXISTS_ERROR:
+                item.is_duplicate = True
                 if INTRAVERSION.V11 == self._platform_version:
                     self._logging(
                         f"({run_position}/{total_count}) - Queue Already Exists: {item.queue.row_number} - {item.queue.queue_name}"

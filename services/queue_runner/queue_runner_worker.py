@@ -30,6 +30,7 @@ from .enums import (
     QEXECUTORTASK,
     QRECOVERYACTION,
     QRESULTACTION,
+    QUEUERUNNERSUMMARYMODE,
 )
 from .executors import QueueExecutor, V11QueueExecutor
 from .models import (
@@ -39,7 +40,6 @@ from .models import (
     QueueRunItem,
     QueueRunnerState,
 )
-from services.queues.enums import QUEUEACTION
 from .queue_result_handler import QueueResultHandler
 
 
@@ -73,6 +73,7 @@ class QueueRunnerWorker(QObject):
         self.current_executor: QueueExecutor | None = None
         self.errored_queues: list[QueueRunItem] = []
         self.success_queues: list[QueueRunItem] = []
+        self.duplicate_queues: list[QueueRunItem] = []
         self.completed_count = 0
         self.total_count = len(self.q_item_queue)
         self._shut_down = Event()
@@ -83,6 +84,7 @@ class QueueRunnerWorker(QObject):
 
         self.provider_name = job.payload.provider_name
         self.provider_instance = job.payload.provider_instance
+        self.queue_summary_mode = QUEUERUNNERSUMMARYMODE.FULL
 
     def should_stop(self) -> bool:
         return self._shut_down.is_set()
@@ -112,16 +114,14 @@ class QueueRunnerWorker(QObject):
             self.logging(f"{e}", "DEBUG")
             self.logging("Fatal Error", "ERROR")
             if self.should_stop():
-                self._drain_remaining_queues(
-                    QUEUERUNSTATUS.STOPPED,
-                    "Queue Runner manually stopped.",
-                )
+                self.stop_clean_up()
             else:
                 self._drain_remaining_queues(
                     QUEUERUNSTATUS.FAILED,
                     "Fatal queue runner error.",
                 )
         finally:
+            self._create_summary_safe()
             self.runner_life_cyle.emit(QUEUERUNNERLIFECYCLE.FINISHED)
             self.clean_up()
 
@@ -300,8 +300,6 @@ class QueueRunnerWorker(QObject):
                 QUEUERUNSTATUS.FAILED,
                 "Fatal queue runner error.",
             )
-        finally:
-            self.create_queue_summary()
 
     def _send_result_progress(
         self,
@@ -331,6 +329,8 @@ class QueueRunnerWorker(QObject):
         )
 
         if decision.action == QRESULTACTION.SUCCESS:
+            if item.is_duplicate:
+                self.duplicate_queues.append(item)
             self.success_queues.append(item)
             self.completed_count += 1
         elif decision.action == QRESULTACTION.STOP:
@@ -384,19 +384,66 @@ class QueueRunnerWorker(QObject):
 
         self.progress_status.emit(self.completed_count, self.total_count)
 
-    def create_queue_summary(self) -> None:
+    def _create_summary_safe(self):
+        try:
+            self.create_queue_summary(self.queue_summary_mode)
+        except Exception as e:
+            self.logging(f"Failed to create queue summary: {e}", "ERROR")
+
+    def create_queue_summary(
+        self, summary_mode: QUEUERUNNERSUMMARYMODE = QUEUERUNNERSUMMARYMODE.FULL
+    ) -> None:
         """
         Creates a summary of successfully executed and errored queues.
         """
         errored_queues_msg = f"ERRORED Queues TOTAL: {len(self.errored_queues)} \n"
         succeeded_queues_msg = f"SUCCEEDED Queues TOTAL: {len(self.success_queues)} \n"
+        duplicate_queues_msg = f"DUPLICATE Queues TOTAL: {len(self.duplicate_queues)} (included in succeeded) \n"
         tabs = "\t" * 3
-        for error_rule in self.errored_queues:
-            errored_queues_msg += f"{tabs}- Row {error_rule.queue.row_number}: - {error_rule.queue.queue_name} \n"
-        for succeed_rule in self.success_queues:
-            succeeded_queues_msg += f"{tabs}- Row {succeed_rule.queue.row_number}: - {succeed_rule.queue.queue_name} \n"
+
+        max_errors_logged = 5
+
         self.logging(succeeded_queues_msg, "INFO")
+        self.logging(duplicate_queues_msg, "INFO")
         self.logging(errored_queues_msg, "ERROR")
+
+        if summary_mode == QUEUERUNNERSUMMARYMODE.COUNTS:
+            if self.success_queues:
+                last_success = self.success_queues[-1]
+                self.logging("LAST SUCCESSFUL QUEUE: \n", "INFO")
+                last_success_msg = f"{tabs}- Row {last_success.queue.row_number}: - {last_success.queue.queue_name}"
+                self.logging(last_success_msg, "INFO")
+
+            if self.errored_queues:
+                self.logging(f"LAST {max_errors_logged} ERRORED QUEUES: \n")
+
+            for error_rule in self.errored_queues[:max_errors_logged]:
+                abv_errored_idv = f"{tabs}- Row {error_rule.queue.row_number}: - {error_rule.queue.queue_name} \n"
+                self.logging(abv_errored_idv, "ERROR")
+            omitted = len(self.errored_queues) - max_errors_logged
+            if omitted > 0:
+                self.logging(
+                    f"{tabs}... {omitted} additional errored queues omitted. \n",
+                    "ERROR",
+                )
+        if summary_mode == QUEUERUNNERSUMMARYMODE.COUNTS:
+            return
+
+        self.logging("SUCCESSFUL QUEUES: \n", "INFO")
+
+        for success_queue in self.success_queues:
+            indv_success_msg = f"{tabs}- Row {success_queue.queue.row_number}: - {success_queue.queue.queue_name}"
+            self.logging(indv_success_msg, "INFO")
+
+        self.logging("DUPLICATE QUEUES: \n", "INFO")
+        for duplicate_queue in self.duplicate_queues:
+            indv_duplicate_msg = f"{tabs}- Row {duplicate_queue.queue.row_number}: - {duplicate_queue.queue.queue_name}"
+            self.logging(indv_duplicate_msg, "WARN")
+
+        self.logging("ERROR QUEUES: \n", "INFO")
+        for errored_queue in self.errored_queues:
+            indv_errored_msg = f"{tabs}- Row {errored_queue.queue.row_number}: - {errored_queue.queue.queue_name}"
+            self.logging(indv_errored_msg, "ERROR")
 
     def _drain_remaining_queues(self, status: QUEUERUNSTATUS, reason: str):
         # self._send_batch_progress(status, reason, end_time=True)
@@ -409,6 +456,7 @@ class QueueRunnerWorker(QObject):
         self.logging(f"Removing remaining queues from queue: {reason}", "WARN")
 
     def stop_clean_up(self):
+        self.queue_summary_mode = QUEUERUNNERSUMMARYMODE.COUNTS
         self._drain_remaining_queues(
             QUEUERUNSTATUS.STOPPED, "Queue Runner manually stopped."
         )
