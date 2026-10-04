@@ -21,6 +21,7 @@ class SpreadsheetFileService(ServiceBase):
     ) -> SheetsLoadResult:
 
         try:
+            self._logging(f"Opening Workbook: {file_path} ", "INFO")
             workbook = load_workbook(file_path, read_only=True, data_only=True)
             sheet = workbook.active
 
@@ -84,3 +85,7 @@ class SpreadsheetFileService(ServiceBase):
             self._logging(message, "ERROR")
             self._logging(f"Unexpected Error: {e}", "DEBUG")
             return SheetsLoadResult(ok=False, file_path=file_path, message=message)
+        finally:
+            if workbook is not None:
+                workbook.close()
+                self._logging(f"Workbook closed: {file_path} ", "INFO")
