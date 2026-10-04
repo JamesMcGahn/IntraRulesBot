@@ -17,7 +17,10 @@ class SpreadsheetFileService(ServiceBase):
         super().__init__(logger)
 
     def load(
-        self, file_path: Path, required_headers: set | None = None
+        self,
+        file_path: Path,
+        required_headers: set | None = None,
+        store_as_str: bool = False,
     ) -> SheetsLoadResult:
 
         try:
@@ -51,12 +54,20 @@ class SpreadsheetFileService(ServiceBase):
                     )
 
             for excel_row_number, row_values in enumerate(rows[1:], start=2):
-                row_data = {
-                    headers[index]: value
-                    for index, value in enumerate(row_values)
-                    if index < len(headers)
-                }
-                ImportedSheetsRow(row_number=excel_row_number, values=row_data)
+
+                if store_as_str:
+                    row_data = {
+                        headers[index]: str(value)
+                        for index, value in enumerate(row_values)
+                        if index < len(headers)
+                    }
+                else:
+                    row_data = {
+                        headers[index]: value
+                        for index, value in enumerate(row_values)
+                        if index < len(headers)
+                    }
+
                 imported_rows.append(
                     ImportedSheetsRow(row_number=excel_row_number, values=row_data)
                 )

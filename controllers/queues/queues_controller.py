@@ -69,6 +69,7 @@ class QueuesController(ControllerBase):
         import_res = self._spread_sheet_service.load(
             action.file_location,
             required_headers={"queue_name", "queue_number"},
+            store_as_str=True,
         )
         if import_res.ok:
             self.send_toast_success("Queues Import Succeeded", import_res.message)
