@@ -63,6 +63,42 @@ class MonitorTableModel(QAbstractTableModel):
         self.row_by_guid[rule_row.queue_guid] = row_index
         self.endInsertRows()
 
+    def upsert_rows(self, rule_rows: list[QueueRunRow]) -> None:
+        if not rule_rows:
+            return
+
+        updated_indexes: list[int] = []
+        new_rows: list[QueueRunRow] = []
+
+        for rule_row in rule_rows:
+            existing_index = self.row_by_guid.get(rule_row.queue_guid)
+            if existing_index is not None:
+                self.rule_rows[existing_index] = rule_row
+                updated_indexes.append(existing_index)
+            else:
+                new_rows.append(rule_row)
+
+        if new_rows:
+            first_row = len(self.rule_rows)
+            last_row = first_row + len(new_rows) - 1
+
+            self.beginInsertRows(QModelIndex(), first_row, last_row)
+
+            for rule_row in new_rows:
+                self.row_by_guid[rule_row.queue_guid] = len(self.rule_rows)
+                self.rule_rows.append(rule_row)
+
+            self.endInsertRows()
+
+        if updated_indexes:
+            first_updated = min(updated_indexes)
+            last_updated = max(updated_indexes)
+
+            top_left = self.index(first_updated, 0)
+            bottom_right = self.index(last_updated, self.columnCount() - 1)
+
+            self.dataChanged.emit(top_left, bottom_right, [Qt.DisplayRole])
+
     def add_row(self, rule_row: QueueRunRow):
         row_index = self.rowCount()
         self.beginInsertRows(QModelIndex(), row_index, row_index)

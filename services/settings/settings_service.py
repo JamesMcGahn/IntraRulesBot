@@ -69,6 +69,10 @@ class SettingsService(QObjectBase):
     def get_validations(self) -> dict[SETTINGSCATEGORIES, dict[str, bool]]:
         return deepcopy(self._validated)
 
+    def category_all_fields_validated(self, category: SETTINGSCATEGORIES) -> bool:
+        cat = self.get_category_validation(category)
+        return all(cat)
+
     def update_setting(self, event: SettingUpdatedPayload):
         section = getattr(self._settings, event.category, None)
         if section is None:

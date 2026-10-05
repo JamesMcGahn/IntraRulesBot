@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..auth.auth_service import AuthService
-    from ..browser import BrowserSessionFactory
-    from .intra_provider_session import IntraProviderSession
+    from services.auth.auth_service import AuthService
+    from ...browser import BrowserSessionFactory
+    from services.intra.v10.intra_provider_session import IntraProviderSession
     from services.logger.adapters import LogAdapter
     from services.browser.models import PlaywrightSession
 
@@ -15,9 +15,9 @@ from PySide6.QtCore import QObject, Signal
 
 from services.auth.enums import PROVIDERS
 
-from ..auth.enums import AUTHSTATUS
-from ..auth.models.auth_result import AuthResult
-from ..rule_runner.models import RuleRunnerConfig
+from ...auth.enums import AUTHSTATUS
+from ...auth.models.auth_result import AuthResult
+from ...rule_runner.models import RuleRunnerConfig
 
 
 class IntraLoginWorker(QObject):
@@ -87,7 +87,7 @@ class IntraLoginWorker(QObject):
         Initializes the Selenium WebDriver through the WebDriverManager.
         """
         self.playwright_session_manager = self.browser_session_factory.create_session(
-            PROVIDERS.INTRA
+            PROVIDERS.INTRA_V11
         )
         self.playwright_session = self.playwright_session_manager.start()
 
@@ -109,12 +109,11 @@ class IntraLoginWorker(QObject):
                 f"Attempting to authenticate: {auth_attempts} / {max_attempts-1}"
             )
             result = self.auth_service.ensure_auth(
-                PROVIDERS.INTRA,
+                PROVIDERS.INTRA_V11,
                 self.creds,
                 self.playwright_session.browser_adapter,
                 should_stop_cb=self.should_stop,
             )
-
             if result.success:
                 self.logging("Received Successful Authentication.")
                 return self.is_valid.emit(self.job_id, result.success)

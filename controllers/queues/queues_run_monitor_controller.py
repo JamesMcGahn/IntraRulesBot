@@ -13,6 +13,7 @@ from PySide6.QtCore import Signal, Slot
 from base.enums import UIEVENTTYPE
 from base.events import (
     MonitorRowUpsertEvent,
+    MonitorRowBatchUpsertEvent,
     MonitorSummaryUpdateEvent,
     MonitorSnapShotEvent,
     ProgressStatus,
@@ -54,11 +55,40 @@ class QueuesRunMonitorController(ControllerBase):
         self._emit_row_updated(row)
         self._emit_summary_updated(self.run_store.get_summary())
 
+    def handle_batch_task_progress_event(self, events: list[QueueProgressEvent]):
+        batch_rows = []
+        for queue_item in events:
+            row = QueueRunRow(
+                queue_guid=queue_item.queue_guid,
+                queue_row=queue_item.queue_row,
+                queue_name=queue_item.queue_name,
+                status=queue_item.status,
+                task=queue_item.task,
+                emitted_at=queue_item.emitted_at,
+                retry_count=queue_item.retry_count,
+                message=queue_item.message,
+                started_at=queue_item.started_at,
+                finished_at=queue_item.finished_at,
+            )
+
+            batch_rows.append(row)
+        self.run_store.upsert_rows(batch_rows)
+        self._emit_rows_batch_updated(batch_rows)
+        self._emit_summary_updated(self.run_store.get_summary())
+
     def _emit_row_updated(self, row: QueueRunRow):
         self.ui_event.emit(
             UIEvent(
                 event_type=UIEVENTTYPE.DISPLAY,
                 payload=MonitorRowUpsertEvent[QueueRunRow](row=row),
+            )
+        )
+
+    def _emit_rows_batch_updated(self, rows: list[QueueRunRow]):
+        self.ui_event.emit(
+            UIEvent(
+                event_type=UIEVENTTYPE.DISPLAY,
+                payload=MonitorRowBatchUpsertEvent[QueueRunRow](rows=rows),
             )
         )
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from services.auth.session import BaseProviderSession
+    from services.auth.session.base_provider_session import BaseProviderSession
     from services.logger.adapters import LogAdapter
     from .models import PlaywrightConfig
 

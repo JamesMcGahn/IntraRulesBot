@@ -26,7 +26,8 @@ class BaseProviderSession:
         self.cookie_lock = QMutex()
         self.cookie_jar = requests.cookies.RequestsCookieJar()
         self.session = None
-        self._token = None
+        self._access_token_token = None
+        self._refresh_token = None
         self.logger = logger
 
     class Config:
@@ -67,12 +68,20 @@ class BaseProviderSession:
         return getattr(self.Config, "has_cookies", False)
 
     @property
-    def token(self):
-        return self._token
+    def access_token(self):
+        return self._access_token_token
 
-    @token.setter
-    def token(self, new_token):
-        self._token = new_token
+    @access_token.setter
+    def access_token(self, new_token):
+        self._access_token_token = new_token
+
+    @property
+    def refresh_token(self):
+        return self._refresh_token
+
+    @refresh_token.setter
+    def refresh_token(self, new_token):
+        self._refresh_token = new_token
 
     def _copy_cookie_jar(self, session):
         with QMutexLocker(self.cookie_lock):

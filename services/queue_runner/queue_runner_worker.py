@@ -4,13 +4,14 @@ from typing import TYPE_CHECKING, Deque
 
 if TYPE_CHECKING:
     from ..auth.auth_service import AuthService
-    from ..intra.intra_provider_session import IntraProviderSession
+    from ..intra.v10.intra_provider_session import IntraProviderSession
     from services.logger.adapters import LogAdapter
     from ..base.models import JobRequest
     from .models import QueueRunnerRequestPayload
     from ..browser import BrowserSessionFactory
     from services.browser.models import PlaywrightSession
     from services.profiles import ProfileRegistry
+    from ..api.queues.queue_v11_api import V11QueueApi
 
 import time
 from collections import deque
@@ -22,8 +23,16 @@ from base.enums import INTRAVERSION
 
 from ..auth.enums import AUTHSTATUS
 from ..auth.models.auth_result import AuthResult
-from .enums import QUEUEEXECSTATUS, QUEUERUNNERLIFECYCLE, QUEUERUNSTATUS
-from .executors import QueueExecutor
+from .enums import (
+    QUEUEEXECSTATUS,
+    QUEUERUNNERLIFECYCLE,
+    QUEUERUNSTATUS,
+    QEXECUTORTASK,
+    QRECOVERYACTION,
+    QRESULTACTION,
+    QUEUERUNNERSUMMARYMODE,
+)
+from .executors import QueueExecutor, V11QueueExecutor
 from .models import (
     QueueExecutionContext,
     QueueExecutionResult,
@@ -31,13 +40,13 @@ from .models import (
     QueueRunItem,
     QueueRunnerState,
 )
-from services.queues.enums import QUEUEACTION
+from .queue_result_handler import QueueResultHandler
 
 
 class QueueRunnerWorker(QObject):
     done = Signal()
-    runner_result = Signal(object)
     task_progress = Signal(object)
+    batch_task_progress = Signal(list)
     runner_life_cyle = Signal(object)
     progress_status = Signal(int, int)
 
@@ -49,6 +58,7 @@ class QueueRunnerWorker(QObject):
         auth_service: AuthService,
         logger: LogAdapter,
         profile_registry: ProfileRegistry,
+        queue_api: V11QueueApi,
     ):
         super().__init__()
         self.q_item_queue: Deque[QueueRunItem] = deque(job.payload.queues)
@@ -56,15 +66,15 @@ class QueueRunnerWorker(QObject):
         self.session = session
         self.auth_service = auth_service
         self.browser_session_factory = browser_session_factory
+        self._queue_api = queue_api
 
         self.creds = job.payload.config
         self.url = f"https://{self.creds.tenant}.intradiem.com/"
 
-        self.driver = None
-        self.driver_adapter = None
         self.current_executor: QueueExecutor | None = None
         self.errored_queues: list[QueueRunItem] = []
         self.success_queues: list[QueueRunItem] = []
+        self.duplicate_queues: list[QueueRunItem] = []
         self.completed_count = 0
         self.total_count = len(self.q_item_queue)
         self._shut_down = Event()
@@ -75,6 +85,7 @@ class QueueRunnerWorker(QObject):
 
         self.provider_name = job.payload.provider_name
         self.provider_instance = job.payload.provider_instance
+        self.queue_summary_mode = QUEUERUNNERSUMMARYMODE.FULL
 
     def should_stop(self) -> bool:
         return self._shut_down.is_set()
@@ -91,6 +102,11 @@ class QueueRunnerWorker(QObject):
             f"Starting {self.__class__.__name__} in thread: {get_ident()}",
             "INFO",
         )
+        self._result_handler = QueueResultHandler(
+            logging=self.logging,
+            send_result_progress=self._send_result_progress,
+            platform_version=self.creds.platform_version,
+        )
         try:
             self._init_browser(True)
             self.run_queue()
@@ -98,7 +114,15 @@ class QueueRunnerWorker(QObject):
         except Exception as e:
             self.logging(f"{e}", "DEBUG")
             self.logging("Fatal Error", "ERROR")
+            if self.should_stop():
+                self.stop_clean_up()
+            else:
+                self._drain_remaining_queues(
+                    QUEUERUNSTATUS.FAILED,
+                    "Fatal queue runner error.",
+                )
         finally:
+            self._create_summary_safe()
             self.runner_life_cyle.emit(QUEUERUNNERLIFECYCLE.FINISHED)
             self.clean_up()
 
@@ -106,6 +130,7 @@ class QueueRunnerWorker(QObject):
         """
         Initializes the Playwright.
         """
+
         self.playwright_session_manager = self.browser_session_factory.create_session(
             self.session.provider_name
         )
@@ -158,9 +183,11 @@ class QueueRunnerWorker(QObject):
         start_time: bool = False,
         end_time: bool = False,
     ):
-        # TODO : REMOVE : TOO MANY SIGNALS - BAD
+
+        batch_task = []
         for queue_item in self.q_item_queue:
-            self.send_queue_progress(
+
+            batch_task.append(
                 QueueProgressEvent(
                     queue_guid=queue_item.queue.guid,
                     queue_name=queue_item.queue.queue_name,
@@ -172,20 +199,19 @@ class QueueRunnerWorker(QObject):
                     finished_at=int(time.time()) if end_time else None,
                 )
             )
+        self.batch_task_progress.emit(batch_task)
 
     def run_queue(self):
-
         try:
             self.runner_life_cyle.emit(QUEUERUNNERLIFECYCLE.STARTED)
-            # self._send_batch_progress(QUEUEEXECSTATUS.PENDING, "Queue queued.")
+            self._send_batch_progress(QUEUEEXECSTATUS.PENDING, "Queue queued.")
             auth_result = self._authenticate()
             if auth_result.status == AUTHSTATUS.STOPPED_REQUESTED:
                 self.stop_clean_up()
                 return
 
             if not auth_result.success:
-                self._shut_down.set()
-                self._drain_remaining_rules(
+                self._drain_remaining_queues(
                     QUEUERUNSTATUS.FAILED, "Failed to Authenticate"
                 )
                 return
@@ -195,6 +221,7 @@ class QueueRunnerWorker(QObject):
             self.logging(f"Total Queues: {len(self.q_item_queue)}", "INFO")
             self.progress_status.emit(0, self.total_count)
             while self.q_item_queue and not self.should_stop():
+                item: QueueRunItem | None = None
                 self.logging(
                     f"({self.completed_count+1}/{self.total_count}) - Queue Executing"
                 )
@@ -227,17 +254,41 @@ class QueueRunnerWorker(QObject):
                             started_at=int(time.time()),
                         )
                     )
-                    self.current_executor = QueueExecutor(queue_context=context)
+
+                    if INTRAVERSION.V10 == self.creds.platform_version:
+                        self.current_executor = QueueExecutor(queue_context=context)
+                    elif INTRAVERSION.V11 == self.creds.platform_version:
+                        self.current_executor = V11QueueExecutor(
+                            queue_context=context, queue_api=self._queue_api
+                        )
+                    else:
+                        msg = f"{self.creds.platform_version} does not have a supported executor"
+                        self.logging(msg, "ERROR")
+                        raise ValueError(msg)
                     result = self.current_executor.execute()
-                    self._handle_result(item, result)
+                    self._process_result(item, result)
                 except Exception as e:
                     if self.should_stop():
+                        if item is not None:
+                            self.q_item_queue.appendleft(item)
                         self.stop_clean_up()
                         return
                     self.logging(f"{e}", "DEBUG")
                     self.logging(
                         "Failure in queue. Trying to process next queue", "ERROR"
                     )
+                    if item is not None:
+                        result = QueueExecutionResult(
+                            queue_guid=item.queue.guid,
+                            queue_name=item.queue.queue_name,
+                            queue_row=item.queue.row_number,
+                            success=False,
+                            task=QEXECUTORTASK.START,
+                            status=QUEUEEXECSTATUS.FATAL_ERROR,
+                            message="Fatal Error: Failure in queue",
+                        )
+                        self._process_result(item, result)
+
             if self.should_stop():
                 self.stop_clean_up()
                 return
@@ -249,8 +300,10 @@ class QueueRunnerWorker(QObject):
 
             self.logging("Fatal Error Occurred. Shutting Down", "ERROR")
             self.logging(f"{e}", "ERROR")
-        finally:
-            self.create_rule_summary()
+            self._drain_remaining_queues(
+                QUEUERUNSTATUS.FAILED,
+                "Fatal queue runner error.",
+            )
 
     def _send_result_progress(
         self,
@@ -273,163 +326,131 @@ class QueueRunnerWorker(QObject):
             )
         )
 
-    def _handle_result(self, item: QueueRunItem, result: QueueExecutionResult):
-        self.logging(
-            f"({self.completed_count+1}/{self.total_count}) - Recieved result for Row: {item.queue.row_number} - {item.queue.queue_name}"
-        )
-        if result.success:
-            self._handle_result_success(item, result)
-        else:
-            if result.status == QUEUEEXECSTATUS.RUNNER_STOPPED_ERROR:
-                return self._handle_result_runner_stopped(item, result)
-            elif result.status == QUEUEEXECSTATUS.NAME_EXISTS_ERROR:
-                return self._handle_result_queue_exists(item, result)
-            elif result.status == QUEUEEXECSTATUS.QUEUE_NOT_FOUND_ERROR:
-                return self._handle_result_queue_not_found(item, result)
-            elif result.status in (
-                QUEUEEXECSTATUS.BROWSER_ERROR,
-                QUEUEEXECSTATUS.UNKNOWN_ERROR,
-                QUEUEEXECSTATUS.TIMEOUT_ERROR,
-            ):
-                return self._handle_result_retry(item, result)
-            else:
-                return self._handle_result_failure(item, result)
+    def _process_result(self, item: QueueRunItem, result: QueueExecutionResult):
 
-    def _handle_result_success(self, item: QueueRunItem, result: QueueExecutionResult):
-        self.logging(
-            f"({self.completed_count+1}/{self.total_count}) - SUCCESS - Row: {item.queue.row_number} - {item.queue.queue_name} - succeeded."
-        )
-        item.status = QUEUERUNSTATUS.SUCCESS
-
-        self.success_queues.append(item)
-        self._send_result_progress(item, result, "Succeeded", use_exec_status=False)
-        self.completed_count += 1
-        self.progress_status.emit(self.completed_count, self.total_count)
-
-    def _handle_result_runner_stopped(
-        self, item: QueueRunItem, result: QueueExecutionResult
-    ):
-        self._send_result_progress(item, result, "Stop Requested", use_exec_status=True)
-        self.errored_queues.append(item)
-        self.completed_count = self.total_count
-        self.logging("Queue Executor stopped.", "WARN")
-        self.stop_clean_up()
-
-    def _handle_result_queue_not_found(
-        self, item: QueueRunItem, result: QueueExecutionResult
-    ):
-        if item.retry_count >= 2 or item.action_type not in (
-            QUEUEACTION.VERIFY_NOT_EXISTS,
-            QUEUEACTION.DELETE,
-        ):
-            return self._handle_result_failure(item, result)
-        self.logging(
-            f"({self.completed_count+1}/{self.total_count}) - FAILED - Row: {item.queue.row_number} - {item.queue.queue_name} - Queue Does NOT Exist Already."
-        )
-        self._send_result_progress(
-            item,
-            result,
-            "Queue Name Does NOT Exist Already.",
-            use_exec_status=False,
-        )
-        item.retry_count += 1
-        item.status = QUEUERUNSTATUS.RETRYING
-        item.action_type = QUEUEACTION.VERIFY_NOT_EXISTS
-        self._send_result_progress(
-            item,
-            result,
-            "Verifying Queue Actually Does Not Exist",
-            use_exec_status=False,
-        )
-        self.q_item_queue.appendleft(item)
-        self.logging(
-            f"({self.completed_count+1}/{self.total_count}) - adding queue item back to queue for validation."
-        )
-        self.progress_status.emit(self.completed_count, self.total_count)
-        self.logging(
-            f"({self.completed_count+1}/{self.total_count}) - VALIDATING (ATTEMPT: {item.retry_count}) - Row: {item.queue.row_number} - {item.queue.queue_name}"
+        decision = self._result_handler.handle_result(
+            item, result, self.completed_count + 1, self.total_count
         )
 
-    def _handle_result_queue_exists(
-        self, item: QueueRunItem, result: QueueExecutionResult
-    ):
-        if item.retry_count >= 2:
-            return self._handle_result_failure(item, result)
-        self.logging(
-            f"({self.completed_count+1}/{self.total_count}) - FAILED - Row: {item.queue.row_number} - {item.queue.queue_name} - Queue Exists."
-        )
-        self._send_result_progress(
-            item,
-            result,
-            "Queue Name Exists Already.",
-            use_exec_status=False,
-        )
-        item.retry_count += 1
-        item.status = QUEUERUNSTATUS.RETRYING
-        item.action_type = QUEUEACTION.VERIFY_EXISTS
-        self._send_result_progress(
-            item, result, "Verifying Queue Actually Exists", use_exec_status=False
-        )
-        self.logging(
-            f"({self.completed_count+1}/{self.total_count}) - adding queue item back to queue for validation."
-        )
-        self.q_item_queue.appendleft(item)
-        self.progress_status.emit(self.completed_count, self.total_count)
-        self.logging(
-            f"({self.completed_count+1}/{self.total_count}) - VALIDATING (ATTEMPT: {item.retry_count}) - Row: {item.queue.row_number} - {item.queue.queue_name}"
-        )
-
-    def _handle_result_retry(self, item: QueueRunItem, result: QueueExecutionResult):
-        if item.retry_count >= 2:
-            return self._handle_result_failure(item, result)
-        self.logging(
-            f"({self.completed_count+1}/{self.total_count}) - FAILED - Row: {item.queue.row_number} - {item.queue.queue_name} - failed."
-        )
-        item.retry_count += 1
-        item.status = QUEUERUNSTATUS.RETRYING
-        self.logging(
-            f"({self.completed_count+1}/{self.total_count}) - RETRYING (ATTEMPT: {item.retry_count}) - Row: {item.queue.row_number} - {item.queue.queue_name} - failed."
-        )
-        self._send_result_progress(item, result, "Retrying...", use_exec_status=False)
-        self.q_item_queue.appendleft(item)
-        self._rebuild_browser()
-        auth_result = self._authenticate()
-        if not auth_result.success:
-            self._handle_result_failure(item, result)
-            self._shut_down.set()
-            self._drain_remaining_rules(
-                QUEUERUNSTATUS.FAILED, "Authentication failed during retry"
+        if decision.action == QRESULTACTION.SUCCESS:
+            if item.is_duplicate:
+                self.duplicate_queues.append(item)
+            self.success_queues.append(item)
+            self.completed_count += 1
+        elif decision.action == QRESULTACTION.STOP:
+            self.errored_queues.append(item)
+            self.completed_count = self.total_count
+            self.stop_clean_up()
+            return
+        elif decision.action == QRESULTACTION.ABORT_RUN:
+            self.errored_queues.append(item)
+            self.completed_count = self.total_count
+            self._drain_remaining_queues(
+                QUEUERUNSTATUS.FAILED,
+                "Queue Runner stopped. Too many consecutive errors.",
             )
             return
+        elif decision.action == QRESULTACTION.RETRY:
 
-    def _handle_result_failure(self, item: QueueRunItem, result: QueueExecutionResult):
-        self.logging(
-            f"({self.completed_count+1}/{self.total_count}) - FAILED - Row: {item.queue.row_number} - {item.queue.queue_name} - not retrying running queue."
-        )
-        item.status = QUEUERUNSTATUS.FAILED
-        self._send_result_progress(
-            item, result, "Failed. Not retrying.", use_exec_status=False
-        )
-        self.errored_queues.append(item)
-        self.completed_count += 1
+            if decision.recovery == QRECOVERYACTION.NONE:
+                self.q_item_queue.appendleft(item)
+                return
+
+            elif decision.recovery == QRECOVERYACTION.REBUILD_BROWSER:
+                self._rebuild_browser()
+                auth_result = self._authenticate()
+                if auth_result.status == AUTHSTATUS.STOPPED_REQUESTED:
+                    self.q_item_queue.appendleft(item)
+                    return
+                if not auth_result.success:
+                    self.q_item_queue.appendleft(item)
+                    self._drain_remaining_queues(
+                        QUEUERUNSTATUS.FAILED, "Authentication failed during retry"
+                    )
+                    return
+                self.q_item_queue.appendleft(item)
+            elif decision.recovery == QRECOVERYACTION.AUTHENTICATE:
+                auth_result = self._authenticate()
+                if auth_result.status == AUTHSTATUS.STOPPED_REQUESTED:
+                    self.q_item_queue.appendleft(item)
+                    return
+
+                if not auth_result.success:
+                    self.q_item_queue.appendleft(item)
+                    self._drain_remaining_queues(
+                        QUEUERUNSTATUS.FAILED, "Authentication failed during retry"
+                    )
+                    return
+                self.q_item_queue.appendleft(item)
+        elif decision.action == QRESULTACTION.FAIL:
+            self.errored_queues.append(item)
+            self.completed_count += 1
+
         self.progress_status.emit(self.completed_count, self.total_count)
 
-    def create_rule_summary(self) -> None:
+    def _create_summary_safe(self):
+        try:
+            self.create_queue_summary(self.queue_summary_mode)
+        except Exception as e:
+            self.logging(f"Failed to create queue summary: {e}", "ERROR")
+
+    def create_queue_summary(
+        self, summary_mode: QUEUERUNNERSUMMARYMODE = QUEUERUNNERSUMMARYMODE.FULL
+    ) -> None:
         """
         Creates a summary of successfully executed and errored queues.
         """
-        errored_rules_msg = f"ERRORED Queues TOTAL: {len(self.errored_queues)} \n"
-        succeeded_rules_msg = f"SUCCEEDED Queues TOTAL: {len(self.success_queues)} \n"
+        errored_queues_msg = f"ERRORED Queues TOTAL: {len(self.errored_queues)} \n"
+        succeeded_queues_msg = f"SUCCEEDED Queues TOTAL: {len(self.success_queues)} \n"
+        duplicate_queues_msg = f"DUPLICATE Queues TOTAL: {len(self.duplicate_queues)} (included in succeeded) \n"
         tabs = "\t" * 3
-        for error_rule in self.errored_queues:
-            errored_rules_msg += f"{tabs}- Row {error_rule.queue.row_number}: - {error_rule.queue.queue_name} \n"
-        for succeed_rule in self.success_queues:
-            succeeded_rules_msg += f"{tabs}- Row {succeed_rule.queue.row_number}: - {succeed_rule.queue.queue_name} \n"
-        self.logging(succeeded_rules_msg, "INFO")
-        self.logging(errored_rules_msg, "ERROR")
 
-    def _drain_remaining_rules(self, status: QUEUERUNSTATUS, reason: str):
-        # self._send_batch_progress(status, reason, end_time=True)
+        max_errors_logged = 5
+        self.logging(f"{self.provider_name} - {self.provider_instance} - RESULT:")
+        self.logging(succeeded_queues_msg, "INFO")
+        self.logging(duplicate_queues_msg, "INFO")
+        self.logging(errored_queues_msg, "ERROR")
+
+        if summary_mode == QUEUERUNNERSUMMARYMODE.COUNTS:
+            if self.success_queues:
+                last_success = self.success_queues[-1]
+                self.logging("LAST SUCCESSFUL QUEUE: \n", "INFO")
+                last_success_msg = f"{tabs}- Row {last_success.queue.row_number}: - {last_success.queue.queue_name}"
+                self.logging(last_success_msg, "INFO")
+
+            if self.errored_queues:
+                self.logging(f"LAST {max_errors_logged} ERRORED QUEUES: \n")
+
+            for error_rule in self.errored_queues[:max_errors_logged]:
+                abv_errored_idv = f"{tabs}- Row {error_rule.queue.row_number}: - {error_rule.queue.queue_name} \n"
+                self.logging(abv_errored_idv, "ERROR")
+            omitted = len(self.errored_queues) - max_errors_logged
+            if omitted > 0:
+                self.logging(
+                    f"{tabs}... {omitted} additional errored queues omitted. \n",
+                    "ERROR",
+                )
+        if summary_mode == QUEUERUNNERSUMMARYMODE.COUNTS:
+            return
+
+        self.logging("SUCCESSFUL QUEUES: \n", "INFO")
+
+        for success_queue in self.success_queues:
+            indv_success_msg = f"{tabs}- Row {success_queue.queue.row_number}: - {success_queue.queue.queue_name}"
+            self.logging(indv_success_msg, "INFO")
+
+        self.logging("DUPLICATE QUEUES: \n", "INFO")
+        for duplicate_queue in self.duplicate_queues:
+            indv_duplicate_msg = f"{tabs}- Row {duplicate_queue.queue.row_number}: - {duplicate_queue.queue.queue_name}"
+            self.logging(indv_duplicate_msg, "WARN")
+
+        self.logging("ERROR QUEUES: \n", "INFO")
+        for errored_queue in self.errored_queues:
+            indv_errored_msg = f"{tabs}- Row {errored_queue.queue.row_number}: - {errored_queue.queue.queue_name}"
+            self.logging(indv_errored_msg, "ERROR")
+
+    def _drain_remaining_queues(self, status: QUEUERUNSTATUS, reason: str):
+        self._send_batch_progress(status, reason, end_time=True)
         while self.q_item_queue:
             item = self.q_item_queue.popleft()
             item.status = status
@@ -439,10 +460,10 @@ class QueueRunnerWorker(QObject):
         self.logging(f"Removing remaining queues from queue: {reason}", "WARN")
 
     def stop_clean_up(self):
-        self._drain_remaining_rules(
+        self.queue_summary_mode = QUEUERUNNERSUMMARYMODE.COUNTS
+        self._drain_remaining_queues(
             QUEUERUNSTATUS.STOPPED, "Queue Runner manually stopped."
         )
-        self.progress_status.emit(self.total_count, self.total_count)
 
     def stop(self) -> None:
         """

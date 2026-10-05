@@ -8,11 +8,13 @@ if TYPE_CHECKING:
     from services.logger.adapters import LogAdapter
     from services.rule_runner.interfaces import BrowserPort
     from services.profiles import ProfileRegistry
+    from services.intra.v11.intra_token_manager import IntraTokenManager
 
 from .enums import PROVIDERS
 from .models import AuthValidationResponse
 
-from ..intra.intra_auth_service import IntraAuthService
+from ..intra.v10.intra_auth_service import IntraAuthService as V10_AuthService
+from ..intra.v11.intra_auth_service import IntraAuthService as V11_AuthService
 from .session.session_registry import SessionRegistry
 from .base_auth_service import BaseAuthService
 
@@ -24,18 +26,26 @@ class AuthService:
         session_registry: SessionRegistry,
         profile_registry: ProfileRegistry,
         logger: LogAdapter,
+        token_manager: IntraTokenManager,
     ):
         super().__init__()
         self._providers: dict[PROVIDERS, BaseAuthService] = {
-            PROVIDERS.INTRA: IntraAuthService(
-                session_registry, profile_registry, PROVIDERS.INTRA, logger
+            PROVIDERS.INTRA_V10: V10_AuthService(
+                session_registry, profile_registry, PROVIDERS.INTRA_V10, logger
+            ),
+            PROVIDERS.INTRA_V11: V11_AuthService(
+                session_registry,
+                profile_registry,
+                PROVIDERS.INTRA_V11,
+                logger,
+                token_manager,
             ),
         }
 
     def validate(self, provider: PROVIDERS) -> AuthValidationResponse:
         service = self._providers.get(provider)
         if not service:
-            raise NotImplementedError(f"{provider} not implemented")
+            raise NotImplementedError(f"AuthService: {provider} not implemented")
         return service.validate()
 
     def ensure_auth(
@@ -48,11 +58,11 @@ class AuthService:
     ) -> AuthResult:
         service = self._providers.get(provider)
         if not service:
-            raise NotImplementedError(f"{provider} not implemented")
+            raise NotImplementedError(f"AuthService: {provider} not implemented")
         return service.ensure_auth(creds, browser_port, force_login, should_stop_cb)
 
     def can_attempt_login(self, provider) -> bool:
         service = self._providers.get(provider)
         if not service:
-            raise NotImplementedError(f"{provider} not implemented")
+            raise NotImplementedError(f"AuthService: {provider} not implemented")
         return service.can_attempt_login()

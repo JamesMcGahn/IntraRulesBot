@@ -85,7 +85,7 @@ class LogWorker(QThread):
 
         complete_path = self.log_file_path + self.log_file_name
         self.logger = logging.getLogger(complete_path)
-        self.logger.setLevel(logging.INFO)
+        self.logger.setLevel(logging.DEBUG)
         if not isinstance(self.log_file_max_mbs, int):
             self.log_file_max_mbs = 5
         if not isinstance(self.log_backup_count, int):

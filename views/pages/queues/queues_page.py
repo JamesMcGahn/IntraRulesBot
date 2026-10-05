@@ -16,6 +16,7 @@ from .enums.queues_page_event import QUEUESPAGEEVENT
 from .models.queues_page_action import QueuesPageAction
 from base.events import (
     MonitorRowUpsertEvent,
+    MonitorRowBatchUpsertEvent,
     MonitorSummaryUpdateEvent,
     MonitorSnapShotEvent,
     UIEvent,
@@ -30,6 +31,7 @@ class QueuesPage(QWidgetBase):
     Queues page that integrates the UI view with the logic for
     """
 
+    monitor_upsert_rows = Signal(list)
     monitor_upsert_row = Signal(object)
     monitor_summary_update = Signal(object)
     progress_bar_update = Signal(int, int)
@@ -58,6 +60,7 @@ class QueuesPage(QWidgetBase):
 
         # Monitor connections
         self.monitor_upsert_row.connect(self.queue_runner_monitor.handle_upsert_row)
+        self.monitor_upsert_rows.connect(self.queue_runner_monitor.handle_upsert_rows)
         self.monitor_summary_update.connect(
             self.queue_runner_monitor.handle_summary_update
         )
@@ -70,8 +73,9 @@ class QueuesPage(QWidgetBase):
     def receive_ui_event(self, event: UIEvent):
         if isinstance(event.payload, MonitorRowUpsertEvent):
             self.monitor_upsert_row.emit(event.payload.row)
+        elif isinstance(event.payload, MonitorRowBatchUpsertEvent):
+            self.monitor_upsert_rows.emit(event.payload.rows)
         elif isinstance(event.payload, MonitorSummaryUpdateEvent):
-
             self.monitor_summary_update.emit(event.payload.summary)
         elif isinstance(event.payload, MonitorSnapShotEvent):
             self.monitor_snapshot_update.emit(event.payload)

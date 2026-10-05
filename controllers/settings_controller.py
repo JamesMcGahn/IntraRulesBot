@@ -167,7 +167,7 @@ class SettingsController(ControllerBase):
             toast_level = QTOASTSTATUS.INFORMATION
 
         toast = ToastEvent(
-            message="Field Validation Update",
+            message=msg,
             title=msg,
             toast_level=toast_level,
             log_level=log_level,

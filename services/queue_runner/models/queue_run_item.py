@@ -11,3 +11,4 @@ class QueueRunItem:
     status: QUEUERUNSTATUS = QUEUERUNSTATUS.PENDING
     retry_count: int = 0
     action_type: QUEUEACTION = QUEUEACTION.ADD
+    is_duplicate: bool = False

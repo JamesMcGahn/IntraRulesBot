@@ -1,3 +1,4 @@
+from typing import Callable
 from playwright.sync_api import (
     Dialog,
     FrameLocator,
@@ -249,3 +250,34 @@ class PlaywrightBrowserAdapter(BrowserPort):
         timeout: int = 30000,
     ) -> None:
         return self.interactions.wait_for_locator_visible(locator, timeout)
+
+    def capture_response_json(
+        self,
+        url_contains: str,
+        action: Callable[[], None],
+        method: str = "POST",
+        status: int | None = None,
+        timeout: int = 30_000,
+    ) -> dict:
+
+        method = method.upper()
+        if method not in (
+            "POST",
+            "PATCH",
+            "GET",
+            "DELETE",
+        ):
+            raise ValueError(
+                f"Method type {method} passed to capture_response_json is not supported."
+            )
+
+        with self._page.expect_response(
+            lambda r: url_contains in r.url
+            and r.request.method == method
+            and (status is None or r.status == status),
+            timeout=timeout,
+        ) as response_info:
+            action()
+            self._page.wait_for_load_state("networkidle", timeout=timeout)
+        payload = response_info.value.json()
+        return payload

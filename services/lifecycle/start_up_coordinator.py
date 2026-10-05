@@ -11,15 +11,19 @@ from utils.files import PathManager
 from services.auth.enums import PROVIDERS
 from PySide6.QtCore import QObject, Signal
 from playwright._impl._driver import compute_driver_executable, get_driver_env
+from services.settings.enums import SETTINGSCATEGORIES
+from base.enums import INTRAVERSION
 
 
 class StartUpCoordinator(QObject):
     done = Signal(bool)
+    start_service = Signal()
 
     def __init__(self, container: StartUpContainer):
         super().__init__()
         self.container = container
         self.logger = self.container.logger
+        self.start_service.connect(self.container.intra_token_service.start_service)
 
     def _logging(self, msg, level="INFO", print_msg=True) -> None:
         msg = f"{self.__class__.__name__}: {msg}"
@@ -30,12 +34,25 @@ class StartUpCoordinator(QObject):
             self._logging("Starting Start Up Checks....", "INFO")
             self.container.rule_sets_controller.load_editor_state()
             self.container.rules_controller.load_editor_state()
-            self.container.session_registry.pre_load_providers([PROVIDERS.INTRA])
+            self.container.session_registry.pre_load_providers(
+                [PROVIDERS.INTRA_V10, PROVIDERS.INTRA_V11]
+            )
+            self.set_current_provider()
+            self.start_service.emit()
             self.ensure_playwright_browsers()
             self._logging("Starting Start Up Checks Finished.", "INFO")
             self.done.emit(True)
         except Exception:
             self.done.emit(False)
+
+    def set_current_provider(self):
+        login_settings = self.container.settings_manager.get_category(
+            SETTINGSCATEGORIES.LOGIN
+        )
+        if INTRAVERSION.V11 == login_settings.platform_version:
+            self.container.session_registry.set_current_session(PROVIDERS.INTRA_V11)
+        else:
+            self.container.session_registry.set_current_session(PROVIDERS.INTRA_V10)
 
     def ensure_playwright_browsers(self):
         folder = PathManager.create_folder_in_app_data("playwright")

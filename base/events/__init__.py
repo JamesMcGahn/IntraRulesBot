@@ -9,6 +9,7 @@ from .rule_runner_state_event import RuleRunnerStateEvent
 from .monitor_snapshot import MonitorSnapShotEvent
 from .queue_runner_state_event import QueueRunnerStateEvent
 from .progress_status import ProgressStatus
+from .monitor_row_batch_upsert_event import MonitorRowBatchUpsertEvent
 
 __all__ = [
     "UIEvent",
@@ -22,4 +23,5 @@ __all__ = [
     "MonitorSnapShotEvent",
     "QueueRunnerStateEvent",
     "ProgressStatus",
+    "MonitorRowBatchUpsertEvent",
 ]

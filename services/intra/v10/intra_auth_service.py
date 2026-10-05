@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
-    from ..auth.session.session_registry import SessionRegistry
-    from ..auth.enums import PROVIDERS
+    from ...auth.session.session_registry import SessionRegistry
+    from ...auth.enums import PROVIDERS
 
     from services.logger.adapters import LogAdapter
     from services.browser.ports import BrowserPort
-    from .models.intra_login import IntraLogin
+    from ..models.intra_login import IntraLogin
     from services.profiles import ProfileRegistry
     from services.profiles.models import LoginSelectors
 
@@ -16,10 +16,10 @@ import time
 
 from playwright.sync_api import Error as PlaywrightError
 
-from ..auth.base_auth_service import BaseAuthService
-from ..auth.enums.auth_status import AUTHSTATUS
-from ..auth.models.auth_result import AuthResult
-from ..auth.models.auth_validation_response import AuthValidationResponse
+from ...auth.base_auth_service import BaseAuthService
+from ...auth.enums.auth_status import AUTHSTATUS
+from ...auth.models.auth_result import AuthResult
+from ...auth.models.auth_validation_response import AuthValidationResponse
 
 
 class IntraAuthService(BaseAuthService):

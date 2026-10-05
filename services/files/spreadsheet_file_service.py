@@ -17,10 +17,14 @@ class SpreadsheetFileService(ServiceBase):
         super().__init__(logger)
 
     def load(
-        self, file_path: Path, required_headers: set | None = None
+        self,
+        file_path: Path,
+        required_headers: set | None = None,
+        store_as_str: bool = False,
     ) -> SheetsLoadResult:
 
         try:
+            self._logging(f"Opening Workbook: {file_path} ", "INFO")
             workbook = load_workbook(file_path, read_only=True, data_only=True)
             sheet = workbook.active
 
@@ -50,12 +54,20 @@ class SpreadsheetFileService(ServiceBase):
                     )
 
             for excel_row_number, row_values in enumerate(rows[1:], start=2):
-                row_data = {
-                    headers[index]: value
-                    for index, value in enumerate(row_values)
-                    if index < len(headers)
-                }
-                ImportedSheetsRow(row_number=excel_row_number, values=row_data)
+
+                if store_as_str:
+                    row_data = {
+                        headers[index]: str(value)
+                        for index, value in enumerate(row_values)
+                        if index < len(headers)
+                    }
+                else:
+                    row_data = {
+                        headers[index]: value
+                        for index, value in enumerate(row_values)
+                        if index < len(headers)
+                    }
+
                 imported_rows.append(
                     ImportedSheetsRow(row_number=excel_row_number, values=row_data)
                 )
@@ -84,3 +96,7 @@ class SpreadsheetFileService(ServiceBase):
             self._logging(message, "ERROR")
             self._logging(f"Unexpected Error: {e}", "DEBUG")
             return SheetsLoadResult(ok=False, file_path=file_path, message=message)
+        finally:
+            if workbook is not None:
+                workbook.close()
+                self._logging(f"Workbook closed: {file_path} ", "INFO")

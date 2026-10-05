@@ -18,13 +18,30 @@ class QueueMonitorStore:
     def upsert_row(self, row: QueueRunRow) -> QueueRunRow:
         old_row = self.rows.get(row.queue_guid, None)
 
-        if old_row and row.emitted_at < old_row.emitted_at:
-            return old_row
+        if old_row:
+            if row.emitted_at < old_row.emitted_at:
+                return old_row
 
-        if old_row and row.started_at is None:
-            row.started_at = old_row.started_at
+            if row.started_at is None:
+                row.started_at = old_row.started_at
+
+            if old_row.started_at is not None and row.started_at > old_row.started_at:
+                row.started_at = old_row.started_at
 
         self.rows[row.queue_guid] = row
+        self._recalculate_summary()
+
+    def upsert_rows(self, rows: list[QueueRunRow]) -> QueueRunRow:
+        for row in rows:
+            old_row = self.rows.get(row.queue_guid, None)
+
+            if old_row and row.emitted_at < old_row.emitted_at:
+                return old_row
+
+            if old_row and row.started_at is None:
+                row.started_at = old_row.started_at
+
+            self.rows[row.queue_guid] = row
         self._recalculate_summary()
 
     def get_summary(self) -> RunSummary:

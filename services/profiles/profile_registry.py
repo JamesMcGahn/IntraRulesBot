@@ -7,13 +7,14 @@ if TYPE_CHECKING:
 
 from base.enums import INTRAVERSION
 from .defaults.profile_v_10 import v_10
+from .defaults.profile_v_11 import v_11
 
 
 class ProfileRegistry:
 
     def __init__(self):
 
-        self._registry = {INTRAVERSION.V10: v_10}
+        self._registry = {INTRAVERSION.V10: v_10, INTRAVERSION.V11: v_11}
 
     def get_profile(self, version: INTRAVERSION) -> BrowserProfile:
         profile = self._registry.get(version, None)
