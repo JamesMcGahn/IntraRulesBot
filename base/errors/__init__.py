@@ -7,6 +7,7 @@ from .provider_instance_not_found import ProviderInstanceNotFound
 from .not_authenticated import NotAuthenticatedException
 from .network_reponse import NetworkResponseException
 from .retryable_network import RetryableNetworkException
+from .queue_found import QueueFound
 
 __all__ = [
     "DuplicateNameException",
@@ -18,4 +19,5 @@ __all__ = [
     "NotAuthenticatedException",
     "NetworkResponseException",
     "RetryableNetworkException",
+    "QueueFound",
 ]
