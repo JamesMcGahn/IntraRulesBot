@@ -2,55 +2,36 @@
 
 ## File Structure
 
-```bash
-├── __version__.py
-├── app_styles_css.py
+````bash
+
 ├── base
 │   ├── enums
 │   ├── errors
 │   ├── events
 ├── color_palete.md
 ├── context
-│   └── context.py
 ├── controllers
 │   ├── controller_factory.py
 │   ├── models
+│   ├── profiles
 │   ├── queues
-│   │   ├── enums
-│   │   ├── models
-│   │   ├── queues_controller.py
-│   │   ├── queues_run_monitor_controller.py
-│   │   └── queues_validation_coordinator.py
 │   ├── rule_sets
-│   │   └── rule_sets_controller.py
 │   ├── rules
-│   │   ├── enums
-│   │   ├── models
-│   │   ├── rules_controller.py
-│   │   ├── rules_run_monitor_controller.py
-│   │   └── rules_validation_coordinator.py
 │   ├── settings_controller.py
 │   └── ui_controller.py
-├── main.py
-├── Pipfile
-├── Pipfile.lock
-├── pysidedeploy_mac.spec
-├── pysidedeploy_windows.spec
-├── README.md
-├── requirements.txt
 ├── schemas
+│   ├── conditions_schema.py
 │   ├── enums
 │   ├── examples
-│   │   ├── actions
-│   │   ├── conditions
-│   │   └── triggers
 │   ├── main_schema.py
 │   ├── queue_schema.py
 │   ├── registry
 │   │   └── schema_registry.py
 │   ├── rules_schema.py
-│   └── trigger_action_based.py
+│   └── trigger_action_based_schema.py
 ├── services
+│   ├── api
+│   │   └── queues
 │   ├── auth
 │   │   ├── auth_service.py
 │   │   ├── base_auth_service.py
@@ -71,10 +52,9 @@
 │   │   ├── models
 │   │   └── spreadsheet_file_service.py
 │   ├── intra
-│   │   ├── intra_auth_service.py
-│   │   ├── intra_provider_session.py
-│   │   ├── login_worker.py
-│   │   └── models
+│   │   ├── models
+│   │   ├── v10
+│   │   └── v11
 │   ├── lifecycle
 │   │   ├── models
 │   │   ├── protocols
@@ -88,18 +68,27 @@
 │   │   ├── models
 │   │   ├── queue_monitor
 │   │   └── rule_monitor
+│   ├── network
+│   │   ├── base_api.py
+│   │   ├── enums
+│   │   ├── models
+│   │   ├── network_client.py
+│   │   └── network_throttle.py
 │   ├── profiles
 │   │   ├── defaults
 │   │   ├── models
+│   │   ├── profile_builder.py
 │   │   ├── profile_registry.py
-│   │   └── rules
+│   │   └── profile_serializer.py
 │   ├── queue_runner
 │   │   ├── enums
 │   │   ├── executors
 │   │   ├── models
+│   │   ├── queue_result_handler.py
 │   │   ├── queue_runner_service.py
 │   │   └── queue_runner_worker.py
 │   ├── queues
+│   │   ├── enums
 │   │   ├── models
 │   │   └── queue_builder.py
 │   ├── rule_runner
@@ -142,33 +131,38 @@
 │       ├── schema_validator.py
 │       ├── settings_validator.py
 │       └── validation_service.py
-├── todos.md
 ├── utils
-│   └── files
-│       └── path_manager.py
-└── views
-    ├── base
-    │   ├── enums
-    │   └── field_registry.py
-    ├── components
-    │   ├── boxes
-    │   ├── buttons
-    │   ├── dialogs
-    │   ├── helpers
-    │   ├── layouts
-    │   ├── rules
-    │   └── toasts
-    ├── layout
-    │   ├── central_widget
-    │   ├── main_screen
-    │   └── navbars
-    ├── main_window.py
-    └── pages
-        ├── bookmarks
-        ├── queues
-        ├── rules
-        └── settings
-```
+├── uv.lock
+├── views
+│   ├── base
+│   │   ├── enums
+│   │   └── field_registry.py
+│   ├── components
+│   │   ├── boxes
+│   │   ├── buttons
+│   │   ├── dialogs
+│   │   ├── helpers
+│   │   ├── layouts
+│   │   ├── rules
+│   │   └── toasts
+│   ├── layout
+│   │   ├── central_widget
+│   │   ├── main_screen
+│   │   └── navbars
+│   ├── main_window.py
+│   └── pages
+│       ├── bookmarks
+│       ├── logs
+│       ├── queues
+│       ├── rules
+│       └── settings
+├── main.py
+├── pyproject.toml
+├── pysidedeploy_mac.spec
+├── pysidedeploy_windows.spec
+├── __version__.py
+├── app_styles_css.py
+└── README.md
 
 ## Installation
 
@@ -177,27 +171,71 @@
 - Python 3.12+
 
 ```bash
-pipenv install
-```
+uv sync
+````
 
-or
+## Getting Started
+
+### 1. Install uv
+
+Install `uv` if it is not already installed.
+
+**macOS:**
 
 ```bash
-pip install -r requirements.txt
+brew install uv
 ```
 
-### How to Run
+**Windows:**
 
-Windows
+```powershell
+winget install --id=astral-sh.uv -e
+```
+
+Verify the installation:
+
+```bash
+uv --version
+```
+
+### 2. Clone the repository
+
+### 3. Install Python and project dependencies
+
+Run:
+
+```bash
+uv sync
+```
+
+### 4. Run the application
+
+```bash
+uv run python main.py
+```
+
+## Virtual Environment
+
+Activating the virtual environment manually is optional. Commands can normally be run directly with `uv run`.
+
+If manual activation is desired:
+
+**macOS/Linux:**
+
+```bash
+source .venv/bin/activate
+```
+
+**Windows PowerShell:**
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+Once activated, normal Python commands can be used:
 
 ```bash
 python main.py
-```
-
-Mac
-
-```bash
-python3 main.py
 ```
 
 ## How To Deploy
@@ -205,17 +243,33 @@ python3 main.py
 The application will deploy based on the settings in the pysidedeploy.spec file. The spec file is configured for Windows Applications but will also work on Mac.
 In the spec file, update the paths to exec_directory, icon and python_path. Then run the below in console.
 
+**macOS:**
+
 ```bash
-pyside6-deploy
+uv run pyside6-deploy -c pysidedeploy_mac.spec
+```
+
+**Windows:**
+
+```bash
+uv run pyside6-deploy -c pysidedeploy_windows.spec
 ```
 
 ## Supported Use Cases:
 
 ### ACD Queue Input
 
-- Add Queues from Excel File
+Both V10 & V11 are supported.
 
-### Triggers:
+- Add, Delete & Verify Queues from Excel File
+- excel files must have queue_number & queue_name in heading
+  - optional action_type header with commands of ADD, DELETE, VERIFY_EXISTS, & VERIFY_NOT_EXISTS
+
+### Rules
+
+**Note: V11 is not yet supported for Rules**
+
+#### Triggers:
 
 - Frequency Based
 - Action Triggers:
@@ -230,24 +284,24 @@ pyside6-deploy
   - WFM
     - Segment Occurrence
 
-### Condition:
+#### Condition:
 
 - ACD:
   - Statistic
 
-### Actions:
+#### Actions:
 
 - Communications
   - Email
 
 ## How To Add Rule Use Case
 
-- update schema
-- add scope detailed dataclass
-- update detail enum
-- update services/rules/rule_builder
-- update views/rules/rule_factory
-- update services/profiles/rules dc
-- update the profile implementation with selectors
-- add detailed executor
-- update scope executor
+- [ ] Update/Add schema in ./schemas
+- [ ] Add scope detailed dataclass in .rules/models/
+- [ ] Update scope detail enum in .rules/enums/
+- [ ] Update Builder in services/rules/rule_builder
+- [ ] Update Serialization in views/rules/rule_factory
+- [ ] Update Browser Profile DC in services/profiles/rules DC
+- [ ] Update Browser Profile implementation with selectors
+- [ ] Add detailed executor in ./services/rule_runner/executors/{scope}
+- [ ] Update scope executor in ./services/rule_runner/executors/{scope}

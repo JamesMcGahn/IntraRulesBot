@@ -1,0 +1,33 @@
+[project]
+name = "intrarulesbot"
+version = "2.0.0"
+description = "Intra Automation"
+readme = "README.md"
+authors = [
+    { name = "James McGahn", email = "" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "pyside6",
+    "jsonschema",
+    "keyring",
+    "playwright",
+    "pywin32; sys_platform == 'win32'",
+    "openpyxl",
+    "pyjwt",
+    "requests>=2.34.2",
+]
+
+[dependency-groups]
+dev = [
+    "imageio>=2.38.0",
+    "nuitka",
+]
+
+
+[project.scripts]
+intrarulesbot = "main:main"
+
+[build-system]
+requires = ["uv_build>=0.12.9,<0.13.0"]
+build-backend = "uv_build"
