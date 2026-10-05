@@ -37,6 +37,8 @@ class StartUpCoordinator(QObject):
             self.container.session_registry.pre_load_providers(
                 [PROVIDERS.INTRA_V10, PROVIDERS.INTRA_V11]
             )
+            self.container.profiles_controller.load_profiles()
+            self.container.profiles_controller.save_profiles()
             self.set_current_provider()
             self.start_service.emit()
             self.ensure_playwright_browsers()

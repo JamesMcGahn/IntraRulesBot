@@ -8,6 +8,7 @@ from .rules.rules_run_monitor_controller import RulesRunMonitorController
 from .queues.queues_controller import QueuesController
 from .queues.queues_validation_coordinator import QueuesValidationCoordinator
 from .queues.queues_run_monitor_controller import QueuesRunMonitorController
+from .profiles.profiles_controller import ProfilesController
 
 __all__ = [
     "ControllerFactory",
@@ -20,4 +21,5 @@ __all__ = [
     "QueuesController",
     "QueuesValidationCoordinator",
     "QueuesRunMonitorController",
+    "ProfilesController",
 ]

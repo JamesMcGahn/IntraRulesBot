@@ -11,6 +11,7 @@ from controllers import (
     QueuesController,
     QueuesValidationCoordinator,
     QueuesRunMonitorController,
+    ProfilesController,
 )
 from schemas.registry import SchemaRegistry
 from services.auth.auth_service import AuthService
@@ -23,7 +24,7 @@ from services.browser import BrowserSessionFactory
 from services.lifecycle import ShutdownCoordinator, StartUpCoordinator
 from services.logger import Logger
 from services.logger.adapters import LogAdapter
-from services.profiles import ProfileRegistry
+from services.profiles import ProfileRegistry, ProfileSerializer, ProfileBuilder
 from services.monitor.rule_monitor import RunMonitorStore
 from services.monitor.queue_monitor import QueueMonitorStore
 from services.rule_runner import RuleRunnerService
@@ -85,7 +86,9 @@ class AppContext(QObject, metaclass=QSingleton):
 
         self.session_store = SessionStore(self.json_file_service, self.log_adapter)
         self.session_registry = SessionRegistry(self.session_store, self.log_adapter)
-        self.prolife_registry = ProfileRegistry()
+        self.prolife_registry = ProfileRegistry(self.log_adapter)
+        self.profile_serializer = ProfileSerializer(self.log_adapter)
+        self.profile_builder = ProfileBuilder(self.log_adapter)
 
         v11_session = self.session_registry.for_provider(PROVIDERS.INTRA_V11)
 
@@ -217,6 +220,14 @@ class AppContext(QObject, metaclass=QSingleton):
             settings_provider=self.queue_settings_provider,
         )
 
+        self.profiles_controller = ProfilesController(
+            log_adapter=self.log_adapter,
+            profile_serializer=self.profile_serializer,
+            profile_registry=self.prolife_registry,
+            json_file_service=self.json_file_service,
+            profile_builder=self.profile_builder,
+        )
+
         self.start_up_coord = StartUpCoordinator(
             StartUpContainer(
                 logger=self.log_adapter,
@@ -225,6 +236,7 @@ class AppContext(QObject, metaclass=QSingleton):
                 session_registry=self.session_registry,
                 intra_token_service=self.intra_token_service,
                 settings_manager=self.settings_manager,
+                profiles_controller=self.profiles_controller,
             )
         )
 
@@ -316,6 +328,7 @@ class AppContext(QObject, metaclass=QSingleton):
             return
         self.preparing_for_shutdown = True
         self._services_save()
+
         self.log_adapter(
             f"{self.__class__.__name__}: Checking Services before shut down.", "INFO"
         )

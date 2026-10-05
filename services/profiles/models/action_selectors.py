@@ -30,3 +30,6 @@ ActionDetailSelectors = ActionEmailSelectors
 class ActionSelectors:
     common: ActionCommonSelectors
     details: Mapping[ACTIONDETAILTYPE, ActionDetailSelectors]
+
+
+ACTION_MAPPING = {ACTIONDETAILTYPE.EMAIL: ActionEmailSelectors}
