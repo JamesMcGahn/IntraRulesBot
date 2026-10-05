@@ -144,6 +144,26 @@ class V11QueueApi(BaseApi):
         response = self._execute(request)
         self._handle_response(response)
 
+    def delete_queue(
+        self,
+        tenant: str,
+        custom_resource_id: str,
+    ) -> None:
+        url = f"https://{tenant}.intradiem.com/api/instances/customResources({custom_resource_id})"
+        request = NetworkRequest(
+            method=HTTPMETHOD.DELETE,
+            url=url,
+            auth_mode=AUTHMODE.BEARER,
+            headers={"x-api-version": "2"},
+        )
+        self._network_throttle.wait()
+        response = self._execute(request)
+
+        if response.status == 404:
+            # Handle case where resource has already been deleted but its still tied to instance
+            return
+        self._handle_response(response)
+
     def get_provider_instance(
         self, tenant: str, provider_instance: ProviderInstanceInfo
     ) -> ProviderInstanceInfo:
@@ -161,9 +181,12 @@ class V11QueueApi(BaseApi):
         return self._process_provider_payload(response.data)
 
     def update_provider_instance_settings(
-        self, tenant: str, provider_instance: ProviderInstanceInfo, queue: Queue
+        self,
+        tenant: str,
+        provider_instance: ProviderInstanceInfo,
+        queue_list: list[dict[str, str]],
     ):
-        payload = self._build_provider_settings_payload(provider_instance, queue)
+        payload = self._build_provider_settings_payload(provider_instance, queue_list)
         url = f"https://{tenant}providerapi.intradiem.com/api/instances/providers({provider_instance.id})"
         request = NetworkRequest(
             method=HTTPMETHOD.PATCH,
@@ -178,26 +201,8 @@ class V11QueueApi(BaseApi):
         self._handle_response(response)
 
     def _build_provider_settings_payload(
-        self, provider_instance: ProviderInstanceInfo, queue: Queue
+        self, provider_instance: ProviderInstanceInfo, queue_list: list[dict[str, str]]
     ) -> dict[str, Any]:
-        queue_list = [
-            {
-                "@odata.type": queue.odata_type,
-                "queue_name": queue.queue_name,
-                "queue_number": queue.queue_number,
-                "queue_id": queue.queue_id,
-            }
-            for queue in provider_instance.queue_list
-        ]
-
-        queue_list.append(
-            {
-                "@odata.type": "#com.intradiem.enterprise.edm.instances.QueueList",
-                "queue_name": queue.queue_name,
-                "queue_number": queue.queue_name,
-                "queue_id": queue.guid,
-            }
-        )
 
         return {
             "id_manage_acd_queues": queue_list,
