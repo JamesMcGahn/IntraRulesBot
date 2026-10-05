@@ -74,9 +74,28 @@ class QueueResultHandler:
                         item, result, run_position, total_count
                     )
             case QUEUEEXECSTATUS.QUEUE_NOT_FOUND_ERROR:
+                if INTRAVERSION.V11 == self._platform_version:
+                    if item.action_type == QUEUEACTION.DELETE:
+                        self._logging(
+                            f"({run_position}/{total_count}) - Queue Already Does Not Exist: {item.queue.row_number} - {item.queue.queue_name}"
+                        )
+                        return self._handle_result_success(
+                            item, result, run_position, total_count
+                        )
+                    if item.action_type == QUEUEACTION.ADD:
+                        return self._handle_requeue_retry(
+                            item, result, run_position, total_count
+                        )
+
                 return self._handle_result_queue_not_found(
                     item, result, run_position, total_count
                 )
+
+            case QUEUEEXECSTATUS.QUEUE_FOUND_ERROR:
+                return self._handle_requeue_retry(
+                    item, result, run_position, total_count
+                )
+
             case QUEUEEXECSTATUS.BROWSER_ERROR:
                 return self._handle_browser_result_retry(
                     item, result, run_position, total_count
