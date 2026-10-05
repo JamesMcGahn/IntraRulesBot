@@ -51,3 +51,9 @@ ConditionDetailSelectors = ConditionStatsSelectors | ConditionWFMSegmentCodes
 class ConditionSelectors:
     common: ConditionCommonSelectors
     details: Mapping[CONDITIONDETAILTYPE, ConditionDetailSelectors]
+
+
+CONDITION_MAPPING = {
+    CONDITIONDETAILTYPE.STATS: ConditionStatsSelectors,
+    CONDITIONDETAILTYPE.SEGMENT_CODES: ConditionWFMSegmentCodes,
+}

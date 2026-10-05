@@ -86,3 +86,13 @@ TriggerDetailSelectors = (
 class TriggerSelectors:
     common: TriggerCommonSelectors
     details: Mapping[ACTIONTRIGGERDETAILTYPE, TriggerDetailSelectors]
+
+
+TRIGGER_MAPPING = {
+    ACTIONTRIGGERDETAILTYPE.STATE_CHANGED: TriggerStateChangedSelectors,
+    ACTIONTRIGGERDETAILTYPE.TIME_IN_STATE: TriggerTimeInStateSelectors,
+    ACTIONTRIGGERDETAILTYPE.USER_LOGGED_IN: TriggerUserLoggedInSelectors,
+    ACTIONTRIGGERDETAILTYPE.USER_LOGGED_OUT: TriggerUserLoggedOutSelectors,
+    ACTIONTRIGGERDETAILTYPE.QUICK_ACTION: TriggerQuickActionSelectors,
+    ACTIONTRIGGERDETAILTYPE.SEGMENT_OCCURRENCE: TriggerSegementOccurrence,
+}
