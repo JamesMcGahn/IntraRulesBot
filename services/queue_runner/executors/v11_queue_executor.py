@@ -3,13 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ...browser.ports import InteractionPort
     from ..models import QueueExecutionContext
     from ...api.queues.queue_v11_api import V11QueueApi
 
 import threading
-
-from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from base.errors import (
     DuplicateNameException,
@@ -20,6 +17,7 @@ from base.errors import (
     NotAuthenticatedException,
     RetryableNetworkException,
     NetworkResponseException,
+    QueueFound,
 )
 
 from ..enums import QEXECUTORTASK, QUEUEEXECSTATUS
@@ -60,13 +58,25 @@ class V11QueueExecutor:
             ),
             QEXECSTEPCALL(
                 QEXECUTORTASK.UPDATE_PROVIDER_INSTANCE_SETTINGS,
-                self.submit_provider_settings,
+                self.submit_add_provider_settings,
             ),
             QEXECSTEPCALL(QEXECUTORTASK.VERIFY_SUBMISSION, self.verify_queue_added),
         ]
 
         self._del_queue_flow = [
+            QEXECSTEPCALL(
+                QEXECUTORTASK.GET_CURRENT_PROVIDER_INSTANCE,
+                self.get_current_provider_instance,
+            ),
+            QEXECSTEPCALL(
+                QEXECUTORTASK.CHECK_FOR_DUPLICATE_QUEUE,
+                self.check_already_deleted_queue,
+            ),
             QEXECSTEPCALL(QEXECUTORTASK.DELETE_QUEUE, self.delete_queue),
+            QEXECSTEPCALL(
+                QEXECUTORTASK.UPDATE_PROVIDER_INSTANCE_SETTINGS,
+                self.submit_delete_provider_settings,
+            ),
             QEXECSTEPCALL(QEXECUTORTASK.VERIFY_SUBMISSION, self.verify_delete_queue),
         ]
 
@@ -85,18 +95,6 @@ class V11QueueExecutor:
             QUEUEACTION.DELETE: self._del_queue_flow,
         }
 
-    @property
-    def form_port(self) -> InteractionPort:
-        if self._ctx.state.form_port is None:
-            raise RuntimeError("Form port has not been initialized.")
-        return self._ctx.state.form_port
-
-    @property
-    def queue_port(self) -> InteractionPort:
-        if self._ctx.state.queue_port is None:
-            raise RuntimeError("Queue form port has not been initialized.")
-        return self._ctx.state.queue_port
-
     def _is_provider_settings_usable(self, ctx: QueueExecutionContext):
         self.logging("Checking the Provider Settings Cache.", "DEBUG")
         if ctx.state.provider_instance is None:
@@ -107,6 +105,8 @@ class V11QueueExecutor:
 
         if ctx.state.provider_info is None:
             return False
+
+        return True
 
     def logging(self, msg, level="INFO", print_msg=True) -> None:
         msg = f"{self.__class__.__name__}: {msg}"
@@ -144,75 +144,8 @@ class V11QueueExecutor:
             raise
         self.queue_progress(step.task, QUEUEEXECSTATUS.SUCCESS)
 
-    def set_queue_number(self, ctx: QueueExecutionContext):
-        self.queue_port.fill(
-            ctx.profile.selectors.queues.queue_number_input,
-            str(ctx.queue.queue_number),
-        )
-
-    def set_queue_name(self, ctx: QueueExecutionContext):
-        self.queue_port.fill(
-            ctx.profile.selectors.queues.queue_name_input,
-            ctx.queue.queue_name,
-        )
-
-    def submit_queue(self, ctx: QueueExecutionContext):
-        self.logging(f"Submitting Queue: {ctx.queue.queue_number}", "INFO")
-        self._queue_api.add_queue(
-            ctx.tenant,
-            ctx.state.queue_custom_resource,
-            ctx.state.provider_instance,
-            ctx.queue,
-        )
-
-    # TODO - Make Delete Flow
-    def delete_queue(self, ctx: QueueExecutionContext):
-        message = f"Unable to find {ctx.queue.queue_name}. Queue does not exist"
-        try:
-            name_row = self.queue_port.find_by_has_selector(
-                ctx.profile.selectors.queues.queue_grid_rows,
-                (
-                    f"{ctx.profile.selectors.queues.queue_row_name_item}"
-                    f"[{ctx.profile.selectors.queues.queue_row_attribute}="
-                    f"'{ctx.queue.queue_name}']"
-                ),
-            )
-            if name_row.count() == 0:
-                self.logging(message, "ERROR")
-                raise QueueNotFound
-
-            ctx.browser_port.frame_click_and_accept_alert_if_appears(
-                name_row,
-                ctx.profile.selectors.queues.queue_delete_button,
-                "delete",
-            )
-
-            self.logging("Checking for Loading Spinner.", "INFO")
-            self.queue_port.wait_for_loading_cycle(
-                ctx.profile.selectors.queues.queue_grid_container,
-                500,
-                disappear_timeout=30000,
-            )
-            self.logging("Loading Spinner Clear.", "INFO")
-        except PlaywrightTimeoutError as e:
-            self.logging(message, "ERROR")
-            raise QueueNotFound from e
-
-    # TODO - Make Delete Flow
-    def verify_delete_queue(self, ctx: QueueExecutionContext):
-        name_row = self.queue_port.find_by_has_selector(
-            ctx.profile.selectors.queues.queue_grid_rows,
-            (
-                f"{ctx.profile.selectors.queues.queue_row_name_item}"
-                f"[{ctx.profile.selectors.queues.queue_row_attribute}="
-                f"'{ctx.queue.queue_name}']"
-            ),
-        )
-        try:
-            self.queue_port.verify_locator_not_present(name_row, 3000)
-        except (PlaywrightTimeoutError, AssertionError):
-            self.queue_port.verify_locator_not_present(name_row, 30_000)
-
+    # ***********************************************
+    # General
     def get_current_provider_instance(self, ctx: QueueExecutionContext):
         self.logging(
             f"Getting Current Provider Instance Settings: {ctx.provider_instance}",
@@ -230,151 +163,6 @@ class V11QueueExecutor:
 
         ctx.state.provider_instance = instance
 
-    def submit_provider_settings(self, ctx: QueueExecutionContext):
-        self._queue_api.update_provider_instance_settings(
-            ctx.tenant, ctx.state.provider_instance, ctx.queue
-        )
-
-    def verify_queue_added(self, ctx: QueueExecutionContext):
-        self.logging(
-            f"Checking Queue: {ctx.queue.queue_name} exists for: {ctx.provider_instance}",
-            "INFO",
-        )
-
-        instance = self._queue_api.get_provider_instance(
-            ctx.tenant, ctx.state.provider_instance
-        )
-
-        queue_added = [
-            queue
-            for queue in instance.queue_list
-            if queue.queue_name == ctx.queue.queue_name
-        ]
-        if queue_added:
-            self.logging(
-                f"Found Queue: {ctx.queue.queue_name} exists for: {ctx.provider_instance}",
-                "INFO",
-            )
-        else:
-            raise QueueNotFound
-
-    def check_duplicate_queue(self, ctx: QueueExecutionContext):
-        self.logging(
-            f"Checking Queue: {ctx.queue.queue_name} exists for: {ctx.provider_instance}",
-            "INFO",
-        )
-
-        instance = self._queue_api.get_provider_instance(
-            ctx.tenant, ctx.state.provider_instance
-        )
-
-        queue_added = [
-            queue
-            for queue in instance.queue_list
-            if queue.queue_name == ctx.queue.queue_name
-        ]
-        if queue_added:
-            raise DuplicateNameException
-
-    def execute(self) -> QueueExecutionResult:
-        """
-        Executes the queue creation process by navigating through the form pages and submitting queues.
-        """
-
-        try:
-            self.logging(
-                f"Starting {self.__class__.__name__} in thread: {threading.get_ident()}",
-                "INFO",
-            )
-
-            if not self._is_provider_settings_usable(self._ctx):
-                self.logging(
-                    "Provider Settings Not cached in state. Getting Provider Settings.",
-                    "INFO",
-                )
-                for step in self._ensure_form_flow:
-                    self.run_step(step)
-
-            self.logging("Provider Settings cached in state. Continuing", "INFO")
-            action_type = self._ctx.action_type
-            queue_flow = self._queue_actions.get(action_type)
-
-            if queue_flow is None:
-                msg = f"queue_action is not a recognized value. value: {queue_flow}"
-                self.logging(msg, "ERROR")
-                raise ValueError(msg)
-            for step in queue_flow:
-                self.run_step(step)
-
-            return QueueExecutionResult(
-                queue_guid=self._ctx.queue.guid,
-                queue_name=self._ctx.queue.queue_name,
-                queue_row=self._ctx.queue.row_number,
-                success=True,
-                task=self._current_task,
-                status=QUEUEEXECSTATUS.SUCCESS,
-                message="Queue submitted successfully.",
-            )
-        except StoppedRequestException:
-            return self._build_error_result(
-                status=QUEUEEXECSTATUS.RUNNER_STOPPED_ERROR,
-                message="Stopped Requested.",
-            )
-
-        except DuplicateNameException:
-            return self._build_error_result(
-                status=QUEUEEXECSTATUS.NAME_EXISTS_ERROR,
-                message="Queue name already exists.",
-            )
-
-        except QueueNotFound:
-            return self._build_error_result(
-                status=QUEUEEXECSTATUS.QUEUE_NOT_FOUND_ERROR,
-                message="Queue not found.",
-            )
-
-        except NotAuthenticatedException:
-            return self._build_error_result(
-                status=QUEUEEXECSTATUS.NOT_AUTHENTICATED,
-                message="Received Not Autenticated Response from Server.",
-            )
-        except RetryableNetworkException:
-            return self._build_error_result(
-                status=QUEUEEXECSTATUS.NETWORK_RETRYABLE_ERROR,
-                message="Received an Network Retryable Error from the server.",
-            )
-        except NetworkResponseException:
-            return self._build_error_result(
-                status=QUEUEEXECSTATUS.NETWORK_RESPONSE_ERROR,
-                message="Received a Network Response Error.",
-            )
-        except Exception as e:
-
-            if self._ctx.should_stop():
-                return self._build_error_result(
-                    status=QUEUEEXECSTATUS.RUNNER_STOPPED_ERROR,
-                    message="Stopped Requested.",
-                )
-
-            self.logging(str(e), "DEBUG")
-            return self._build_error_result(
-                status=QUEUEEXECSTATUS.UNKNOWN_ERROR,
-                message="Error happened in Queue execution.",
-            )
-
-    def _build_error_result(self, status: QUEUEEXECSTATUS, message: str):
-        self.logging(message, "ERROR")
-        return QueueExecutionResult(
-            queue_guid=self._ctx.queue.guid,
-            queue_name=self._ctx.queue.queue_name,
-            queue_row=self._ctx.queue.row_number,
-            success=False,
-            task=self._current_task,
-            status=status,
-            message=message,
-        )
-
-    # ***********************************************
     # ENSURE PROVIDER SETTINGS
 
     def find_provider_name(self, ctx: QueueExecutionContext):
@@ -440,3 +228,258 @@ class V11QueueExecutor:
             raise ProviderInstanceNotFound(
                 f"Custom Resources For Provider Name: {ctx.provider_name} does not exist."
             )
+
+    # ***********************************************
+    # ADD QUEUE
+
+    def check_duplicate_queue(self, ctx: QueueExecutionContext):
+        self.logging(
+            f"Checking Queue: {ctx.queue.queue_name} exists for: {ctx.provider_instance}",
+            "INFO",
+        )
+
+        instance = self._queue_api.get_provider_instance(
+            ctx.tenant, ctx.state.provider_instance
+        )
+
+        queue_added = [
+            queue
+            for queue in instance.queue_list
+            if queue.queue_number == ctx.queue.queue_number
+        ]
+        if queue_added:
+            raise DuplicateNameException
+
+    def submit_queue(self, ctx: QueueExecutionContext):
+        self.logging(f"Submitting Queue: {ctx.queue.queue_number}", "INFO")
+        self._queue_api.add_queue(
+            ctx.tenant,
+            ctx.state.queue_custom_resource,
+            ctx.state.provider_instance,
+            ctx.queue,
+        )
+
+    def submit_add_provider_settings(self, ctx: QueueExecutionContext):
+
+        queue_list = [
+            {
+                "@odata.type": queue.odata_type,
+                "queue_name": queue.queue_name,
+                "queue_number": queue.queue_number,
+                "queue_id": queue.queue_id,
+            }
+            for queue in ctx.state.provider_instance.queue_list
+        ]
+
+        queue_list.append(
+            {
+                "@odata.type": "#com.intradiem.enterprise.edm.instances.QueueList",
+                "queue_name": ctx.queue.queue_name,
+                "queue_number": ctx.queue.queue_number,
+                "queue_id": ctx.queue.guid,
+            }
+        )
+
+        self._queue_api.update_provider_instance_settings(
+            ctx.tenant, ctx.state.provider_instance, queue_list
+        )
+
+    def verify_queue_added(self, ctx: QueueExecutionContext):
+        self.logging(
+            f"Checking Queue: {ctx.queue.queue_name} exists for: {ctx.provider_instance}",
+            "INFO",
+        )
+
+        instance = self._queue_api.get_provider_instance(
+            ctx.tenant, ctx.state.provider_instance
+        )
+
+        queue_added = [
+            queue
+            for queue in instance.queue_list
+            if queue.queue_number == ctx.queue.queue_number
+        ]
+        if queue_added:
+            self.logging(
+                f"Found Queue: {ctx.queue.queue_name} exists for: {ctx.provider_instance}",
+                "INFO",
+            )
+        else:
+            raise QueueNotFound
+
+    # ***********************************************
+    # DELETE QUEUE
+
+    def check_already_deleted_queue(self, ctx: QueueExecutionContext):
+        self.logging(
+            f"Checking Queue: {ctx.queue.queue_name} if already deleted for: {ctx.provider_instance}",
+            "INFO",
+        )
+        instance = ctx.state.provider_instance
+        if instance is None:
+            raise RetryableNetworkException
+        queue_added = [
+            queue
+            for queue in instance.queue_list
+            if queue.queue_number == ctx.queue.queue_number
+        ]
+        if not queue_added:
+            raise QueueNotFound
+
+    def delete_queue(self, ctx: QueueExecutionContext):
+        self.logging(f"Deleting Queue: {ctx.queue.queue_number}", "INFO")
+
+        queue_cust_id = None
+        for queue in ctx.state.provider_instance.queue_list:
+            if queue.queue_number == ctx.queue.queue_number:
+                queue_cust_id = queue.queue_id
+
+        if queue_cust_id is None:
+            raise QueueNotFound
+
+        self._queue_api.delete_queue(ctx.tenant, queue_cust_id)
+
+    def submit_delete_provider_settings(self, ctx: QueueExecutionContext):
+
+        queue_list = [
+            {
+                "@odata.type": queue.odata_type,
+                "queue_name": queue.queue_name,
+                "queue_number": queue.queue_number,
+                "queue_id": queue.queue_id,
+            }
+            for queue in ctx.state.provider_instance.queue_list
+            if queue.queue_number != ctx.queue.queue_number
+        ]
+
+        self._queue_api.update_provider_instance_settings(
+            ctx.tenant, ctx.state.provider_instance, queue_list
+        )
+
+    def verify_delete_queue(self, ctx: QueueExecutionContext):
+        self.logging(
+            f"Checking Queue: {ctx.queue.queue_name} does not exist for: {ctx.provider_instance}",
+            "INFO",
+        )
+
+        instance = self._queue_api.get_provider_instance(
+            ctx.tenant, ctx.state.provider_instance
+        )
+
+        queue_exists = any(
+            [
+                queue
+                for queue in instance.queue_list
+                if queue.queue_number == ctx.queue.queue_number
+            ]
+        )
+        if not queue_exists:
+            self.logging(
+                f"Not Found Queue: {ctx.queue.queue_name} does not exist for: {ctx.provider_instance}",
+                "INFO",
+            )
+        else:
+            raise QueueFound
+
+    def execute(self) -> QueueExecutionResult:
+        """
+        Executes the queue creation process by navigating through the form pages and submitting queues.
+        """
+
+        try:
+            self.logging(
+                f"Starting {self.__class__.__name__} in thread: {threading.get_ident()}",
+                "INFO",
+            )
+
+            if not self._is_provider_settings_usable(self._ctx):
+                self.logging(
+                    "Provider Settings Not cached in state. Getting Provider Settings.",
+                    "INFO",
+                )
+                for step in self._ensure_form_flow:
+                    self.run_step(step)
+
+            self.logging("Provider Settings cached in state. Continuing", "INFO")
+            action_type = self._ctx.action_type
+            queue_flow = self._queue_actions.get(action_type)
+
+            if queue_flow is None:
+                msg = f"queue_action is not a recognized value. value: {queue_flow}"
+                self.logging(msg, "ERROR")
+                raise ValueError(msg)
+            for step in queue_flow:
+                self.run_step(step)
+
+            return QueueExecutionResult(
+                queue_guid=self._ctx.queue.guid,
+                queue_name=self._ctx.queue.queue_name,
+                queue_row=self._ctx.queue.row_number,
+                success=True,
+                task=self._current_task,
+                status=QUEUEEXECSTATUS.SUCCESS,
+                message=f"Queue action: {self._ctx.action_type} succeeded.",
+            )
+        except StoppedRequestException:
+            return self._build_error_result(
+                status=QUEUEEXECSTATUS.RUNNER_STOPPED_ERROR,
+                message="Stopped Requested.",
+            )
+
+        except DuplicateNameException:
+            return self._build_error_result(
+                status=QUEUEEXECSTATUS.NAME_EXISTS_ERROR,
+                message="Queue name already exists.",
+            )
+
+        except QueueNotFound:
+            return self._build_error_result(
+                status=QUEUEEXECSTATUS.QUEUE_NOT_FOUND_ERROR,
+                message="Queue not found.",
+            )
+        except QueueFound:
+            return self._build_error_result(
+                status=QUEUEEXECSTATUS.QUEUE_FOUND_ERROR,
+                message="Queue found.",
+            )
+
+        except NotAuthenticatedException:
+            return self._build_error_result(
+                status=QUEUEEXECSTATUS.NOT_AUTHENTICATED,
+                message="Received Not Autenticated Response from Server.",
+            )
+        except RetryableNetworkException:
+            return self._build_error_result(
+                status=QUEUEEXECSTATUS.NETWORK_RETRYABLE_ERROR,
+                message="Received an Network Retryable Error from the server.",
+            )
+        except NetworkResponseException:
+            return self._build_error_result(
+                status=QUEUEEXECSTATUS.NETWORK_RESPONSE_ERROR,
+                message="Received a Network Response Error.",
+            )
+        except Exception as e:
+
+            if self._ctx.should_stop():
+                return self._build_error_result(
+                    status=QUEUEEXECSTATUS.RUNNER_STOPPED_ERROR,
+                    message="Stopped Requested.",
+                )
+
+            self.logging(str(e), "DEBUG")
+            return self._build_error_result(
+                status=QUEUEEXECSTATUS.UNKNOWN_ERROR,
+                message="Error happened in Queue execution.",
+            )
+
+    def _build_error_result(self, status: QUEUEEXECSTATUS, message: str):
+        self.logging(message, "ERROR")
+        return QueueExecutionResult(
+            queue_guid=self._ctx.queue.guid,
+            queue_name=self._ctx.queue.queue_name,
+            queue_row=self._ctx.queue.row_number,
+            success=False,
+            task=self._current_task,
+            status=status,
+            message=message,
+        )
