@@ -9,23 +9,22 @@ project_dir = .
 
 # project_dir = ./
 # source file path
-input_file = /Users/jamesmcgahn/Desktop/Code Projects/IntraRulesBot/main.py
+input_file = main.py
 
 # directory where exec is stored
-exec_directory = /Users/jamesmcgahn/Desktop/Code Projects/IntraRulesBot/build
+exec_directory = ./build
 
 # path to .pyproject project file
 project_file = 
 
 # application icon
 #icon = /Users/jamesmcgahn/Desktop/Code Projects/IntraRulesBot/.venv/lib/python3.12/site-packages/PySide6/scripts/deploy_lib/pyside_icon.icns
-icon = /Users/jamesmcgahn/Desktop/Code Projects/IntraRulesBot/.venv/lib/python3.12/site-packages/PySide6/scripts/deploy_lib/pyside_icon.icns
+icon = C:\Users\JamesMcgahn\Documents\GitHub\IntraRulesBot\resources\system_icons\logo48_48.ico
 
 [python]
 
 # python path
-python_path = C:\Users\james.mcgahn\Documents\IntraRulesBot\.venv\Scripts\python.exe
-
+python_path = C:\Users\JamesMcgahn\Documents\GitHub\IntraRulesBot\.venv\Scripts\python.exe
 
 # python packages to install
 packages = Nuitka==2.4.8
@@ -43,7 +42,7 @@ qml_files =
 excluded_qml_plugins = 
 
 # qt modules used. comma separated
-modules = Widgets,Gui,Core,DBus
+modules = Core,Gui,Widgets
 
 # qt plugins used by the application
 plugins = accessiblebridge,styles,egldeviceintegrations,xcbglintegrations,iconengines,platforminputcontexts,platforms/darwin,platforms,generic,imageformats,platformthemes
@@ -70,7 +69,7 @@ macos.permissions =
 mode = onefile
 
 # (str) specify any extra nuitka arguments
-extra_args = --quiet --noinclude-qt-translations --windows-console-mode=disable --windows-icon-from-ico=./resources/system_icons/logo48_48.ico --company-name=IntraRulesBot --product-name=IntraRulesBot --product-version=1.0.0 --copyright=MIT --file-description="IntraRulesBot Rules Automation"
+extra_args = --quiet --noinclude-qt-translations --windows-console-mode=disable --windows-icon-from-ico=./resources/system_icons/logo48_48.ico --company-name=IntraRulesBot --product-name=IntraRulesBot --product-version=1.0.0 --copyright=MIT --file-description="Intra Automation"
 
 [buildozer]
 

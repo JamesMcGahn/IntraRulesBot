@@ -2,19 +2,18 @@
 
 #### TO-DO NOW
 
-- [ ] : Legacy and Modern Executor path
-- [ ] : load selectors from file(s)
+- [ ] :#FEATURE V11 Support for Rules
 
 #### TO-DO LATER
 
-- [ ] : update schema to check for provider_condition based on provider_category
 - [ ] :#FEATURE : Setting to turn off Toasts
 - [ ] :#TODO : switch page to rules page after open file validation
-
-- [ ] : TODO : Remove implicit passing of logger to services
 - [ ] :#FEATURE : Stats Queue Selection
 - [ ] :#FEATURE : Action: Create List
 - [ ] :#FEATURE : Action: Update User
+- [ ] :#FEATURE: ADD ACD STATS Config
+- [ ] :#FEATURE: STATE MAPPING
+- [ ] :#FEATURE: app props compare
 
 ### COMPLETED
 
@@ -34,15 +33,22 @@
   - [x] : Implement context container
   - [x] : Implement state container
   - [x] : profiles for version selectors
-- [/] : Action Based Triggers - ACD
+- [x] : Action Based Triggers - ACD
   - [x] : Agent Changed State Trigger
   - [x] : Agent Logged In
   - [x] : Agent Logged Out
   - [x] : Time in Current State
-- [/] : Intradiem
+- [x] : Intradiem
   - [x] : Quick Action Clicked
 - Threaded Service Safe Shutdown
 - Display Rule Runner Summaries of Rule Completion
+- Auth Flows for V10 & V11
+  - [x] Token Refresh for V11
+
+- Load Selectors from Profile Configuration File
+- Queue Entry for V11 & V10 - ADD, DELETE, VERIFY
+- Start up and Shutdown Coordination
+- Migrate from pipenv to uv
 
 #### 1.0.0
 
