@@ -188,9 +188,7 @@ brew install uv
 
 **Windows:**
 
-```powershell
-winget install --id=astral-sh.uv -e
-```
+[uv windows install (Astral Docs)](https://docs.astral.sh/uv/getting-started/installation/)
 
 Verify the installation:
 

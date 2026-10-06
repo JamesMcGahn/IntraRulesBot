@@ -164,6 +164,9 @@ class QueueRunnerWorker(QObject):
                 should_stop_cb=self.should_stop,
             )
 
+            if INTRAVERSION.V11 == self.creds.platform_version:
+                self._close_down_browser()
+
             if result.success:
                 self.logging("Received Successful Authentication.")
                 return result
@@ -225,6 +228,13 @@ class QueueRunnerWorker(QObject):
                 self.logging(
                     f"({self.completed_count+1}/{self.total_count}) - Queue Executing"
                 )
+
+                browser_port = (
+                    self.playwright_session.browser_adapter
+                    if self.creds.platform_version == INTRAVERSION.V10
+                    else None
+                )
+
                 try:
                     item = self.q_item_queue.popleft()
                     item.status = QUEUERUNSTATUS.RUNNING
@@ -232,7 +242,7 @@ class QueueRunnerWorker(QObject):
                         tenant=self.creds.tenant,
                         provider_instance=self.provider_instance,
                         provider_name=self.provider_name,
-                        browser_port=self.playwright_session.browser_adapter,
+                        browser_port=browser_port,
                         state=state,
                         queue=item.queue,
                         action_type=item.action_type,
