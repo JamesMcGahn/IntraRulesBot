@@ -13,6 +13,7 @@ from PySide6.QtCore import QObject, Signal
 from playwright._impl._driver import compute_driver_executable, get_driver_env
 from services.settings.enums import SETTINGSCATEGORIES
 from base.enums import INTRAVERSION
+from pathlib import Path
 
 
 class StartUpCoordinator(QObject):
@@ -59,18 +60,29 @@ class StartUpCoordinator(QObject):
     def ensure_playwright_browsers(self):
         folder = PathManager.create_folder_in_app_data("playwright")
         env = get_driver_env()
-        env["PLAYWRIGHT_BROWSERS_PATH"] = folder
+        env["PLAYWRIGHT_BROWSERS_PATH"] = str(folder)
+        node_executable, cli_path = compute_driver_executable()
         self._logging(
             "Ensuring Playwright is installed. ** This can take a while. **",
             "INFO",
         )
-        node_executable, cli_path = compute_driver_executable()
+        self._logging(f"Node: {node_executable}", "INFO")
+        self._logging(f"Node exists: {Path(node_executable).exists()}", "INFO")
+
+        self._logging(f"CLI: {cli_path}", "INFO")
+        self._logging(f"CLI exists: {Path(cli_path).exists()}", "INFO")
+
+        self._logging(
+            f"PLAYWRIGHT_BROWSERS_PATH: {env.get('PLAYWRIGHT_BROWSERS_PATH')}",
+            "INFO",
+        )
         command = [
             node_executable,
             cli_path,
             "install",
             "chromium",
         ]
+        self._logging(f"Command: {command}", "INFO")
 
         try:
             result = subprocess.run(
