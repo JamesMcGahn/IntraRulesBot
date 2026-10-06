@@ -177,7 +177,7 @@ class QueueExecutor:
         self.queue_port.wait_for_loading_cycle(
             ctx.profile.selectors.queues.queue_grid_container,
             500,
-            disappear_timeout=30000,
+            disappear_timeout=90000,
         )
         self.logging("Loading Spinner Clear.", "INFO")
 
@@ -205,7 +205,7 @@ class QueueExecutor:
                 name_row,
                 selector=ctx.profile.selectors.queues.queue_row_number_item,
                 attribute=ctx.profile.selectors.queues.queue_row_attribute,
-                timeout=20_000,
+                timeout=35_000,
             )
         expected_number = str(ctx.queue.queue_number)
         expected_name = str(ctx.queue.queue_name)
