@@ -62,17 +62,14 @@ class QueueResultHandler:
                 )
             case QUEUEEXECSTATUS.NAME_EXISTS_ERROR:
                 item.is_duplicate = True
-                if INTRAVERSION.V11 == self._platform_version:
-                    self._logging(
-                        f"({run_position}/{total_count}) - Queue Already Exists: {item.queue.row_number} - {item.queue.queue_name}"
-                    )
-                    return self._handle_result_success(
-                        item, result, run_position, total_count
-                    )
-                else:
-                    return self._handle_result_queue_exists(
-                        item, result, run_position, total_count
-                    )
+
+                self._logging(
+                    f"({run_position}/{total_count}) - Queue Already Exists: {item.queue.row_number} - {item.queue.queue_name}"
+                )
+                return self._handle_result_success(
+                    item, result, run_position, total_count
+                )
+
             case QUEUEEXECSTATUS.QUEUE_NOT_FOUND_ERROR:
                 if INTRAVERSION.V11 == self._platform_version:
                     if item.action_type == QUEUEACTION.DELETE:
