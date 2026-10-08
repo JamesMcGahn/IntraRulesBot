@@ -73,6 +73,8 @@ v_11 = BrowserProfile(
             queue_row_number_item="",
             queue_row_attribute="",
             queue_delete_button="",
+            queue_search_input="",
+            queue_search_button="",
         ),
         rule_form=RuleFormSelectors(
             page_path="",

@@ -73,6 +73,8 @@ v_10 = BrowserProfile(
             queue_row_number_item="span[id$='lblNumber']",
             queue_row_attribute="title",
             queue_delete_button='input[id*="_imageDelete"]',
+            queue_search_input="#ctl00_overlayContent_tbSearch",
+            queue_search_button="#ctl00_overlayContent_imageSearch",
         ),
         rule_form=RuleFormSelectors(
             page_path="ManagerConsole/Delivery/Rules.aspx",

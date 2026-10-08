@@ -13,3 +13,5 @@ class QueueSelectors:
     queue_row_number_item: str
     queue_row_attribute: str
     queue_delete_button: str
+    queue_search_input: str
+    queue_search_button: str
