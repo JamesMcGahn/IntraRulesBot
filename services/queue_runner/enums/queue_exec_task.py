@@ -13,6 +13,8 @@ class QEXECUTORTASK(StrEnum):
     SET_QUEUE_NUMBER = "set_queue_number"
     SUBMIT_QUEUE = "submit_queue"
     VERIFY_SUBMISSION = "verify_submission"
+    VERIFY_DELETION = "verify_deletion"
+    EDIT_QUEUE = "edit_queue"
     DELETE_QUEUE = "delete_queue"
     FIND_PROVIDER_CUSTOM_RESOURCES = "find_provider_custom_resources"
     GET_CURRENT_PROVIDER_INSTANCE = "get_current_provider_instance"

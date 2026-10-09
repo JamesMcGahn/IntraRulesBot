@@ -70,14 +70,14 @@ class V11QueueExecutor:
             ),
             QEXECSTEPCALL(
                 QEXECUTORTASK.CHECK_FOR_DUPLICATE_QUEUE,
-                self.check_already_deleted_queue,
+                self.check_queue_exists,
             ),
             QEXECSTEPCALL(QEXECUTORTASK.DELETE_QUEUE, self.delete_queue),
             QEXECSTEPCALL(
                 QEXECUTORTASK.UPDATE_PROVIDER_INSTANCE_SETTINGS,
                 self.submit_delete_provider_settings,
             ),
-            QEXECSTEPCALL(QEXECUTORTASK.VERIFY_SUBMISSION, self.verify_delete_queue),
+            QEXECSTEPCALL(QEXECUTORTASK.VERIFY_DELETION, self.verify_delete_queue),
         ]
 
         self._verify_add_queue_flow = [
@@ -85,7 +85,7 @@ class V11QueueExecutor:
         ]
 
         self._verify_del_queue_flow = [
-            QEXECSTEPCALL(QEXECUTORTASK.VERIFY_SUBMISSION, self.verify_delete_queue),
+            QEXECSTEPCALL(QEXECUTORTASK.VERIFY_DELETION, self.verify_delete_queue),
         ]
 
         self._queue_actions = {
@@ -245,7 +245,7 @@ class V11QueueExecutor:
         queue_added = [
             queue
             for queue in instance.queue_list
-            if queue.queue_number == ctx.queue.queue_number
+            if queue.queue_number.lower() == ctx.queue.queue_number.lower()
         ]
         if queue_added:
             raise DuplicateNameException
@@ -297,7 +297,7 @@ class V11QueueExecutor:
         queue_added = [
             queue
             for queue in instance.queue_list
-            if queue.queue_number == ctx.queue.queue_number
+            if queue.queue_number.lower() == ctx.queue.queue_number.lower()
         ]
         if queue_added:
             self.logging(
@@ -310,9 +310,9 @@ class V11QueueExecutor:
     # ***********************************************
     # DELETE QUEUE
 
-    def check_already_deleted_queue(self, ctx: QueueExecutionContext):
+    def check_queue_exists(self, ctx: QueueExecutionContext):
         self.logging(
-            f"Checking Queue: {ctx.queue.queue_name} if already deleted for: {ctx.provider_instance}",
+            f"Checking Queue: {ctx.queue.queue_name} if queue exists: {ctx.provider_instance}",
             "INFO",
         )
         instance = ctx.state.provider_instance
@@ -321,7 +321,7 @@ class V11QueueExecutor:
         queue_added = [
             queue
             for queue in instance.queue_list
-            if queue.queue_number == ctx.queue.queue_number
+            if queue.queue_number.lower() == ctx.queue.queue_number.lower()
         ]
         if not queue_added:
             raise QueueNotFound
@@ -331,7 +331,7 @@ class V11QueueExecutor:
 
         queue_cust_id = None
         for queue in ctx.state.provider_instance.queue_list:
-            if queue.queue_number == ctx.queue.queue_number:
+            if queue.queue_number.lower() == ctx.queue.queue_number.lower():
                 queue_cust_id = queue.queue_id
 
         if queue_cust_id is None:
@@ -349,7 +349,7 @@ class V11QueueExecutor:
                 "queue_id": queue.queue_id,
             }
             for queue in ctx.state.provider_instance.queue_list
-            if queue.queue_number != ctx.queue.queue_number
+            if queue.queue_number.lower() != ctx.queue.queue_number.lower()
         ]
 
         self._queue_api.update_provider_instance_settings(
@@ -370,7 +370,7 @@ class V11QueueExecutor:
             [
                 queue
                 for queue in instance.queue_list
-                if queue.queue_number == ctx.queue.queue_number
+                if queue.queue_number.lower() == ctx.queue.queue_number.lower()
             ]
         )
         if not queue_exists:

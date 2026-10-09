@@ -61,7 +61,7 @@ class QueueExecutor:
 
         self._del_queue_flow = [
             QEXECSTEPCALL(QEXECUTORTASK.DELETE_QUEUE, self.delete_queue),
-            QEXECSTEPCALL(QEXECUTORTASK.VERIFY_SUBMISSION, self.verify_delete_queue),
+            QEXECSTEPCALL(QEXECUTORTASK.VERIFY_DELETION, self.verify_delete_queue),
         ]
 
         self._verify_add_queue_flow = [
@@ -71,7 +71,7 @@ class QueueExecutor:
         ]
 
         self._verify_del_queue_flow = [
-            QEXECSTEPCALL(QEXECUTORTASK.VERIFY_SUBMISSION, self.verify_delete_queue),
+            QEXECSTEPCALL(QEXECUTORTASK.VERIFY_DELETION, self.verify_delete_queue),
         ]
 
         self._queue_actions = {
@@ -205,7 +205,7 @@ class QueueExecutor:
                 name_row,
                 selector=ctx.profile.selectors.queues.queue_row_number_item,
                 attribute=ctx.profile.selectors.queues.queue_row_attribute,
-                timeout=35_000,
+                timeout=90_000,
             )
         expected_number = str(ctx.queue.queue_number)
         expected_name = str(ctx.queue.queue_name)
@@ -220,6 +220,11 @@ class QueueExecutor:
     def delete_queue(self, ctx: QueueExecutionContext):
         message = f"Unable to find {ctx.queue.queue_name}. Queue does not exist"
         try:
+            self.queue_port.fill(
+                ctx.profile.selectors.queues.queue_search_input, ctx.queue.queue_name
+            )
+            self.queue_port.click(ctx.profile.selectors.queues.queue_search_button)
+
             name_row = self.queue_port.find_by_has_selector(
                 ctx.profile.selectors.queues.queue_grid_rows,
                 (
@@ -250,6 +255,18 @@ class QueueExecutor:
             raise QueueNotFound from e
 
     def verify_delete_queue(self, ctx: QueueExecutionContext):
+
+        self.queue_port.fill(
+            ctx.profile.selectors.queues.queue_search_input, ctx.queue.queue_name
+        )
+        self.queue_port.click(ctx.profile.selectors.queues.queue_search_button)
+
+        self.queue_port.wait_for_loading_cycle(
+            ctx.profile.selectors.queues.queue_grid_container,
+            500,
+            disappear_timeout=90000,
+        )
+
         name_row = self.queue_port.find_by_has_selector(
             ctx.profile.selectors.queues.queue_grid_rows,
             (
