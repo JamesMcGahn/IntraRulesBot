@@ -41,6 +41,7 @@ from .models import (
     QueueRunnerState,
 )
 from .queue_result_handler import QueueResultHandler
+from services.queues.enums import QUEUEACTION
 
 
 class QueueRunnerWorker(QObject):
@@ -75,6 +76,7 @@ class QueueRunnerWorker(QObject):
         self.errored_queues: list[QueueRunItem] = []
         self.success_queues: list[QueueRunItem] = []
         self.duplicate_queues: list[QueueRunItem] = []
+        self.already_absent: list[QueueRunItem] = []
         self.completed_count = 0
         self.total_count = len(self.q_item_queue)
         self._shut_down = Event()
@@ -345,6 +347,8 @@ class QueueRunnerWorker(QObject):
         if decision.action == QRESULTACTION.SUCCESS:
             if item.is_duplicate:
                 self.duplicate_queues.append(item)
+            if item.already_absent:
+                self.already_absent.append(item)
             self.success_queues.append(item)
             self.completed_count += 1
         elif decision.action == QRESULTACTION.STOP:
@@ -410,15 +414,40 @@ class QueueRunnerWorker(QObject):
         """
         Creates a summary of successfully executed and errored queues.
         """
-        errored_queues_msg = f"ERRORED Queues TOTAL: {len(self.errored_queues)} \n"
-        succeeded_queues_msg = f"SUCCEEDED Queues TOTAL: {len(self.success_queues)} \n"
-        duplicate_queues_msg = f"DUPLICATE Queues TOTAL: {len(self.duplicate_queues)} (included in succeeded) \n"
+        added_queues = [
+            queue
+            for queue in self.success_queues
+            if queue.action_type == QUEUEACTION.ADD and not queue.is_duplicate
+        ]
+        deled_queues = [
+            queue
+            for queue in self.success_queues
+            if queue.action_type == QUEUEACTION.DELETE
+        ]
+        errored_queues_msg = f"ERRORED Queues TOTAL: {len(self.errored_queues)}"
+        succeeded_queues_msg = f"SUCCEEDED Queues TOTAL: {len(self.success_queues)}"
+        duplicate_queues_msg = f"DUPLICATE Queues TOTAL: {len(self.duplicate_queues)} (included in succeeded)"
+        added_queues_msg = (
+            f"ADDED Queues TOTAL: {len(added_queues)} (included in succeeded)"
+        )
+
+        if deled_queues or self.already_absent:
+            deleted_queues_msg = (
+                f"DELETED Queues TOTAL: {len(deled_queues)} (included in succeeded)"
+            )
+            already_absent_msg = f"Already Absent Queues TOTAL: {len(self.already_absent)} (included in succeeded)"
+
         tabs = "\t" * 3
 
         max_errors_logged = 5
         self.logging(f"{self.provider_name} - {self.provider_instance} - RESULT:")
         self.logging(succeeded_queues_msg, "INFO")
-        self.logging(duplicate_queues_msg, "INFO")
+        if added_queues or self.duplicate_queues:
+            self.logging(added_queues_msg, "INFO")
+            self.logging(duplicate_queues_msg, "INFO")
+        if deled_queues or self.already_absent:
+            self.logging(deleted_queues_msg, "INFO")
+            self.logging(already_absent_msg, "INFO")
         self.logging(errored_queues_msg, "ERROR")
 
         if summary_mode == QUEUERUNNERSUMMARYMODE.COUNTS:

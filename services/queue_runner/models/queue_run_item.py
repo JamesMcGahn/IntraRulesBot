@@ -12,3 +12,4 @@ class QueueRunItem:
     retry_count: int = 0
     action_type: QUEUEACTION = QUEUEACTION.ADD
     is_duplicate: bool = False
+    already_absent: bool = False

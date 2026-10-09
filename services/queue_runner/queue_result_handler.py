@@ -71,6 +71,9 @@ class QueueResultHandler:
                 )
 
             case QUEUEEXECSTATUS.QUEUE_NOT_FOUND_ERROR:
+                if item.action_type == QUEUEACTION.DELETE:
+                    item.already_absent = True
+
                 if INTRAVERSION.V11 == self._platform_version:
                     if item.action_type == QUEUEACTION.DELETE:
                         self._logging(
