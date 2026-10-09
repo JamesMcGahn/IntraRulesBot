@@ -12,7 +12,7 @@ from time import monotonic, sleep
 class NetworkThrottle(LoggingBase):
     """Class to throttle requests. Throttle will delay requests based on time of the last request.
     params:
-    interval: time between requests in ms
+    interval: time between requests in seconds
     """
 
     def __init__(self, logger: LogAdapter, interval: float = 0.5):
