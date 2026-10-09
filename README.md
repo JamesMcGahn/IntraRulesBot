@@ -1,8 +1,148 @@
 # IntraRulesBot
 
+## Installation
+
+### Requirements
+
+- Python 3.12
+
+```bash
+uv sync
+```
+
+## Getting Started
+
+### 1. Install uv
+
+Install `uv` if it is not already installed.
+
+**macOS:**
+
+```bash
+brew install uv
+```
+
+**Windows:**
+
+[uv windows install (Astral Docs)](https://docs.astral.sh/uv/getting-started/installation/)
+
+Verify the installation:
+
+```bash
+uv --version
+```
+
+### 2. Clone the repository
+
+### 3. Install Python and project dependencies
+
+Run:
+
+```bash
+uv sync
+```
+
+### 4. Run the application
+
+```bash
+uv run python main.py
+```
+
+## Virtual Environment
+
+Activating the virtual environment manually is optional. Commands can normally be run directly with `uv run`.
+
+If manual activation is desired:
+
+**macOS/Linux:**
+
+```bash
+source .venv/bin/activate
+```
+
+**Windows PowerShell:**
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+Once activated, normal Python commands can be used:
+
+```bash
+python main.py
+```
+
+## How To Deploy
+
+The application will deploy based on the settings in the pysidedeploy.spec file. The spec file is configured for Windows Applications but will also work on Mac.
+In the spec file, update the paths to exec_directory, icon and python_path. Then run the below in console.
+
+**macOS:**
+
+```bash
+uv run pyside6-deploy -c pysidedeploy_mac.spec
+```
+
+**Windows:**
+
+```bash
+uv run pyside6-deploy -c pysidedeploy_windows.spec
+```
+
+## Supported Use Cases:
+
+### ACD Queue Input
+
+Both V10 & V11 are supported.
+
+- Add, Delete & Verify Queues from Excel File
+- excel files must have queue_number & queue_name in heading
+  - optional action_type header with commands of ADD, DELETE, VERIFY_EXISTS, & VERIFY_NOT_EXISTS
+
+### Rules
+
+**Note: V11 is not yet supported for Rules**
+
+#### Triggers:
+
+- Frequency Based
+- Action Triggers:
+  - ACD
+    - Agent Changed State Trigger
+    - Agent Logged In
+    - Agent Logged Out
+    - Time in State
+  - Intradiem
+    - Users
+    - Quick Action Clicked
+  - WFM
+    - Segment Occurrence
+
+#### Condition:
+
+- ACD:
+  - Statistic
+
+#### Actions:
+
+- Communications
+  - Email
+
+## How To Add Rule Use Case
+
+- [ ] Update/Add schema in ./schemas
+- [ ] Add scope detailed dataclass in .rules/models/
+- [ ] Update scope detail enum in .rules/enums/
+- [ ] Update Builder in services/rules/rule_builder
+- [ ] Update Serialization in views/rules/rule_factory
+- [ ] Update Browser Profile DC in services/profiles/rules DC
+- [ ] Update Browser Profile implementation with selectors
+- [ ] Add detailed executor in ./services/rule_runner/executors/{scope}
+- [ ] Update scope executor in ./services/rule_runner/executors/{scope}
+
 ## File Structure
 
-````bash
+```bash
 
 ├── base
 │   ├── enums
@@ -163,143 +303,4 @@
 ├── __version__.py
 ├── app_styles_css.py
 └── README.md
-
-## Installation
-
-### Requirements
-
-- Python 3.12+
-
-```bash
-uv sync
-````
-
-## Getting Started
-
-### 1. Install uv
-
-Install `uv` if it is not already installed.
-
-**macOS:**
-
-```bash
-brew install uv
 ```
-
-**Windows:**
-
-[uv windows install (Astral Docs)](https://docs.astral.sh/uv/getting-started/installation/)
-
-Verify the installation:
-
-```bash
-uv --version
-```
-
-### 2. Clone the repository
-
-### 3. Install Python and project dependencies
-
-Run:
-
-```bash
-uv sync
-```
-
-### 4. Run the application
-
-```bash
-uv run python main.py
-```
-
-## Virtual Environment
-
-Activating the virtual environment manually is optional. Commands can normally be run directly with `uv run`.
-
-If manual activation is desired:
-
-**macOS/Linux:**
-
-```bash
-source .venv/bin/activate
-```
-
-**Windows PowerShell:**
-
-```powershell
-.venv\Scripts\Activate.ps1
-```
-
-Once activated, normal Python commands can be used:
-
-```bash
-python main.py
-```
-
-## How To Deploy
-
-The application will deploy based on the settings in the pysidedeploy.spec file. The spec file is configured for Windows Applications but will also work on Mac.
-In the spec file, update the paths to exec_directory, icon and python_path. Then run the below in console.
-
-**macOS:**
-
-```bash
-uv run pyside6-deploy -c pysidedeploy_mac.spec
-```
-
-**Windows:**
-
-```bash
-uv run pyside6-deploy -c pysidedeploy_windows.spec
-```
-
-## Supported Use Cases:
-
-### ACD Queue Input
-
-Both V10 & V11 are supported.
-
-- Add, Delete & Verify Queues from Excel File
-- excel files must have queue_number & queue_name in heading
-  - optional action_type header with commands of ADD, DELETE, VERIFY_EXISTS, & VERIFY_NOT_EXISTS
-
-### Rules
-
-**Note: V11 is not yet supported for Rules**
-
-#### Triggers:
-
-- Frequency Based
-- Action Triggers:
-  - ACD
-    - Agent Changed State Trigger
-    - Agent Logged In
-    - Agent Logged Out
-    - Time in State
-  - Intradiem
-    - Users
-    - Quick Action Clicked
-  - WFM
-    - Segment Occurrence
-
-#### Condition:
-
-- ACD:
-  - Statistic
-
-#### Actions:
-
-- Communications
-  - Email
-
-## How To Add Rule Use Case
-
-- [ ] Update/Add schema in ./schemas
-- [ ] Add scope detailed dataclass in .rules/models/
-- [ ] Update scope detail enum in .rules/enums/
-- [ ] Update Builder in services/rules/rule_builder
-- [ ] Update Serialization in views/rules/rule_factory
-- [ ] Update Browser Profile DC in services/profiles/rules DC
-- [ ] Update Browser Profile implementation with selectors
-- [ ] Add detailed executor in ./services/rule_runner/executors/{scope}
-- [ ] Update scope executor in ./services/rule_runner/executors/{scope}
