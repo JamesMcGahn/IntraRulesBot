@@ -23,6 +23,7 @@ from base.errors import (
 from ..enums import QEXECUTORTASK, QUEUEEXECSTATUS
 from ..models import QEXECSTEPCALL, QueueExecutionResult, QueueProgressEvent
 from services.queues.enums import QUEUEACTION
+from services.queues.models import Queue
 
 
 class V11QueueExecutor:
@@ -61,6 +62,21 @@ class V11QueueExecutor:
                 self.submit_add_provider_settings,
             ),
             QEXECSTEPCALL(QEXECUTORTASK.VERIFY_SUBMISSION, self.verify_queue_added),
+        ]
+
+        self._edit_queue_flow = [
+            QEXECSTEPCALL(
+                QEXECUTORTASK.GET_CURRENT_PROVIDER_INSTANCE,
+                self.get_current_provider_instance,
+            ),
+            QEXECSTEPCALL(
+                QEXECUTORTASK.CHECK_FOR_DUPLICATE_QUEUE,
+                self.check_queue_exists,
+            ),
+            QEXECSTEPCALL(
+                QEXECUTORTASK.EDIT_QUEUE,
+                self.edit_queue,
+            ),
         ]
 
         self._del_queue_flow = [
@@ -228,6 +244,39 @@ class V11QueueExecutor:
             raise ProviderInstanceNotFound(
                 f"Custom Resources For Provider Name: {ctx.provider_name} does not exist."
             )
+
+    # ***********************************************
+    # EDIT QUEUE
+
+    def edit_queue(self, ctx: QueueExecutionContext):
+        self.logging(f"Deleting Queue: {ctx.queue.queue_number}", "INFO")
+
+        queue_cust_id = None
+        for queue in ctx.state.provider_instance.queue_list:
+            if queue.queue_number == ctx.queue.queue_number:
+                queue_cust_id = queue.queue_id
+
+        if queue_cust_id is None:
+            raise QueueNotFound
+
+        editted_queue = Queue(
+            guid=queue_cust_id,
+            queue_name=ctx.queue.rename_queue_name,
+            queue_number=ctx.queue.rename_queue_number,
+            row_number=ctx.queue.row_number,
+            provider_name=ctx.queue.provider_name,
+            provider_instance=ctx.queue.provider_instance,
+            action_type=QUEUEACTION.RENAME,
+            rename_queue_number=ctx.queue.rename_queue_number,
+            rename_queue_name=ctx.queue.rename_queue_name,
+        )
+
+        self._queue_api.add_queue(
+            ctx.tenant,
+            ctx.state.queue_custom_resource,
+            ctx.state.provider_instance,
+            editted_queue,
+        )
 
     # ***********************************************
     # ADD QUEUE
