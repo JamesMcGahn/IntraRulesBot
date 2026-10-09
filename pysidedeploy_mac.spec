@@ -12,7 +12,7 @@ project_dir = .
 input_file = main.py
 
 # directory where exec is stored
-exec_directory = /Users/jamesmcgahn/Desktop/Code Projects/IntraRulesBot/build
+exec_directory = ./build/mac
 
 # path to .pyproject project file
 project_file = 
@@ -23,7 +23,7 @@ icon = /Users/jamesmcgahn/Desktop/Code Projects/IntraRulesBot/resources/system_i
 [python]
 
 # python path
-python_path = /Users/jamesmcgahn/Desktop/Code Projects/IntraRulesBot/.venv/bin/python3
+python_path = ./python3
 
 # python packages to install
 packages = Nuitka==2.4.8

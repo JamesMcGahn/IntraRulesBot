@@ -12,14 +12,14 @@ project_dir = .
 input_file = main.py
 
 # directory where exec is stored
-exec_directory = ./build
+exec_directory = ./build/windows/
 
 # path to .pyproject project file
 project_file = 
 
 # application icon
 #icon = /Users/jamesmcgahn/Desktop/Code Projects/IntraRulesBot/.venv/lib/python3.12/site-packages/PySide6/scripts/deploy_lib/pyside_icon.icns
-icon = C:\Users\JamesMcgahn\Documents\GitHub\IntraRulesBot\resources\system_icons\logo48_48.ico
+icon = ./resources/system_icons/logo48_48.ico
 
 [python]
 
