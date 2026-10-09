@@ -23,6 +23,8 @@ class QueueBuilder(ServiceBase):
         queue_number = queue.values.get("queue_number", "").strip()
         queue_row = queue.row_number
         queue_action_raw = queue.values.get("action_type", "ADD")
+        queue_rename_name = queue.values.get("queue_rename_name", None)
+        queue_rename_number = queue.values.get("queue_rename_name", None)
 
         try:
             queue_action = QUEUEACTION(queue_action_raw)
@@ -41,6 +43,8 @@ class QueueBuilder(ServiceBase):
             provider_instance=provider_instance,
             provider_name=provider_name,
             action_type=queue_action,
+            rename_queue_name=queue_rename_name,
+            rename_queue_number=queue_rename_number,
         )
 
     def build_queues(self, batch: ValidationQueueBatch) -> list[Queue]:

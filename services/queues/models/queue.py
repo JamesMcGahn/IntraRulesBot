@@ -11,3 +11,5 @@ class Queue:
     provider_name: str
     provider_instance: str
     action_type: QUEUEACTION = QUEUEACTION.ADD
+    rename_queue_name: str | None = None
+    rename_queue_number: str | None = None
