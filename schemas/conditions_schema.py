@@ -23,7 +23,7 @@ CONDITIONS_SCHEMA = {
                         "Not Equal To",
                     ],
                 },
-                "equality_threshold": {"type": "number", "minimum": 1},
+                "equality_threshold": {"type": "number", "minimum": 0},
                 "queues_source": {
                     "type": "string",
                     "enum": ["queues", "users"],
