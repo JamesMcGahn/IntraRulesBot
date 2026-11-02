@@ -159,6 +159,9 @@ class QueueRunnerWorker(QObject):
             self.logging(
                 f"Attempting to authenticate: {auth_attempts} / {max_attempts-1}"
             )
+            if self.playwright_session is None:
+                self._rebuild_browser()
+
             result = self.auth_service.ensure_auth(
                 self.session.provider_name,
                 self.creds,
