@@ -1,9 +1,6 @@
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import (
-    QVBoxLayout,
-    QWidget,
-    QTabWidget,
-)
+from PySide6.QtWidgets import QVBoxLayout, QWidget, QTabWidget, QLabel
+from __version__ import __version__
 
 
 class PageSettingsUI(QWidget):
@@ -33,6 +30,10 @@ class PageSettingsUI(QWidget):
         self.tabs.setTabPosition(QTabWidget.West)
         self.tabs.setTabsClosable(False)
         self.settings_layout.addWidget(self.tabs)
+        self.version = __version__
+        version_label = QLabel(f"Version: {self.version}")
+        version_label.setStyleSheet("color: #fcfcfc;")
+        self.settings_layout.addWidget(version_label)
 
     def add_page_to_tab(self, tab, text, icon=None):
         if icon is None:
