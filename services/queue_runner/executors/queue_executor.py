@@ -398,27 +398,44 @@ class QueueExecutor:
             )
         ctx.browser_port.reload_page()
         self.logging(f"Trying to Find Provider Name: {ctx.provider_name}", "INFO")
-        provider_category = ctx.browser_port.find_by_has_text(
-            ctx.profile.selectors.providers.category_items,
-            ctx.profile.selectors.providers.category_header,
+        categories = (
             ctx.profile.selectors.providers.acd_category_title,
-            True,
+            ctx.profile.selectors.providers.chat_category_title,
         )
+        for category_title in categories:
 
-        provider_instance = ctx.browser_port.find_child_by_has_text(
-            provider_category,
-            ctx.profile.selectors.providers.provider_cards,
-            ctx.profile.selectors.providers.provider_name,
-            ctx.provider_name,
-            True,
-        )
+            provider_category = ctx.browser_port.find_by_has_text(
+                ctx.profile.selectors.providers.category_items,
+                ctx.profile.selectors.providers.category_header,
+                category_title,
+                True,
+            )
 
-        ctx.browser_port.click_inside_parent(
-            provider_instance,
-            ctx.profile.selectors.providers.provider_edit_button,
-            no_wait_after=True,
-        )
-        self.logging(f"Found Provider Name: {ctx.provider_name}", "INFO")
+            provider_instance = ctx.browser_port.find_child_by_has_text(
+                provider_category,
+                ctx.profile.selectors.providers.provider_cards,
+                ctx.profile.selectors.providers.provider_name,
+                ctx.provider_name,
+                True,
+            )
+
+            try:
+                provider_instance.wait_for(state="visible", timeout=5000)
+            except PlaywrightTimeoutError:
+                self.logging(
+                    f"Could not find {ctx.provider_name} in category {category_title}",
+                    "INFO",
+                )
+                continue
+            ctx.browser_port.click_inside_parent(
+                provider_instance,
+                ctx.profile.selectors.providers.provider_edit_button,
+                no_wait_after=True,
+            )
+            self.logging(f"Found Provider Name: {ctx.provider_name}", "INFO")
+            return
+        self.logging(f"Could not find Provider Name {ctx.provider_name}", "ERROR")
+        raise PlaywrightError(f"Could not find Provider Name {ctx.provider_name}")
 
     def open_provider_form(self, ctx: QueueExecutionContext):
         frame_port = ctx.browser_port.frame_locator(

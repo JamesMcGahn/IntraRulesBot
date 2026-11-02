@@ -49,6 +49,7 @@ v_11 = BrowserProfile(
             provider_name="",
             provider_edit_button="",
             acd_category_title="",
+            chat_category_title="",
             switch_instance_alert_text="",
         ),
         provider_instance=ProviderInstanceSelectors(

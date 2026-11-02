@@ -10,4 +10,5 @@ class ProviderSelectors:
     provider_name: str
     provider_edit_button: str
     acd_category_title: str
+    chat_category_title: str
     switch_instance_alert_text: str

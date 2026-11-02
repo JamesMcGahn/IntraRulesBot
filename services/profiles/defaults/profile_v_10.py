@@ -49,6 +49,7 @@ v_10 = BrowserProfile(
             provider_name=".providerHeaderContent",
             provider_edit_button="input[title='Edit Provider Instance']",
             acd_category_title="ACD",
+            chat_category_title="Chat&Messaging",
             switch_instance_alert_text="Are you sure you want to select another Provider Instance and lose current Instance settings?",
         ),
         provider_instance=ProviderInstanceSelectors(
