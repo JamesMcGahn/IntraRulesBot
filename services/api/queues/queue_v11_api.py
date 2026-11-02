@@ -246,9 +246,6 @@ class V11QueueApi(BaseApi):
 
     def _handle_response(self, response: NetworkResponse):
 
-        if response.ok:
-            return
-
         match response.status:
             case 0:
                 raise NetworkResponseException
@@ -268,3 +265,5 @@ class V11QueueApi(BaseApi):
                 raise RetryableNetworkException
             case status if status >= 400:
                 raise NetworkResponseException
+            case _:
+                return
