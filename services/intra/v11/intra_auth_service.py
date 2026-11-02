@@ -100,6 +100,11 @@ class IntraAuthService(BaseAuthService):
         selectors: LoginSelectors,
         should_stop_cb,
     ):
+        if browser_port is None:
+            msg = "Browser port is required for V11 login."
+            self.logging(msg, "ERROR")
+            raise ValueError(msg)
+
         try:
             self.check_shutdown(should_stop_cb)
             browser_port.goto(
