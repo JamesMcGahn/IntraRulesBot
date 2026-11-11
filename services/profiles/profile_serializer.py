@@ -20,7 +20,7 @@ class ProfileSerializer(ServiceBase):
 
     def to_schema_dict(self, profile: BrowserProfile) -> dict:
         schema_dict = {
-            "schema_version": 2,
+            "schema_version": 3,
             "version": profile.version,
             "selectors": self.normalize(asdict(profile.selectors)),
         }
