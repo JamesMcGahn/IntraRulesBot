@@ -77,7 +77,7 @@ class LogSettings(SettingsCategoryBase):
     )
     log_level: str = setting(
         key="log_level",
-        default="INFO",
+        default="DEBUG",
         category=SETTINGSCATEGORIES.LOG,
         widget_type=SETTINGSWIDGETTYPE.COMBO_BOX,
         label_text="Log Level:",
