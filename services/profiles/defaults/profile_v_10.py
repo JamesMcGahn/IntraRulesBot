@@ -45,7 +45,7 @@ v_10 = BrowserProfile(
             page_path="ManagerConsole/Delivery/Providers.aspx",
             category_items="#ctl00_OpenSpaceContent_divCategories > .providerCategory",
             category_header=".providerCategoryTopHeader",
-            provider_cards=".providerCurvedBoxWrapper",
+            provider_cards=".providerCurvedBoxWrapper:not(:has(.disableText))",
             provider_name=".providerHeaderContent",
             provider_edit_button="input[title='Edit Provider Instance']",
             acd_category_title="ACD",
